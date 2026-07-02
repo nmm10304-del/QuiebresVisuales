@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v8</title>
+    <title>Escaneo de Quiebres - Control Operativo v17</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -29,9 +29,6 @@
                 <span class="text-xs opacity-90">Colaborador</span>
                 <span id="nombreUsuarioActivo" class="font-bold font-mono text-sm bg-orange-600 px-2 py-0.5 rounded"></span>
             </div>
-            <button id="btnCambiarClaveView" onclick="abrirModalClave()" class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-1 px-2.5 rounded text-xs transition border border-orange-400">
-                ⚙️ Cambiar Clave
-            </button>
             <button onclick="cerrarSesion()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs transition shadow-sm">
                 Salir
             </button>
@@ -61,49 +58,130 @@
         </div>
         
         <div id="panelAdmin" class="hidden space-y-6">
-            <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrator</h2>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div id="dropZoneData1" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer">
-                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider">1. Cajas_Tienda (Subida en la nube)</h3>
+                <div id="dropZoneData1" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider pr-6">1. Cajas_Tienda (Subida en la nube)</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
                     <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden"/>
-                    <button onclick="event.stopPropagation(); document.getElementById('fileData1').click()" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar e Inyectar Stock
                     </button>
                     <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold">⚠️ Conectando base de datos...</p>
                 </div>
 
-                <div id="dropZoneJ_Satelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer">
-                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider">2. Jsatélite</h3>
+                <div id="dropZoneJ_Satelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider pr-6">2. Jsatélite</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para la ruta solicitada.</p>
                     <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden"/>
-                    <button onclick="event.stopPropagation(); document.getElementById('fileJSatelite').click()" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar Archivo
                     </button>
                     <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
                 </div>
 
-                <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer">
-                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider">3. Detalle_Reposicion</h3>
+                <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider pr-6">3. Detalle_Reposicion</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic para informe final.</p>
                     <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden"/>
-                    <button onclick="event.stopPropagation(); document.getElementById('fileData2').click()" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar Archivo
                     </button>
                     <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold">Waiting...</p>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">Seleccionar módulo de visualización:</label>
+                <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
+                    <option value="todos">📋 Mostrar Monitores de Control Operativo</option>
+                    <option value="buzon">📥 Buzón de incidencias</option>
+                    <option value="password">🔑 Resetear contraseña</option>
+                </select>
+            </div>
+
+            <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
+                    <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias y Mensajes (Alertas del Personal)</h3>
+                    <button onclick="limpiarBuzonMensajes()" class="text-xs bg-red-600 text-white hover:bg-red-700 font-semibold py-1 px-3 rounded shadow-sm transition">
+                        Eliminar data
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-40 overflow-y-auto">
+                    <table class="min-w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-red-100 text-red-900 uppercase text-xs sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border">Asistente</th>
+                                <th class="px-4 py-2 border">Código Reportado</th>
+                                <th class="px-4 py-2 border">Detalle / Motivo de Alerta</th>
+                                <th class="px-4 py-2 border text-center">Fecha y Hora</th>
+                                <th class="px-4 py-2 border text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMensajesBody" class="divide-y divide-gray-200 text-gray-700 text-xs bg-white">
+                            <tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin mensajes ni reportes pendientes por revisar...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="wrapperModuloClaveAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-blue-200 bg-blue-50/10 space-y-3">
+                <div class="border-b border-blue-100 pb-2">
+                    <h3 class="text-sm font-bold text-blue-700 uppercase flex items-center gap-2">🔑 Panel de Restablecimiento de Credenciales de Personal</h3>
+                </div>
+                <div class="max-w-md space-y-3 p-2 bg-white rounded border">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Seleccionar Usuario de Asistente:</label>
+                        <select id="selectResetUserAdmin" class="w-full p-2 border rounded text-xs focus:outline-none font-mono font-bold text-gray-800 bg-gray-50">
+                            <option value="HP72545443">Andy (HP72545443)</option>
+                            <option value="HP74139234">Ale (HP74139234)</option>
+                            <option value="HP70729960">Farro (HP70729960)</option>
+                            <option value="HP75235329">Jairo (HP75235329)</option>
+                            <option value="HP47431216">Moses (HP47431216)</option>
+                            <option value="HP74315583">Job (HP74315583)</option>
+                            <option value="HP46411164">Jhon (HP46411164)</option>
+                            <option value="HP48848362">Rommel (HP48848362)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Nueva Contraseña Temporal:</label>
+                        <input type="text" id="inputResetPassAdmin" placeholder="Coloca la nueva clave aquí" class="w-full p-2 border rounded text-xs focus:outline-none font-semibold">
+                    </div>
+                    <button onclick="ejecutarFuerzaClaveAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded shadow-sm transition">
+                        Guardar Nueva Contraseña
+                    </button>
+                </div>
+            </div>
+
+            <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
-                        <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda (Escaneos Asistentes en Vivo)</h3>
-                        <p class="text-xs text-gray-500">Unidades Validadas por el Personal: <span id="lblUnidadesRepotenciar" class="font-bold text-promart text-sm">0</span> Uds</p>
+                        <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                            <div class="flex items-center gap-1.5">
+                                <span>Unidades Validadas:</span>
+                                <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span>Cantidad SKUs (Únicos):</span>
+                                <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
+                            </div>
+                        </div>
                     </div>
-                    <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
-                        Descargar Excel Repotenciación
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
+                            Descargar Excel Repotenciación
+                        </button>
+                        <button onclick="eliminarData('repotenciacion', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
+                            Eliminar data
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto max-h-60 overflow-y-auto">
                     <table class="min-w-full text-sm text-left border border-gray-200">
@@ -111,11 +189,11 @@
                             <tr>
                                 <th class="px-4 py-2 border">Operador</th>
                                 <th class="px-4 py-2 border">SKU</th>
+                                <th class="px-4 py-2 border bg-orange-100 text-orange-900">LPN</th>
                                 <th class="px-4 py-2 border">Descripción</th>
-                                <th class="px-4 py-2 border">LPN Asignado</th>
-                                <th class="px-4 py-2 border">Ubicación Origen</th>
                                 <th class="px-4 py-2 border text-center">Cant</th>
                                 <th class="px-4 py-2 border text-center">F. Caducidad</th>
+                                <th class="px-4 py-2 border text-purple-700 bg-purple-50">🔮 LPNS Consumidos por RF</th>
                             </tr>
                         </thead>
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
@@ -125,30 +203,31 @@
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+            <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
-                        <h3 class="text-sm font-bold text-gray-700 uppercase">📋 Monitor de Cruce Global (Cajas + Satélite + Reposición)</h3>
-                        <p class="text-xs text-gray-500">Mapeo consolidado del estado de inventarios generales.</p>
+                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 Monitor de Cruce Macropurga (Cajas_Tienda vs Detalle_Reposición)</h3>
+                        <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.</p>
                     </div>
                     <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
-                        Procesar y Cruzar Datos Macro
+                        Procesar y Cruzar Archivos
                     </button>
                 </div>
                 <div class="overflow-x-auto max-h-60 overflow-y-auto">
                     <table class="min-w-full text-sm text-left border border-gray-200">
-                        <thead class="bg-gray-50 text-gray-700 uppercase text-xs sticky top-0">
+                        <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0">
                             <tr>
+                                <th class="px-4 py-2 border">Nro LPN Mapeado</th>
                                 <th class="px-4 py-2 border">SKU</th>
-                                <th class="px-4 py-2 border">Descripción</th>
-                                <th class="px-4 py-2 border text-center">Cant. Cajas</th>
-                                <th class="px-4 py-2 border text-center">Cant. Satélite</th>
-                                <th class="px-4 py-2 border text-center">Cant. Reposición</th>
-                                <th class="px-4 py-2 border text-center">Diferencias</th>
+                                <th class="px-4 py-2 border">Pantalla RF</th>
+                                <th class="px-4 py-2 border text-center">Cant. Original</th>
+                                <th class="px-4 py-2 border text-center">Cant. Ajustada</th>
+                                <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">🔮 LPNS Consumidos por RF</th>
+                                <th class="px-4 py-2 border">Usuario Actividad</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
-                            <tr><td colspan="6" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Datos Macro" para compilar la información de los archivos...</td></tr>
+                            <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -166,24 +245,30 @@
             <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                 <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
                 <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
-                <div class="flex justify-between items-center pt-2 border-t border-orange-200/60">
-                    <span class="text-xs text-gray-600">SKU / Artículo: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900"></b></span>
+                <div class="pt-2 border-t border-orange-200/60 flex flex-col gap-1">
+                    <span class="text-xs text-gray-600">SKU Real Traducido: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900"></b></span>
                 </div>
             </div>
 
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">1. Escanear SKU o código de barra (EAN del producto):</label>
-                    <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
-                           class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
-                           onkeypress="handleBarcode(event)">
-                </div>
+            <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
+                <span class="text-2xl">⚠️</span>
+                <div>ADVERTENCIA: Este producto no cuenta con stock disponible en la reserva.</div>
+            </div>
 
-                <div id="containerInputLpn" class="hidden transition-all">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">2. Cantidad solicitada:</label>
-                    <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                           class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
-                           placeholder="00" onkeypress="handleCantidadKey(event)">
+            <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
+                        <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
+                               class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
+                               onkeypress="handleBarcode(event)">
+                    </div>
+                    <div id="containerInputLpn" class="invisible">
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
+                        <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
+                               class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
+                               placeholder="00" onkeypress="handleCantidadKey(event)">
+                    </div>
                 </div>
             </div>
 
@@ -196,25 +281,36 @@
                     <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition">Cancelar</button>
                 </div>
             </div>
+
+            <div class="pt-4 border-t flex flex-col gap-2">
+                <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm">
+                    🚨 SKU/EAN no escanea
+                </button>
+            </div>
         </div>
     </div>
 
-    <div id="modalClave" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full space-y-3">
-            <h3 class="font-bold text-gray-800 text-lg border-b pb-1.5">Cambiar Contraseña</h3>
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Nueva Contraseña</label>
-                <input type="password" id="nuevaClaveInput" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus-promart">
+    <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4">
+            <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
+                    <input type="text" id="incidenciaCodigoInput" placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
+                    <textarea id="incidenciaMotivoInput" rows="3" placeholder="" class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="procesarCambioClave()" class="flex-1 bg-promart hover:bg-orange-600 text-white font-bold py-2 rounded text-xs shadow transition">Actualizar</button>
-                <button onclick="cerrarModalClave()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
+                <button onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm">Enviar Alerta</button>
+                <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURACIÓN DE FIREBASE CENTRALIZADA EN LA NUBE REPARADA
         const firebaseConfig = {
             projectId: "quiebresvisuales",
             databaseURL: "https://quiebresvisuales-default-rtdb.firebaseio.com"
@@ -223,17 +319,31 @@
         const db = firebase.database();
         const dbRef = db.ref("inventarioMaestro");
         const logRef = db.ref("logsRepotenciacion");
+        const msgRef = db.ref("alertasIncidencias");
+        const passRef = db.ref("credencialesForzadas");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
         let reqJ_Satelite = {};
-        let reqDetalleReposicion = {};
+        let matrixDetalleReposicion = []; 
         let registrosHistoricosRepotenciar = []; 
         let databaseCat_Ean = {}; 
         let rolUsuarioActivo = "";
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
+
+        let usuariosDB = {
+            "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
+            "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
+            "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
+            "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
+            "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
+            "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
+            "HP46411164": { nombre: "Jhon", clave: "Hpsa2027" },
+            "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
+            "ADMIN": { nombre: "Administrador", clave: "Admin2026" }
+        };
 
         const urlActual = window.location.href;
         let pathBaseGitHub = "";
@@ -248,150 +358,212 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            setupDragAndDrop("dropZoneData1", "fileData1", procesarData1, "drop-zone--over");
-            setupDragAndDrop("dropZoneJ_Satelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
-            setupDragAndDrop("dropZoneData2", "fileData2", procesarData2, "drop-zone-purple--over");
+            setupDragAndDrop("dropZoneData1", "fileData1", "btnClickData1", procesarData1, "drop-zone--over");
+            setupDragAndDrop("dropZoneJ_Satelite", "fileJSatelite", "btnClickJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
+            setupDragAndDrop("dropZoneData2", "fileData2", "btnClickData2", procesarData2, "drop-zone-purple--over");
             
-            document.getElementById("fileData1").addEventListener("change", procesarData1);
-            document.getElementById("fileJSatelite").addEventListener("change", procesarJ_Satelite);
-            document.getElementById("fileData2").addEventListener("change", procesarData2);
-
             descargarCatalogoAutomaticoRemoto();
             escucharInventarioEnTiempoReal();
             escucharLogsRepotenciacionTiempoReal();
+            escucharMensajesBuzonTiempoReal();
+            escucharClavesForzadasTiempoReal();
             verificarSesionGuardada();
         });
 
-        // VERIFICADOR DE SESIÓN (SOLUCIÓN PUNTO 2)
         function verificarSesionGuardada() {
             const usuarioGuardado = localStorage.getItem("sesion_usuario");
             const rolGuardado = localStorage.getItem("sesion_rol");
             if (usuarioGuardado && rolGuardado) {
-                rolUsuarioActivo = rolGuardado;
-                idUsuarioLogueado = usuarioGuardado;
+                rolUsuarioActivo = rolGuardado; idUsuarioLogueado = usuarioGuardado;
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
-                document.getElementById('btnCambiarClaveView').classList.toggle('hidden', rolUsuarioActivo === 'admin');
                 switchRole();
             }
         }
 
-        // ESCUCHADOR EN LA NUBE DE INVENTARIO
+        function alternarModuloAdminView() {
+            const val = document.getElementById("selectVistaModuloAdmin").value;
+            if (val === "todos") {
+                document.getElementById("wrapperModuloBuzonAdmin").classList.add("hidden");
+                document.getElementById("wrapperModuloClaveAdmin").classList.add("hidden");
+                document.getElementById("containerCuadroRepotenciar").classList.remove("hidden");
+                document.getElementById("containerCuadroCruceMacropurga").classList.remove("hidden");
+            } else {
+                document.getElementById("containerCuadroRepotenciar").classList.add("hidden");
+                document.getElementById("containerCuadroCruceMacropurga").classList.add("hidden");
+                document.getElementById("wrapperModuloBuzonAdmin").classList.toggle("hidden", val !== "buzon");
+                document.getElementById("wrapperModuloClaveAdmin").classList.toggle('hidden', val !== 'password');
+            }
+        }
+
+        function escucharClavesForzadasTiempoReal() {
+            passRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    Object.keys(data).forEach(u => {
+                        if(usuariosDB[u]) usuariosDB[u].clave = data[u];
+                    });
+                }
+            });
+        }
+
+        function ejecutarFuerzaClaveAdmin() {
+            const targetUser = document.getElementById("selectResetUserAdmin").value;
+            const newPass = document.getElementById("inputResetPassAdmin").value.trim();
+            if(!newPass) { alert("Escriba la nueva contraseña temporal."); return; }
+            passRef.child(targetUser).set(newPass).then(() => {
+                alert(`Contraseña de ${usuariosDB[targetUser]?.nombre || targetUser} actualizada con éxito.`);
+                document.getElementById("inputResetPassAdmin").value = "";
+            });
+        }
+
+        function eliminarData(tipo, event) {
+            if(event) { event.stopPropagation(); event.preventDefault(); }
+            if(!confirm(`¿Está seguro de que desea restablecer y eliminar los datos de ${tipo}?`)) return;
+
+            if(tipo === 'cajas') {
+                dbRef.set(null).then(() => { alert("Base de datos de la nube eliminada correctamente."); });
+            } else if(tipo === 'satelite') {
+                reqJ_Satelite = {};
+                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+            } else if(tipo === 'reposicion') {
+                matrixDetalleReposicion = [];
+                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusData2').innerText = "Waiting...";
+            } else if(tipo === 'repotenciacion') {
+                logRef.set(null).then(() => { alert("Datos de repotenciación eliminados correctamente."); });
+            }
+        }
+
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
-                    const statusLbl = document.getElementById('statusData1');
-                    if (statusLbl) {
-                        statusLbl.className = "text-xs text-green-600 mt-2 font-semibold";
-                        statusLbl.innerText = `✅ Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
-                    }
+                    document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
+                    document.getElementById('statusData1').innerText = `✅ Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
                 } else {
-                    data1Cargada = false;
-                    const statusLbl = document.getElementById('statusData1');
-                    if (statusLbl) {
-                        statusLbl.className = "text-xs text-red-500 mt-2 font-semibold";
-                        statusLbl.innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
-                    }
+                    inventarioData1 = []; data1Cargada = false;
+                    document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
+                    document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
                 }
             });
         }
 
-        // ESCUCHADOR DE LOS LOGS PARA REPOTENCIAR TIENDA (SOLUCIÓN PUNTOS 3 Y 4)
         function escucharLogsRepotenciacionTiempoReal() {
             logRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 const tbody = document.getElementById('tablaRepotenciarBody');
                 if (data) {
                     registrosHistoricosRepotenciar = Object.values(data);
-                    registrosHistoricosRepotenciar.reverse(); // Mostrar los más recientes arriba
-                    
-                    tbody.innerHTML = "";
-                    totalUnidadesRepotenciar = 0;
+                    registrosHistoricosRepotenciar.reverse(); 
+                    tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
+                    const skusUnicosSet = new Set();
                     
                     registrosHistoricosRepotenciar.forEach(item => {
                         totalUnidadesRepotenciar += parseInt(item.cant || 0);
+                        if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
+                        
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
                                 <td class="px-4 py-2 border font-sans text-gray-500">${item.operador || "Anonimo"}</td>
                                 <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                                <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${item.fifoLpnOptimizado || "N/A"}</td>
                                 <td class="px-4 py-2 border font-sans text-sm">${item.desc}</td>
-                                <td class="px-4 py-2 border text-orange-600 font-bold">${item.lpn}</td>
-                                <td class="px-4 py-2 border">${item.ubica}</td>
                                 <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${item.cant}</td>
                                 <td class="px-4 py-2 border text-center font-bold">${item.fv === "SIN FECHA" ? "" : item.fv}</td>
+                                <td class="px-4 py-2 border font-sans text-purple-950 font-semibold text-xs bg-purple-50/30">${item.purgaCompletaRuta || "N/A"}</td>
                             </tr>`;
                     });
-                    document.getElementById('lblUnidadesRepotenciar').innerText = totalUnidadesRepotenciar;
+                    document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
+                    document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
                 } else {
                     tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
-                    document.getElementById('lblUnidadesRepotenciar').innerText = "0";
+                    document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
+                    document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
                 }
             });
         }
 
-        async function descargarCatalogoAutomaticoRemoto() {
-            let descargasExitosas = 0; 
+        function escucharMensajesBuzonTiempoReal() {
+            msgRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                const tbody = document.getElementById('tablaMensajesBody');
+                tbody.innerHTML = "";
+                if(data) {
+                    Object.keys(data).reverse().forEach(key => {
+                        let m = data[key];
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-red-50/50 text-xs">
+                                <td class="px-4 py-2 border font-bold text-gray-800">${m.remitente}</td>
+                                <td class="px-4 py-2 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
+                                <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
+                                <td class="px-4 py-2 border text-center">
+                                    <button onclick="eliminarIncidenciaUnica('${key}')" class="text-red-600 hover:text-white hover:bg-red-600 rounded-full w-5 h-5 font-bold transition">✕</button>
+                                </td>
+                            </tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin mensajes ni reportes pendientes por revisar...</td></tr>`;
+                }
+            });
+        }
+
+        function eliminarIncidenciaUnica(key) { msgRef.child(key).set(null); }
+
+        function descargarCatalogoAutomaticoRemoto() {
             for (let i = 1; i <= 43; i++) {
-                try {
-                    let response = await fetch(`${pathBaseGitHub}FV-${i}.json`);
-                    if (!response.ok) continue;
-                    let datos = await response.json();
+                fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
                     datos.forEach(item => {
                         let skuVal = ""; let eanVal = ""; let descVal = "";
                         Object.keys(item).forEach(key => {
-                            let normalizedKey = key.toString().toLowerCase();
-                            if (normalizedKey.includes("barras") || normalizedKey.includes("ean")) eanVal = item[key];
-                            else if (normalizedKey.includes("art") || normalizedKey.includes("sku")) skuVal = item[key];
-                            else if (normalizedKey.includes("desc")) descVal = item[key];
+                            let nk = key.toString().toLowerCase();
+                            // Captura las cabeceras independientemente de errores de encoding (CÃ³digo de barras, ArtÃ­culo)
+                            if (nk.includes("barras") || nk.includes("ean") || nk.includes("cã³digo")) eanVal = item[key];
+                            else if (nk.includes("art") || nk.includes("sku")) skuVal = item[key];
+                            else if (nk.includes("desc")) descVal = item[key];
                         });
                         if (skuVal) {
-                            let sku = skuVal.toString().trim().replace(/^="|"$/g, '').replace(/^0+/, "").toUpperCase();
+                            // Extrae únicamente los números limpiando el formato plano del JSON
+                            let skuLimpio = skuVal.toString().replace(/[^\d]/g, "").trim().toUpperCase();
                             if (eanVal) {
-                                let eanLimpio = eanVal.toString().trim().replace(/^="|"$/g, '').toUpperCase();
-                                databaseCat_Ean[eanLimpio] = { sku: sku, desc: descVal || "" };
+                                let eanLimpio = eanVal.toString().replace(/[^\d]/g, "").trim().toUpperCase();
+                                // Guardamos la referencia cruzada para que al consultar el EAN devuelva el SKU mapeado
+                                databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descVal || "PRODUCTO PROMART" };
                             }
-                            databaseCat_Ean[sku] = { sku: sku, desc: descVal || "" };
                         }
                     });
-                    descargasExitosas++; 
-                } catch (err) {}
+                })).catch(e => {});
             }
         }
 
-        // CONTROL DE ARRASTRE MEJORADO (SOLUCIÓN PUNTO 1)
-        function setupDragAndDrop(zoneId, inputId, callback, overClass) {
+        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
             
-            dropZone.addEventListener("click", () => { input.click(); });
+            dropZone.addEventListener("click", (e) => {
+                if (e.target === btn || btn.contains(e.target) || e.target.tagName === 'BUTTON') return;
+                input.click();
+            });
+            btn.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
+            input.addEventListener("change", () => { callback(); });
+
+            dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
             dropZone.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
-            ["dragleave", "dragend"].forEach(type => { dropZone.addEventListener(type, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); }); });
-            
+            dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); });
             dropZone.addEventListener("drop", (e) => {
                 e.preventDefault(); e.stopPropagation();
                 dropZone.classList.remove(overClass);
-                if (e.dataTransfer.files.length) { 
-                    input.files = e.dataTransfer.files; 
-                    callback(); 
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+                    input.files = e.dataTransfer.files; callback(); 
                 }
             });
         }
-
-        let usuariosDB = {
-            "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
-            "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
-            "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
-            "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
-            "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
-            "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
-            "HP46411164": { nombre: "Jhon", clave: "Hpsa2027" },
-            "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
-            "ADMIN": { nombre: "Administrador", clave: "Admin2026" }
-        };
 
         function handleLoginKey(event) { if (event.key === 'Enter') { event.preventDefault(); autenticarUsuario(); } }
 
@@ -401,23 +573,18 @@
             if (usuariosDB[user] && usuariosDB[user].clave === pass) {
                 rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
                 idUsuarioLogueado = user;
-                
-                // GUARDAR EN STORAGE PARA EVITAR DESLOGUEO (SOLUCIÓN PUNTO 2)
                 localStorage.setItem("sesion_usuario", user);
                 localStorage.setItem("sesion_rol", rolUsuarioActivo);
-
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
-                document.getElementById('btnCambiarClaveView').classList.toggle('hidden', rolUsuarioActivo === 'admin');
                 switchRole();
             } else { alert("Usuario o contraseña incorrectos."); }
         }
 
         function cerrarSesion() {
             rolUsuarioActivo = ""; idUsuarioLogueado = "";
-            localStorage.removeItem("sesion_usuario");
-            localStorage.removeItem("sesion_rol");
+            localStorage.removeItem("sesion_usuario"); localStorage.removeItem("sesion_rol");
             document.getElementById('panelAdmin').classList.add('hidden');
             document.getElementById('panelAsistente').classList.add('hidden');
             document.getElementById('navUsuario').classList.add('hidden');
@@ -431,13 +598,60 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
-        function abrirModalClave() { document.getElementById('modalClave').classList.remove('hidden'); }
-        function cerrarModalClave() { document.getElementById('modalClave').classList.add('hidden'); }
-
         function parsearFechaEspanol(strFecha) {
             if (strFecha === "SIN FECHA" || !strFecha) return new Date(2999, 11, 31);
             const partes = strFecha.split('/');
             return new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+
+        // ================= DOBLE BÚSQUEDA CORREGIDA Y OPTIMIZADA =================
+        function handleBarcode(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                // 1. Sacamos solamente el número limpio libre de caracteres extraños o ceros adicionales
+                let entradaLimpia = document.getElementById('barcodeInput').value.trim().replace(/[^\d]/g, "").toUpperCase();
+                if (!entradaLimpia) return;
+
+                let skuFinal = entradaLimpia; // Por defecto asumimos que es SKU directo
+                let descripcionDetectada = "PRODUCTO SURTIDO PROMART";
+
+                // 2. DOBLE BÚSQUEDA EN EL JSON: Si la entrada corresponde a un EAN ("CÃ³digo de barras")
+                if (databaseCat_Ean[entradaLimpia]) {
+                    // Extraemos exclusivamente el código numérico asignado en "ArtÃ­culo"
+                    skuFinal = databaseCat_Ean[entradaLimpia].sku;
+                    descripcionDetectada = databaseCat_Ean[entradaLimpia].desc;
+                }
+
+                skuEscaneadoTemporal = skuFinal;
+
+                // 3. CONSULTA FINAL DE STOCK: Buscamos únicamente el SKU resultante en la matriz de Cajas_Tienda
+                let lotesDisponibles = inventarioData1.filter(item => item.sku.toString().trim().replace(/^0+/, "").toUpperCase() === skuFinal && item.unidades > 0);
+                
+                document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                
+                if (lotesDisponibles.length > 0) {
+                    // Si el archivo de inventario provee una descripción más actualizada, la tomamos
+                    descripcionDetectada = lotesDisponibles[0].descripcion || descripcionDetectada;
+                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+                    document.getElementById('containerInputLpn').classList.remove('invisible');
+                    document.getElementById('resultadoEscaneo').classList.remove('hidden');
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
+                } else {
+                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('resultadoEscaneo').classList.add('hidden');
+                }
+
+                document.getElementById('asistenteInfoDescripcion').innerText = descripcionDetectada;
+                document.getElementById('lblSkuConvertido').innerText = skuFinal;
+            }
+        }
+
+        function handleCantidadKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                guardarRegistro();
+            }
         }
 
         function procesarData1() {
@@ -466,7 +680,7 @@
                         let fvTexto = d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : "SIN FECHA";
 
                         datosMapeados.push({
-                            sku: fila[idxSku] ? fila[idxSku].toString().trim().replace(/^0+/, "").toUpperCase() : "",
+                            sku: fila[idxSku] ? fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase() : "",
                             descripcion: fila[idxDesc] || "",
                             lpn: fila[idxLpn] ? fila[idxLpn].toString().trim().toUpperCase() : "",
                             ubicacion: fila[idxUbica] ? fila[idxUbica].toString().trim().toUpperCase() : "",
@@ -478,7 +692,7 @@
                     let filtrados = datosMapeados.filter(fila => {
                         if (!fila.sku || fila.unidades <= 0 || !fila.ubicacion) return false;
                         const u = fila.ubicacion.toString().trim().toUpperCase();
-                        return !(u === "VCTO-GESTION-PERECIBLES-001" || u === "CD-SOBRANTE-001-001" || u === "CD-FALTANTES-001-001" || u === "VACÍAS");
+                        return !(u === "VCTO-GESTION-PERECIBLES-001" || u === "CD-SOBRANTE-001-001" || u === "CD-FALTANTES-001-001" || u === "VACÍAS" || u === "(VACÍAS)" || u === "CMM-ALM-001-001" || u === "MM-000-001-001" || u === "CT-TDA-001-001" || u === "NAV-TDA-001-001" || u === "DAD-RECP-001-001" || u === "DE-PROVEEDOR-001-001" || u === "DEV-PRV-SVT-001" || u === "DSCTO-001-001-001" || u === "JAU-BAT-ALM-001");
                     });
 
                     dbRef.set(filtrados).then(() => { alert("¡Cajas_Tienda inyectada en la nube con éxito!"); });
@@ -498,13 +712,11 @@
                     const matrizFilas = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
                     const cabecera = matrizFilas[0].map(c => c.toString().trim().toUpperCase());
 
-                    let idxSku = cabecera.indexOf("SKU");
-                    let idxQuantity = cabecera.indexOf("QUANTITY");
-
+                    let idxSku = cabecera.indexOf("SKU"); let idxQuantity = cabecera.indexOf("QUANTITY");
                     reqJ_Satelite = {};
                     for (let i = 1; i < matrizFilas.length; i++) {
                         const fila = matrizFilas[i]; if (!fila || fila.length === 0) continue;
-                        let sku = fila[idxSku].toString().trim().replace(/^0+/, "").toUpperCase();
+                        let sku = fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase();
                         let qty = parseInt(fila[idxQuantity] || 0);
                         if (sku && qty > 0) reqJ_Satelite[sku] = (reqJ_Satelite[sku] || 0) + qty;
                     }
@@ -526,144 +738,155 @@
                     const matrizFilas = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
                     const cabecera = matrizFilas[0].map(c => c.toString().trim().toUpperCase());
 
-                    let idxSku = cabecera.indexOf("SKU") !== -1 ? cabecera.indexOf("SKU") : cabecera.indexOf("ARTICULO");
-                    let idxCant = cabecera.indexOf("CANTIDAD") !== -1 ? cabecera.indexOf("CANTIDAD") : cabecera.indexOf("CANT");
+                    let idxPantalla = cabecera.indexOf("PANTALLA");
+                    let idxLpn = cabecera.indexOf("NRO LPN");
+                    let idxSku = cabecera.indexOf("SKU");
+                    let idxCantOrig = cabecera.indexOf("CANTIDAD ORIGINAL");
+                    let idxCantAjust = cabecera.indexOf("CANTIDAD AJUSTADA");
+                    let idxUsuario = cabecera.indexOf("USUARIO");
 
-                    reqDetalleReposicion = {};
+                    matrixDetalleReposicion = [];
+
                     for (let i = 1; i < matrizFilas.length; i++) {
                         const fila = matrizFilas[i]; if (!fila || fila.length === 0) continue;
-                        if(idxSku !== -1 && idxCant !== -1) {
-                            let sku = fila[idxSku].toString().trim().replace(/^0+/, "").toUpperCase();
-                            let qty = parseInt(fila[idxCant] || 0);
-                            if (sku && qty > 0) reqDetalleReposicion[sku] = (reqDetalleReposicion[sku] || 0) + qty;
+                        let txtPantalla = fila[idxPantalla] ? fila[idxPantalla].toString().trim().toUpperCase() : "";
+                        
+                        if (txtPantalla === "RF_REPONER_RESERVA" || txtPantalla === "RF_REPONER_PUERTA" || txtPantalla === "RF_DIVIDIR LPN") {
+                            matrixDetalleReposicion.push({
+                                lpn: fila[idxLpn] ? fila[idxLpn].toString().trim().toUpperCase() : "N/A",
+                                sku: fila[idxSku] ? fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase() : "",
+                                pantalla: txtPantalla,
+                                cantOriginal: parseInt(fila[idxCantOrig] || 0),
+                                cantAjustada: parseInt(fila[idxCantAjust] || 0),
+                                usuario: fila[idxUsuario] || "DESCONOCIDO"
+                            });
                         }
                     }
                     document.getElementById('statusData2').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusData2').innerText = "✅ Detalle_Reposicion Mapeado.";
+                    document.getElementById('statusData2').innerText = `✅ Reposición Mapeada (${matrixDetalleReposicion.length} puestas).`;
                 } catch (err) { alert("Error mapeando Detalle Reposicion: " + err.message); }
             };
             reader.readAsArrayBuffer(fileInput.files[0]);
         }
 
-        // SOLUCIÓN PUNTO 5: PROCESAR CRUCE DE LOS 3 EXCELES SOLAMENTE (MACRO GLOBAL)
-        function ejecutarCruceMacroGlobal() {
-            const tbody = document.getElementById('tablaMacroGlobalBody');
-            tbody.innerHTML = "";
-
-            // Consolidar todos los SKUs únicos presentes en los 3 almacenes de datos
-            let skusUnicos = new Set([
-                ...inventarioData1.map(item => item.sku),
-                ...Object.keys(reqJ_Satelite),
-                ...Object.keys(reqDetalleReposicion)
-            ]);
-
-            if(skusUnicos.size === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center italic text-gray-400">No hay datos inyectados para cruzar...</td></tr>`;
-                return;
-            }
-
-            skusUnicos.forEach(sku => {
-                let itemsCajas = inventarioData1.filter(i => i.sku === sku);
-                let cantCajas = itemsCajas.reduce((acc, curr) => acc + curr.unidades, 0);
-                let desc = itemsCajas.length > 0 ? itemsCajas[0].descripcion : (databaseCat_Ean[sku] ? databaseCat_Ean[sku].desc : "SKU de archivo Externo");
-                let cantSatelite = reqJ_Satelite[sku] || 0;
-                let cantRepo = reqDetalleReposicion[sku] || 0;
-                let diferencia = cantCajas - cantSatelite;
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 text-xs">
-                        <td class="px-4 py-2 border font-mono font-bold">${sku}</td>
-                        <td class="px-4 py-2 border">${desc}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-gray-700">${cantCajas}</td>
-                        <td class="px-4 py-2 border text-center text-blue-600 font-bold">${cantSatelite}</td>
-                        <td class="px-4 py-2 border text-center text-purple-600 font-bold">${cantRepo}</td>
-                        <td class="px-4 py-2 border text-center font-bold ${diferencia < 0 ? 'text-red-500':'text-green-600'}">${diferencia}</td>
-                    </tr>`;
-            });
-        }
-
-        function handleBarcode(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); 
-                let inputCrudo = document.getElementById('barcodeInput').value.trim().toUpperCase();
-                if (!data1Cargada) { alert("Falta cargar Cajas_Tienda en la nube."); limpiarAsistente(); return; }
-                if (inputCrudo === "") return;
-
-                let skuEquivalente = inputCrudo.replace(/^0+/, "");
-                let descDetectada = "";
-
-                if (databaseCat_Ean[inputCrudo]) {
-                    skuEquivalente = databaseCat_Ean[inputCrudo].sku.toString().trim().toUpperCase();
-                    descDetectada = databaseCat_Ean[inputCrudo].desc;
-                }
-
-                let lotesDisponibles = inventarioData1.filter(item => item.sku.toString().trim().toUpperCase() === skuEquivalente && item.unidades > 0);
-                if (lotesDisponibles.length === 0) { alert("🚨 Sin stock en reserva."); limpiarAsistente(); return; }
-
-                skuEscaneadoTemporal = skuEquivalente;
-                if (!descDetectada) descDetectada = lotesDisponibles[0].descripcion;
-
-                document.getElementById('lblSkuConvertido').innerText = skuEquivalente;
-                document.getElementById('asistenteInfoDescripcion').innerText = descDetectada;
-                document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
-                document.getElementById('containerInputLpn').classList.remove('hidden');
-                setTimeout(() => document.getElementById('cantidadInput').focus(), 150);
-            }
-        }
-
-        function handleCantidadKey(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const cantidad = document.getElementById('cantidadInput').value;
-                if (cantidad.length === 0 || parseInt(cantidad) <= 0 || cantidad.length > 2) { alert("Cantidad inválida."); return; }
-                document.getElementById('resultadoEscaneo').classList.remove('hidden');
-            }
-        }
-
         function guardarRegistro() {
             const cantidad = document.getElementById('cantidadInput').value;
+            if(!cantidad || cantidad <= 0) { alert("Ingrese una cantidad válida."); return; }
+            
             let remanente = parseInt(cantidad);
-            let lotesAsignados = inventarioData1.filter(item => item.sku.toString().trim().toUpperCase() === skuEscaneadoTemporal && item.unidades > 0);
+            let lotesAsignados = inventarioData1.filter(item => item.sku.toString().trim().replace(/^0+/, "").toUpperCase() === skuEscaneadoTemporal && item.unidades > 0);
+            
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
-
-            if (lotesAsignados.length === 0) { alert("Sin stock."); return; }
+            if (lotesAsignados.length === 0) { alert("Sin stock disponible."); return; }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+            let primerLpnImplicado = lotesAsignados[0].lpn;
+            let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
                 if (remanente <= 0) break;
                 let descontar = Math.min(lote.unidades, remanente); 
                 lote.unidades -= descontar; 
                 remanente -= descontar;
-
-                // INYECCIÓN DIRECTA EN EL LOG GLOBAL DE REPOTENCIACIÓN EN FIREBASE
-                logRef.push({
-                    operador: nombreOperador,
-                    sku: skuEscaneadoTemporal,
-                    desc: lote.descripcion,
-                    lpn: lote.lpn,
-                    ubica: lote.ubicacion,
-                    cant: descontar,
-                    fv: lote.vencimiento
-                });
+                historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
+            let stringPurgaMapeada = historialConsumosLpns.join(" ➔ ");
+
+            logRef.push({
+                operador: nombreOperador,
+                sku: skuEscaneadoTemporal,
+                fifoLpnOptimizado: primerLpnImplicado, 
+                desc: document.getElementById('asistenteInfoDescripcion').innerText,
+                cant: parseInt(cantidad),
+                fv: lotesAsignados[0].vencimiento,
+                purgaCompletaRuta: stringPurgaMapeada
+            });
+
             dbRef.set(inventarioData1);
-            alert("✔ Guardado y reportado al panel del Administrador."); 
             limpiarAsistente();
         }
 
+        function ejecutarCruceMacroGlobal() {
+            const tbody = document.getElementById("tablaMacroGlobalBody");
+            if (matrixDetalleReposicion.length === 0) {
+                alert("Debe subir primero el archivo de Detalle_Reposicion.");
+                return;
+            }
+            tbody.innerHTML = "";
+            matrixDetalleReposicion.forEach(puesta => {
+                let txtColorRuta = "text-red-600 font-bold";
+                let rutaSugerida = "⚠️ SIN REGISTRO EN REPOTENCIAR_TIENDA";
+
+                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
+                    log.sku.toString().trim().toUpperCase() === puesta.sku.toString().trim().toUpperCase() &&
+                    log.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()
+                );
+
+                if (coincidenciaLog && coincidenciaLog.purgaCompletaRuta) {
+                    rutaSugerida = coincidenciaLog.purgaCompletaRuta;
+                    txtColorRuta = "text-green-700 font-semibold";
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
+                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
+                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
+                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
+                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs bg-purple-50/30">${rutaSugerida}</td>
+                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
+                    </tr>`;
+            });
+        }
+
+        function abrirModalReporteIncidencia() { document.getElementById('modalReporte').classList.remove('hidden'); }
+        function cerrarModalReporteIncidencia() { document.getElementById('modalReporte').classList.add('hidden'); }
+        
+        function enviarReporteIncidencia() {
+            const cod = document.getElementById('incidenciaCodigoInput').value.trim();
+            const mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            if(!cod || !mot) { alert("Por favor complete los campos."); return; }
+
+            let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+            let h = new Date();
+            let horaTexto = `${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')} - ${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}`;
+
+            msgRef.push({
+                remitente: nombreOperador,
+                codigo: cod,
+                motivo: mot,
+                timestamp: horaTexto
+            }).then(() => {
+                document.getElementById('incidenciaCodigoInput').value = "";
+                document.getElementById('incidenciaMotivoInput').value = "";
+                cerrarModalReporteIncidencia();
+            });
+        }
+        
+        function limpiarBuzonMensajes() { if(confirm("¿Eliminar la data histórica de alertas por completo?")) msgRef.set(null); }
         function cancelarRegistro() { limpiarAsistente(); }
+        
         function limpiarAsistente() {
             skuEscaneadoTemporal = "";
             document.getElementById('barcodeInput').value = ""; document.getElementById('cantidadInput').value = "";
-            document.getElementById('containerInputLpn').classList.add('hidden'); document.getElementById('resultadoEscaneo').classList.add('hidden');
-            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden'); document.getElementById('barcodeInput').focus();
+            document.getElementById('containerInputLpn').classList.add('invisible'); document.getElementById('resultadoEscaneo').classList.add('hidden');
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden'); document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            document.getElementById('barcodeInput').focus();
         }
 
         function descargarExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) { alert("No hay datos."); return; }
-            const datosExcel = registrosHistoricosRepotenciar.map(item => ({ "Operador": item.operador, "SKU": item.sku, "Descripción": item.desc, "LPN Utilizado": item.lpn, "Ubicación Origen": item.ubica, "Cantidad": item.cant, "Fecha Caducidad": item.fv === "SIN FECHA" ? "" : item.fv }));
+            const datosExcel = registrosHistoricosRepotenciar.map(item => ({ 
+                "Operador": item.operador, 
+                "SKU": item.sku, 
+                "LPN": item.fifoLpnOptimizado,
+                "Descripción": item.desc, 
+                "Cantidad Surtida": item.cant, 
+                "Fecha Caducidad": item.fv === "SIN FECHA" ? "" : item.fv,
+                "🔮 LPNS Consumidos por RF": item.purgaCompletaRuta 
+            }));
             const hoja = XLSX.utils.json_to_sheet(datosExcel); const libro = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libro, hoja, "Repotenciacion");
             XLSX.writeFile(libro, `Repotenciar_Tienda_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
