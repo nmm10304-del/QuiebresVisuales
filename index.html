@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v17</title>
+    <title>Escaneo de Quiebres - Control Operativo v18</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -520,21 +524,31 @@
                 fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
                     datos.forEach(item => {
                         let skuVal = ""; let eanVal = ""; let descVal = "";
+                        
                         Object.keys(item).forEach(key => {
-                            let nk = key.toString().toLowerCase();
-                            // Captura las cabeceras independientemente de errores de encoding (CÃ³digo de barras, ArtÃ­culo)
-                            if (nk.includes("barras") || nk.includes("ean") || nk.includes("cã³digo")) eanVal = item[key];
-                            else if (nk.includes("art") || nk.includes("sku")) skuVal = item[key];
-                            else if (nk.includes("desc")) descVal = item[key];
-                        });
-                        if (skuVal) {
-                            // Extrae únicamente los números limpiando el formato plano del JSON
-                            let skuLimpio = skuVal.toString().replace(/[^\d]/g, "").trim().toUpperCase();
-                            if (eanVal) {
-                                let eanLimpio = eanVal.toString().replace(/[^\d]/g, "").trim().toUpperCase();
-                                // Guardamos la referencia cruzada para que al consultar el EAN devuelva el SKU mapeado
-                                databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descVal || "PRODUCTO PROMART" };
+                            let nk = key.toString().toLowerCase()
+                                        .replace(/ã³/g, "o")
+                                        .replace(/ã­/g, "i")
+                                        .replace(/[^a-z0-9]/g, "") 
+                                        .trim();
+                            
+                            if (nk.includes("barras") || nk.includes("ean") || nk.includes("codigo")) {
+                                eanVal = item[key];
+                            } else if (nk.includes("articulo") || nk.includes("sku")) {
+                                skuVal = item[key];
+                            } else if (nk.includes("desc") || nk.includes("nom")) {
+                                descVal = item[key];
                             }
+                        });
+
+                        if (skuVal && eanVal) {
+                            let skuLimpio = skuVal.toString().replace(/["']/g, "").trim().toUpperCase();
+                            let eanLimpio = eanVal.toString().replace(/["']/g, "").trim().toUpperCase();
+                            
+                            databaseCat_Ean[eanLimpio] = { 
+                                sku: skuLimpio, 
+                                desc: descVal ? descVal.toString().trim() : "PRODUCTO PROMART" 
+                            };
                         }
                     });
                 })).catch(e => {});
@@ -583,13 +597,8 @@
         }
 
         function cerrarSesion() {
-            rolUsuarioActivo = ""; idUsuarioLogueado = "";
-            localStorage.removeItem("sesion_usuario"); localStorage.removeItem("sesion_rol");
-            document.getElementById('panelAdmin').classList.add('hidden');
-            document.getElementById('panelAsistente').classList.add('hidden');
-            document.getElementById('navUsuario').classList.add('hidden');
-            document.getElementById('seccionLogin').classList.remove('hidden');
-            document.getElementById('userInput').value = ""; document.getElementById('passwordInput').value = "";
+            localStorage.clear();
+            window.location.reload();
         }
 
         function switchRole() {
@@ -604,33 +613,34 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // ================= DOBLE BÚSQUEDA CORREGIDA Y OPTIMIZADA =================
+        // ================= DOBLE BÚSQUEDA CORREGIDA SIN INPUT_LINTERS ERRÓNEOS =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                // 1. Sacamos solamente el número limpio libre de caracteres extraños o ceros adicionales
-                let entradaLimpia = document.getElementById('barcodeInput').value.trim().replace(/[^\d]/g, "").toUpperCase();
+                let entradaLimpia = document.getElementById('barcodeInput').value.trim().replace(/["']/g, "").toUpperCase();
                 if (!entradaLimpia) return;
 
-                let skuFinal = entradaLimpia; // Por defecto asumimos que es SKU directo
+                let skuFinal = entradaLimpia; 
                 let descripcionDetectada = "PRODUCTO SURTIDO PROMART";
 
-                // 2. DOBLE BÚSQUEDA EN EL JSON: Si la entrada corresponde a un EAN ("CÃ³digo de barras")
+                // Si la entrada coincide con un EAN guardado en el JSON
                 if (databaseCat_Ean[entradaLimpia]) {
-                    // Extraemos exclusivamente el código numérico asignado en "ArtÃ­culo"
                     skuFinal = databaseCat_Ean[entradaLimpia].sku;
                     descripcionDetectada = databaseCat_Ean[entradaLimpia].desc;
                 }
 
                 skuEscaneadoTemporal = skuFinal;
 
-                // 3. CONSULTA FINAL DE STOCK: Buscamos únicamente el SKU resultante en la matriz de Cajas_Tienda
-                let lotesDisponibles = inventarioData1.filter(item => item.sku.toString().trim().replace(/^0+/, "").toUpperCase() === skuFinal && item.unidades > 0);
+                // Consulta de Stock Real en Firebase usando exclusivamente el SKU definitivo
+                let lotesDisponibles = inventarioData1.filter(item => {
+                    let skuInventario = item.sku.toString().trim().replace(/^0+/, "").toUpperCase();
+                    let skuBuscado = skuFinal.toString().trim().replace(/^0+/, "").toUpperCase();
+                    return skuInventario === skuBuscado && parseInt(item.unidades || 0) > 0;
+                });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
                 if (lotesDisponibles.length > 0) {
-                    // Si el archivo de inventario provee una descripción más actualizada, la tomamos
                     descripcionDetectada = lotesDisponibles[0].descripcion || descripcionDetectada;
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
@@ -654,127 +664,16 @@
             }
         }
 
-        function procesarData1() {
-            const fileInput = document.getElementById('fileData1');
-            if (fileInput.files.length === 0) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    const matrizFilas = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-                    const cabecera = matrizFilas[0].map(c => c.toString().trim().toUpperCase());
-                    
-                    let idxSku = cabecera.indexOf("SKU");
-                    let idxDesc = cabecera.indexOf("DESCRIPCIÓN") !== -1 ? cabecera.indexOf("DESCRIPCIÓN") : cabecera.indexOf("DESCRIPCION");
-                    let idxLpn = cabecera.indexOf("NRO LPN");
-                    let idxUbica = cabecera.indexOf("UBICACIÓN ACTUAL") !== -1 ? cabecera.indexOf("UBICACIÓN ACTUAL") : cabecera.indexOf("UBICACION ACTUAL");
-                    let idxUnidades = cabecera.indexOf("UNIDADES ACTUALES");
-                    let idxVencimiento = cabecera.indexOf("FECHA DE CADUCIDAD");
-
-                    let datosMapeados = [];
-                    for (let i = 1; i < matrizFilas.length; i++) {
-                        const fila = matrizFilas[i]; if (!fila || fila.length === 0) continue;
-                        let d = null;
-                        if (fila[idxVencimiento] instanceof Date && !isNaN(fila[idxVencimiento])) d = fila[idxVencimiento];
-                        let fvTexto = d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : "SIN FECHA";
-
-                        datosMapeados.push({
-                            sku: fila[idxSku] ? fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase() : "",
-                            descripcion: fila[idxDesc] || "",
-                            lpn: fila[idxLpn] ? fila[idxLpn].toString().trim().toUpperCase() : "",
-                            ubicacion: fila[idxUbica] ? fila[idxUbica].toString().trim().toUpperCase() : "",
-                            unidades: parseInt(fila[idxUnidades] || 0),
-                            vencimiento: fvTexto
-                        });
-                    }
-
-                    let filtrados = datosMapeados.filter(fila => {
-                        if (!fila.sku || fila.unidades <= 0 || !fila.ubicacion) return false;
-                        const u = fila.ubicacion.toString().trim().toUpperCase();
-                        return !(u === "VCTO-GESTION-PERECIBLES-001" || u === "CD-SOBRANTE-001-001" || u === "CD-FALTANTES-001-001" || u === "VACÍAS" || u === "(VACÍAS)" || u === "CMM-ALM-001-001" || u === "MM-000-001-001" || u === "CT-TDA-001-001" || u === "NAV-TDA-001-001" || u === "DAD-RECP-001-001" || u === "DE-PROVEEDOR-001-001" || u === "DEV-PRV-SVT-001" || u === "DSCTO-001-001-001" || u === "JAU-BAT-ALM-001");
-                    });
-
-                    dbRef.set(filtrados).then(() => { alert("¡Cajas_Tienda inyectada en la nube con éxito!"); });
-                } catch (err) { alert("Error analizando Cajas_Tienda: " + err.message); }
-            };
-            reader.readAsArrayBuffer(fileInput.files[0]);
-        }
-
-        function procesarJ_Satelite() {
-            const fileInput = document.getElementById('fileJSatelite');
-            if (fileInput.files.length === 0) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const matrizFilas = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-                    const cabecera = matrizFilas[0].map(c => c.toString().trim().toUpperCase());
-
-                    let idxSku = cabecera.indexOf("SKU"); let idxQuantity = cabecera.indexOf("QUANTITY");
-                    reqJ_Satelite = {};
-                    for (let i = 1; i < matrizFilas.length; i++) {
-                        const fila = matrizFilas[i]; if (!fila || fila.length === 0) continue;
-                        let sku = fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase();
-                        let qty = parseInt(fila[idxQuantity] || 0);
-                        if (sku && qty > 0) reqJ_Satelite[sku] = (reqJ_Satelite[sku] || 0) + qty;
-                    }
-                    document.getElementById('statusJSatelite').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusJSatelite').innerText = "✅ Jsatélite Mapeado.";
-                } catch (err) { alert("Error mapeando Jsatélite: " + err.message); }
-            };
-            reader.readAsArrayBuffer(fileInput.files[0]);
-        }
-
-        function procesarData2() {
-            const fileInput = document.getElementById('fileData2');
-            if (fileInput.files.length === 0) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const matrizFilas = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1, defval: "" });
-                    const cabecera = matrizFilas[0].map(c => c.toString().trim().toUpperCase());
-
-                    let idxPantalla = cabecera.indexOf("PANTALLA");
-                    let idxLpn = cabecera.indexOf("NRO LPN");
-                    let idxSku = cabecera.indexOf("SKU");
-                    let idxCantOrig = cabecera.indexOf("CANTIDAD ORIGINAL");
-                    let idxCantAjust = cabecera.indexOf("CANTIDAD AJUSTADA");
-                    let idxUsuario = cabecera.indexOf("USUARIO");
-
-                    matrixDetalleReposicion = [];
-
-                    for (let i = 1; i < matrizFilas.length; i++) {
-                        const fila = matrizFilas[i]; if (!fila || fila.length === 0) continue;
-                        let txtPantalla = fila[idxPantalla] ? fila[idxPantalla].toString().trim().toUpperCase() : "";
-                        
-                        if (txtPantalla === "RF_REPONER_RESERVA" || txtPantalla === "RF_REPONER_PUERTA" || txtPantalla === "RF_DIVIDIR LPN") {
-                            matrixDetalleReposicion.push({
-                                lpn: fila[idxLpn] ? fila[idxLpn].toString().trim().toUpperCase() : "N/A",
-                                sku: fila[idxSku] ? fila[idxSku].toString().replace(/[^\d]/g, "").trim().toUpperCase() : "",
-                                pantalla: txtPantalla,
-                                cantOriginal: parseInt(fila[idxCantOrig] || 0),
-                                cantAjustada: parseInt(fila[idxCantAjust] || 0),
-                                usuario: fila[idxUsuario] || "DESCONOCIDO"
-                            });
-                        }
-                    }
-                    document.getElementById('statusData2').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusData2').innerText = `✅ Reposición Mapeada (${matrixDetalleReposicion.length} puestas).`;
-                } catch (err) { alert("Error mapeando Detalle Reposicion: " + err.message); }
-            };
-            reader.readAsArrayBuffer(fileInput.files[0]);
-        }
-
         function guardarRegistro() {
             const cantidad = document.getElementById('cantidadInput').value;
             if(!cantidad || cantidad <= 0) { alert("Ingrese una cantidad válida."); return; }
             
             let remanente = parseInt(cantidad);
-            let lotesAsignados = inventarioData1.filter(item => item.sku.toString().trim().replace(/^0+/, "").toUpperCase() === skuEscaneadoTemporal && item.unidades > 0);
+            let lotesAsignados = inventarioData1.filter(item => {
+                let skuInventario = item.sku.toString().trim().replace(/^0+/, "").toUpperCase();
+                let skuBuscado = skuEscaneadoTemporal.toString().trim().replace(/^0+/, "").toUpperCase();
+                return skuInventario === skuBuscado && item.unidades > 0;
+            });
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
             if (lotesAsignados.length === 0) { alert("Sin stock disponible."); return; }
@@ -791,20 +690,105 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
-            let stringPurgaMapeada = historialConsumosLpns.join(" ➔ ");
-
             logRef.push({
                 operador: nombreOperador,
                 sku: skuEscaneadoTemporal,
                 fifoLpnOptimizado: primerLpnImplicado, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
                 cant: parseInt(cantidad),
-                fv: lotesAsignados[0].vencimiento,
-                purgaCompletaRuta: stringPurgaMapeada
+                fv: lotesAsignados[0].vencimiento || "SIN FECHA",
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
             dbRef.set(inventarioData1);
-            limpiarAsistente();
+            cancelarRegistro();
+        }
+
+        function cancelarRegistro() {
+            document.getElementById('barcodeInput').value = "";
+            document.getElementById('cantidadInput').value = "";
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+            document.getElementById('resultadoEscaneo').classList.add('hidden');
+            document.getElementById('containerInputLpn').classList.add('invisible');
+            document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            document.getElementById('barcodeInput').focus();
+        }
+
+        function procesarData1() {
+            const file = document.getElementById("fileData1").files[0];
+            if (!file) return;
+            document.getElementById('statusData1').innerText = "⏳ Inyectando y Sincronizando Base Cloud...";
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                
+                let datosFormateados = filas.map(f => {
+                    let lpnVal = "", skuVal = "", descVal = "", uVal = 0, fvVal = "SIN FECHA";
+                    Object.keys(f).forEach(k => {
+                        let nk = k.toString().toLowerCase().replace(/[^a-z]/g, "");
+                        if(nk.includes("lpn")) lpnVal = f[k];
+                        else if(nk.includes("articulo") || nk.includes("sku")) skuVal = f[k];
+                        else if(nk.includes("descripcion")) descVal = f[k];
+                        else if(nk.includes("unidades") || nk.includes("cant")) uVal = parseInt(f[k] || 0);
+                        else if(nk.includes("vencimiento") || nk.includes("caducidad") || nk.includes("fecha")) fvVal = f[k];
+                    });
+                    return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal };
+                }).filter(x => x.sku && x.lpn);
+
+                dbRef.set(datosFormateados).then(() => {
+                    alert("¡Cajas_Tienda inyectado con éxito en Firebase!");
+                });
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarJ_Satelite() {
+            const file = document.getElementById("fileJSatelite").files[0];
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                reqJ_Satelite = {};
+                filas.forEach(f => {
+                    let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
+                    let lpn = f["LPN"] || f["Nro LPN"];
+                    if(sku && lpn) reqJ_Satelite[sku.toString().trim()] = lpn.toString().trim();
+                });
+                document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold";
+                document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarData2() {
+            const file = document.getElementById("fileData2").files[0];
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                
+                matrixDetalleReposicion = filas.map(f => ({
+                    lpn: f["LPN"] || f["Contenedor Origen"] || "",
+                    sku: f["Articulo"] || f["SKU"] || "",
+                    pantalla: f["Estado"] || f["Ubicación Destino"] || "REPOSICIÓN",
+                    cantOriginal: f["Cantidad Solicitada"] || f["Cant"] || 0,
+                    cantAjustada: f["Cantidad Confirmada"] || f["Cant"] || 0,
+                    usuario: f["Usuario Actividad"] || f["Operador"] || "SISTEMA"
+                })).filter(x => x.sku);
+
+                document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
+                document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion con ${matrixDetalleReposicion.length} registros listo.`;
+            };
+            lector.readAsArrayBuffer(file);
         }
 
         function ejecutarCruceMacroGlobal() {
@@ -819,7 +803,7 @@
                 let rutaSugerida = "⚠️ SIN REGISTRO EN REPOTENCIAR_TIENDA";
 
                 let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().trim().toUpperCase() === puesta.sku.toString().trim().toUpperCase() &&
+                    log.sku.toString().trim().replace(/^0+/, "") === puesta.sku.toString().trim().replace(/^0+/, "") &&
                     log.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()
                 );
 
@@ -841,40 +825,32 @@
             });
         }
 
-        function abrirModalReporteIncidencia() { document.getElementById('modalReporte').classList.remove('hidden'); }
+        function abrirModalReporteIncidencia() {
+            document.getElementById('modalReporte').classList.remove('hidden');
+            document.getElementById('incidenciaCodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciaMotivoInput').value = "";
+            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
+        }
         function cerrarModalReporteIncidencia() { document.getElementById('modalReporte').classList.add('hidden'); }
         
         function enviarReporteIncidencia() {
-            const cod = document.getElementById('incidenciaCodigoInput').value.trim();
-            const mot = document.getElementById('incidenciaMotivoInput').value.trim();
-            if(!cod || !mot) { alert("Por favor complete los campos."); return; }
-
-            let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            let h = new Date();
-            let horaTexto = `${String(h.getHours()).padStart(2,'0')}:${String(h.getMinutes()).padStart(2,'0')} - ${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}`;
-
+            let cod = document.getElementById('incidenciaCodigoInput').value.trim();
+            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            if(!cod || !mot) { alert("Complete ambos campos."); return; }
+            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             msgRef.push({
-                remitente: nombreOperador,
+                remitente: nombreUser,
                 codigo: cod,
                 motivo: mot,
-                timestamp: horaTexto
+                timestamp: new Date().toLocaleString()
             }).then(() => {
-                document.getElementById('incidenciaCodigoInput').value = "";
-                document.getElementById('incidenciaMotivoInput').value = "";
+                alert("Alerta enviada al Panel del Administrador.");
                 cerrarModalReporteIncidencia();
+                cancelarRegistro();
             });
         }
-        
-        function limpiarBuzonMensajes() { if(confirm("¿Eliminar la data histórica de alertas por completo?")) msgRef.set(null); }
-        function cancelarRegistro() { limpiarAsistente(); }
-        
-        function limpiarAsistente() {
-            skuEscaneadoTemporal = "";
-            document.getElementById('barcodeInput').value = ""; document.getElementById('cantidadInput').value = "";
-            document.getElementById('containerInputLpn').classList.add('invisible'); document.getElementById('resultadoEscaneo').classList.add('hidden');
-            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden'); document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
-            document.getElementById('barcodeInput').focus();
-        }
+
+        function limpiarBuzonMensajes() { if(confirm("¿Limpiar buzón?")) msgRef.set(null); }
 
         function descargarExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) { alert("No hay datos."); return; }
