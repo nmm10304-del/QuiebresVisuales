@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v28.6</title>
+    <title>Escaneo de Quiebres - Control Operativo v28.7</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -338,7 +338,6 @@
                         </button>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -370,11 +369,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detallado..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                    <textarea id="incidenciaMotivoInput" rows="3" placeholder="Escribe aquí el motivo detallado..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border">Enviar Alerta</button>
+                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -567,7 +566,7 @@
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
                     document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusData1').innerText = `✅ Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
+                    document.getElementById('statusData1').innerText = ` Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
@@ -693,21 +692,20 @@
             msgRef.child(key).set(null);
         }
 
+        // CONTROL CONTROLADO DE DUPLICADOS EN VIVO SIN BLOQUEAR SI NO SE ESCRIBE MOTIVO
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciaCodigoInput');
-            const inputMot = document.getElementById('incidenciaMotivoInput');
-            if (!inputCod || !inputMot) return;
+            if (!inputCod) return;
             
             let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
-            let motIngresado = inputMot.value.trim();
             
             const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
             const txtAlerta = document.getElementById('txtAlertaDuplicado');
             const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
 
-            if (!codIngresado || !motIngresado) {
-                btnEnviar.disabled = true;
-                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm";
+            if (!codIngresado) {
+                btnEnviar.disabled = false;
+                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
                 wrapperGrafico.classList.add('hidden');
                 return;
             }
@@ -726,7 +724,7 @@
             } else {
                 wrapperGrafico.classList.add('hidden');
                 btnEnviar.disabled = false;
-                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm cursor-pointer";
+                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
             }
         }
 
@@ -809,7 +807,6 @@
             window.location.reload();
         }
 
-        // Switch de roles corregido
         function switchRole() {
             document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
             document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
