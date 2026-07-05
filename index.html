@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v28.8</title>
+    <title>Escaneo de Quiebres - Control Operativo v28.9</title>
     <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -251,8 +251,8 @@
         <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
-            <!-- CABECERA DE INTERIOR ASOCIADA CON Promart_logo_2019.png -->
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
+                <!-- LOGO EN CONTENEDOR INTERNO FUNCIONAL -->
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
             </div>
 
@@ -420,7 +420,7 @@
         let usuariosDB = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
-            "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
+            "HP70729960": { font: "Farro", clave: "Hpsa2027" },
             "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
             "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
             "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
@@ -624,7 +624,7 @@
             });
         }
 
-        // REGLA CRÍTICA EN VIVO: Sincronización exacta con el estado de Firebase para evitar la caída de JavaScript
+        // CORRECCIÓN SINTÁCTICA DEL FLUJO DE INCIDENCIAS
         function escucharAlertasIncidenciasGlobales() {
             msgRef.on("value", (snapshot) => {
                 const data = snapshot.val() || {};
@@ -724,7 +724,6 @@
                 return;
             }
 
-            // Se corrigió a "Pendiente" para evitar el cuelgue por desajuste de estados
             let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
                 m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
                 m.estado === "Pendiente" && 
@@ -948,6 +947,55 @@
             document.getElementById('barcodeInput').focus();
         }
 
+        function abrirModalReporteIncidencia() {
+            document.getElementById('modalReporte').classList.remove('hidden');
+            document.getElementById('incidenciaCodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciaMotivoInput').value = "";
+            
+            document.getElementById('incidenciaCodigoInput').addEventListener('input', evaluarBloqueoDuplicadosEnVivo);
+            
+            evaluarBloqueoDuplicadosEnVivo();
+            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
+        }
+
+        function cerrarModalReporteIncidencia() { 
+            document.getElementById('modalReporte').classList.add('hidden'); 
+            document.getElementById('incidenciaCodigoInput').removeEventListener('input', evaluarBloqueoDuplicadosEnVivo);
+        }
+        
+        function enviarReporteIncidencia() {
+            let cod = document.getElementById('incidenciaCodigoInput').value.trim();
+            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+
+            if(!cod) { 
+                lanzarAlertaCuidadoPersonalizada(`Estimado ${nombreUser}`, "Complete el código.");
+                return; 
+            }
+            
+            msgRef.push({
+                idAsistente: idUsuarioLogueado,
+                remitente: nombreUser,
+                codigo: cod,
+                motivo: mot || "Sin motivo especificado",
+                estado: "Pendiente",
+                timestamp: new Date().toLocaleString()
+            }).then(() => {
+                cerrarModalReporteIncidencia();
+                cancelarRegistro();
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                document.getElementById('txtNotificacionExitoTitulo').innerText = `Estimado ${nombreUser}`;
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            });
+        }
+
+        function cerrarNotificacionExitoPersonalizada() {
+            document.getElementById('modalNotificacionExito').classList.add('hidden');
+        }
+
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1000,7 +1048,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // Carga de Detalle_Reposicion y procesamiento de cruces FIFO inalterados
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1024,42 +1071,6 @@
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion con ${matrixDetalleReposicion.length} registros listo.`;
             };
             lector.readAsArrayBuffer(file);
-        }
-
-        function ejecutarCruceMacroGlobal() {
-            const tbody = document.getElementById("tablaMacroGlobalBody");
-            if (matrixDetalleReposicion.length === 0) {
-                alert("Debe subir primero el archivo de Detalle_Reposicion.");
-                return;
-            }
-            tbody.innerHTML = "";
-            matrixDetalleReposicion.forEach(puesta => {
-                let txtColorRuta = "text-red-600 font-bold";
-                let rutaSugerida = "⚠️ SIN REGISTRO EN REPOTENCIAR_TIENDA";
-
-                let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-
-                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio &&
-                    log.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()
-                );
-
-                if (coincidenciaLog && coincidenciaLog.purgaCompletaRuta) {
-                    rutaSugerida = coincidenciaLog.purgaCompletaRuta;
-                    txtColorRuta = "text-green-700 font-semibold";
-                }
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
-                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
-                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
-                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs bg-purple-50/30">${rutaSugerida}</td>
-                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
-                    </tr>`;
-            });
         }
     </script>
 </body>
