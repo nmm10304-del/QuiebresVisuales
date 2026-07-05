@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v28.5</title>
-    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
+    <title>Escaneo de Quiebres - Control Operativo v28.6</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- COMPONENTES EN LA NUBE DE FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -26,7 +24,6 @@
 </head>
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
 
-    <!-- BARRA DE MENÚ SUPERIOR -->
     <nav class="bg-promart p-4 text-white flex justify-between items-center shadow-md">
         <div class="flex items-center gap-3">
             <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
@@ -44,7 +41,6 @@
 
     <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
 
-        <!-- ================= CAJA DE INGRESO (LOGIN ACTUALIZADO CON Promart_logo_2019.png) ================= -->
         <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5">
             <div class="flex justify-center pb-2">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
@@ -73,7 +69,6 @@
             </div>
         </div>
         
-        <!-- ================= MÓDULO DEL ADMINISTRADOR ================= -->
         <div id="panelAdmin" class="hidden space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
@@ -248,10 +243,8 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
-            <!-- REGLA 2: CABECERA INTERNA DEL ASISTENTE ASOCIADA CON Promart_logo_2019.png DEL SERVIDOR -->
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
             </div>
@@ -266,7 +259,6 @@
                     </select>
                 </div>
 
-                <!-- SUBMÓDULO A: ESCANEO Y FLUJO OPERATIVO -->
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
@@ -311,14 +303,12 @@
                     </div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
-                        <!-- REGLA 1: BOTÓN TOTALMENTE LIBERADO, ACTIVO Y ACCESIBLE SIN NINGUNA RESTRICCIÓN DE ORIGEN -->
                         <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
                             🚨 SKU/EAN no escanea
                         </button>
                     </div>
                 </div>
 
-                <!-- SUBMÓDULO B: BUZÓN DE ALERTAS EXCLUSIVO -->
                 <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
                     <p class="text-xs text-gray-500 italic">Aquí verás el estado en tiempo real de tus incidencias enviadas al administrador.</p>
@@ -327,7 +317,6 @@
                     </div>
                 </div>
 
-                <!-- SUBMÓDULO C: CAMBIAR CONTRASEÑA AUTÓNOMO -->
                 <div id="submoduloAsistenteCambiarClave" class="hidden space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-blue-600 pl-2">🔑 Cambiar contraseña</h2>
                     <p class="text-xs text-gray-500 italic">Actualiza tu clave de acceso personal del sistema en la nube.</p>
@@ -354,7 +343,6 @@
         </div>
     </div>
 
-    <!-- MODAL PERSONALIZADO DE EXITO Y ADVERTENCIA -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -366,7 +354,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE REPORTES DE INCIDENCIA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -387,7 +374,7 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm">Enviar Alerta</button>
+                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -580,7 +567,7 @@
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
                     document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusData1').innerText = ` Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
+                    document.getElementById('statusData1').innerText = `✅ Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
@@ -635,7 +622,7 @@
                     let contadorPendientes = 0;
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        if (m.estado === "Permanent") {
+                        if (m.estado === "Pendiente") {
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
                                 <tr class="hover:bg-red-50/50 text-xs">
@@ -663,7 +650,7 @@
                         let m = data[key];
                         if (m.idAsistente === idUsuarioLogueado) {
                             contadorAlertasAsistente++;
-                            if (m.estado === "Permanent") {
+                            if (m.estado === "Pendiente") {
                                 contenedorNotifAsistente.innerHTML += `
                                     <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-3 rounded shadow-sm text-xs font-mono flex items-start gap-2.5 animate-pulse">
                                         <span class="text-xl">⏳</span>
@@ -727,7 +714,7 @@
 
             let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
                 m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
-                m.estado === "Permanent" && 
+                m.estado === "Pendiente" && 
                 m.idAsistente !== idUsuarioLogueado
             );
 
@@ -822,6 +809,7 @@
             window.location.reload();
         }
 
+        // Switch de roles corregido
         function switchRole() {
             document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
             document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
