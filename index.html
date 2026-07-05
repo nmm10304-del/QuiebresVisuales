@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v29.4</title>
+    <title>Escaneo de Quiebres - Control Operativo v29.5</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -230,7 +230,7 @@
                                 <th class="px-4 py-2 border">SKU</th>
                                 <th class="px-4 py-2 border">Pantalla RF</th>
                                 <th class="px-4 py-2 border text-center">Cant. Original</th>
-                                <th class="px-4 py-2 border text-center">Cant. Ajustada</th>
+                                <th class="px-4 py-2 border text-center : font-bold">Cant. Ajustada</th>
                                 <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">🔮 LPNS Consumidos por RF</th>
                                 <th class="px-4 py-2 border">Usuario Actividad</th>
                             </tr>
@@ -293,9 +293,6 @@
                     </div>
 
                     <div id="resultadoEscaneo" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-                        <div class="bg-orange-50 p-3 rounded text-orange-900 font-medium text-sm border border-orange-200">
-                            ✔ Cantidad registrada. Pulse guardar para migrar los datos desde la reserva.
-                        </div>
                         <div class="flex gap-3">
                             <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition">Guardar</button>
                             <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition">Cancelar</button>
@@ -610,7 +607,7 @@
             });
         }
 
-        // ================= REQUERIMIENTO 1: CAMBIO A ESTADO COMPLETADO TRAS REVISIÓN DEL ADMIN =================
+        // ================= REQUERIMIENTO 1: CAMBIO A COMPLETADO EN LUGAR DE ELIMINAR DE GOLPE =================
         function escucharAlertasIncidenciasGlobales() {
             msgRef.on("value", (snapshot) => {
                 const data = snapshot.val() || {};
@@ -622,7 +619,7 @@
                     let contadorPendientes = 0;
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        // Mantenemos visible para el admin solo lo que está pendiente de corrección
+                        // Mantenemos visible para el admin lo que sigue Pendiente
                         if (m.estado === "Pendiente") {
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
@@ -662,7 +659,7 @@
                                         </div>
                                     </div>`;
                             } else if (m.estado === "Completado") {
-                                // REQUERIMIENTO 1: Se mantiene el bloque para que el asistente visualice que ya fue Completado
+                                // REQUERIMIENTO 1: Se queda visible en verde en el panel del asistente
                                 contenedorNotifAsistente.innerHTML += `
                                     <div class="bg-green-50 border border-green-200 text-green-950 p-3 rounded shadow-sm text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
                                         <div class="flex items-start gap-2.5">
@@ -818,6 +815,7 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
+        UX-PROMART-FIFO-MIGRATION-COMPILER
         function parsearFechaEspanol(strFecha) {
             if (strFecha === "SIN FECHA" || !strFecha) return new Date(2999, 11, 31);
             const partes = strFecha.split('/');
@@ -911,7 +909,7 @@
             }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            // CORREGIDO: Removido el espacio en blanco de 'primer LpnImplicado' que anulaba la ejecución del botón
+            // CORREGIDO: Se removió el espacio en blanco accidental que provocaba el fallo del clic
             let primerLpnImplicado = lotesAsignados[0].lpn;
             let historialConsumosLpns = [];
 
@@ -1137,7 +1135,7 @@
                     <tr class="hover:bg-purple-50/40 font-mono text-xs">
                         <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
                         <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
-                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
+                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">| ${puesta.pantalla}</td>
                         <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
                         <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
                         <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs bg-purple-50/30">${rutaSugerida}</td>
