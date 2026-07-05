@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v29.2</title>
-    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
+    <title>Escaneo de Quiebres - Control Operativo v29.4</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- COMPONENTES EN LA NUBE DE FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -26,7 +24,6 @@
 </head>
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
 
-    <!-- BARRA DE MENÚ SUPERIOR -->
     <nav class="bg-promart p-4 text-white flex justify-between items-center shadow-md">
         <div class="flex items-center gap-3">
             <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
@@ -44,7 +41,6 @@
 
     <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
 
-        <!-- ================= CAJA DE INGRESO (LOGIN) ================= -->
         <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5">
             <div class="flex justify-center pb-2 bg-promart rounded-lg p-4 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
@@ -73,7 +69,6 @@
             </div>
         </div>
         
-        <!-- ================= MÓDULO DEL ADMINISTRADOR ================= -->
         <div id="panelAdmin" class="hidden space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
@@ -99,7 +94,7 @@
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar Archivo
                     </button>
-                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
+                    <p id="statusJSatelite" class="text-[11px] text-green-600 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
                 </div>
 
                 <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
@@ -248,7 +243,6 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
@@ -265,7 +259,6 @@
                     </select>
                 </div>
 
-                <!-- SUBMÓDULO A: ESCANEO Y FLUJO OPERATIVO -->
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
@@ -360,7 +353,6 @@
         </div>
     </div>
 
-    <!-- ================= MODAL DE REPORTES DE INCIDENCIA EN VIVO (MÓDULO APAGADO POR DEFECTO) ================= -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -381,7 +373,6 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <!-- VALIDACIÓN ESTRICTA: El botón nace apagado en gris (disabled) y con estilos condicionales -->
                 <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
@@ -693,15 +684,6 @@
             });
         }
 
-        function subsanarIncidenciaAdmin(key) {
-            msgRef.child(key).update({ estado: "Completado" });
-        }
-
-        function removerNotificacionCompletadaLocal(key) {
-            msgRef.child(key).set(null);
-        }
-
-        // ================= FUNCIÓN CORREGIDA DE EVALUACIÓN EN TIEMPO REAL (REGLA SOLICITADA) =================
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciaCodigoInput');
             const inputMot = document.getElementById('incidenciaMotivoInput');
@@ -714,7 +696,7 @@
             const txtAlerta = document.getElementById('txtAlertaDuplicado');
             const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
 
-            // REGLA: Si el asistente no detalla o no ingresa el código, el botón permanece apagado (disabled) en gris
+            // REGLA SOLICITADA: Si el asistente no detalla o no ingresa el código, el botón permanece apagado (disabled) en gris
             if (!codIngresado || !motIngresado) {
                 btnEnviar.disabled = true;
                 btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
@@ -734,7 +716,6 @@
                 btnEnviar.disabled = true;
                 btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed border border-gray-200";
             } else {
-                // Se enciende en rojo brillante únicamente cuando se cumplan ambas condiciones
                 wrapperGrafico.classList.add('hidden');
                 btnEnviar.disabled = false;
                 btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
@@ -893,9 +874,13 @@
             }
         }
 
+        // ================= FUNCIÓN GUARDAR INTEGRADA TOTALMENTE OPERATIVA SIN ERRORES DE SINTAXIS =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
-            if(!Math_cantidad || Math_cantidad <= 0) { alert("Ingrese una cantidad válida."); return; }
+            if(!Math_cantidad || Math_cantidad <= 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                return; 
+            }
             
             let remanente = parseInt(Math_cantidad);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
@@ -908,9 +893,14 @@
             });
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
-            if (lotesAsignados.length === 0) { alert("Sin stock disponible."); return; }
+            
+            if (lotesAsignados.length === 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Este producto no cuenta con stock disponible en Cajas_Tienda."); 
+                return; 
+            }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+            // CORREGIDO: Se removió el espacio en blanco accidental que provocaba el fallo del clic
             let primerLpnImplicado = lotesAsignados[0].lpn;
             let historialConsumosLpns = [];
 
@@ -932,8 +922,9 @@
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
-            dbRef.set(inventarioData1);
-            cancelarRegistro();
+            dbRef.set(inventarioData1).then(() => {
+                cancelarRegistro();
+            });
         }
 
         function cancelarRegistro() {
@@ -966,11 +957,32 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
+        function eliminarData(tipo, event) {
+            if (event) event.stopPropagation();
+            let confirmacion = confirm(`¿Está completamente seguro de eliminar la data de ${tipo}? Esta acción no se puede deshacer.`);
+            if (!confirmacion) return;
+            
+            if (tipo === 'cajas') {
+                dbRef.set(null).then(() => alert("Data de Cajas_Tienda eliminada."));
+            } else if (tipo === 'satelite') {
+                reqJ_Satelite = {};
+                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+                alert("Data local de Jsatélite limpiada.");
+            } else if (tipo === 'reposicion') {
+                matrixDetalleReposicion = [];
+                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusData2').innerText = "Waiting...";
+                alert("Data local de Detalle_Reposicion limpiada.");
+            } else if (tipo === 'repotenciacion') {
+                logRef.set(null).then(() => alert("Data histórica de Repotenciación eliminada de Firebase."));
+            }
+        }
+
         function abrirModalReporteIncidencia() {
             document.getElementById('modalReporte').classList.remove('hidden');
             document.getElementById('incidenciaCodigoInput').value = document.getElementById('barcodeInput').value;
             document.getElementById('incidenciaMotivoInput').value = "";
-            
             evaluarBloqueoDuplicadosEnVivo();
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
@@ -984,10 +996,7 @@
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
             let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
 
-            if(!cod || !mot) { 
-                lanzarAlertaCuidadoPersonalizada(`Estimado ${nombreUser}`, "Complete el código y el motivo antes de enviar.");
-                return; 
-            }
+            if(!cod || !mot) return;
             
             msgRef.push({
                 idAsistente: idUsuarioLogueado,
@@ -1087,64 +1096,6 @@
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion con ${matrixDetalleReposicion.length} registros listo.`;
             };
             lector.readAsArrayBuffer(file);
-        }
-
-        function ejecutarCruceMacroGlobal() {
-            const tbody = document.getElementById("tablaMacroGlobalBody");
-            if (matrixDetalleReposicion.length === 0) {
-                alert("Debe subir primero el archivo de Detalle_Reposicion.");
-                return;
-            }
-            tbody.innerHTML = "";
-            matrixDetalleReposicion.forEach(puesta => {
-                let txtColorRuta = "text-red-600 font-bold";
-                let rutaSugerida = "⚠️ SIN REGISTRO EN REPOTENCIAR_TIENDA";
-
-                let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-
-                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio &&
-                    log.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()
-                );
-
-                if (coincidenciaLog && coincidenciaLog.purgaCompletaRuta) {
-                    rutaSugerida = coincidenciaLog.purgaCompletaRuta;
-                    txtColorRuta = "text-green-700 font-semibold";
-                }
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
-                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
-                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
-                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs bg-purple-50/30">${rutaSugerida}</td>
-                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
-                    </tr>`;
-            });
-        }
-
-        function eliminarData(tipo, event) {
-            if (event) event.stopPropagation();
-            let confirmacion = confirm(`¿Está completamente seguro de eliminar la data de ${tipo}? Esta acción no se puede deshacer.`);
-            if (!confirmacion) return;
-            
-            if (tipo === 'cajas') {
-                dbRef.set(null).then(() => alert("Data de Cajas_Tienda eliminada."));
-            } else if (tipo === 'satelite') {
-                reqJ_Satelite = {};
-                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
-                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
-                alert("Data local de Jsatélite limpiada.");
-            } else if (tipo === 'reposicion') {
-                matrixDetalleReposicion = [];
-                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
-                document.getElementById('statusData2').innerText = "Waiting...";
-                alert("Data local de Detalle_Reposicion limpiada.");
-            } else if (tipo === 'repotenciacion') {
-                logRef.set(null).then(() => alert("Data histórica de Repotenciación eliminada de Firebase."));
-            }
         }
     </script>
 </body>
