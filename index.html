@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v29.5</title>
-    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
+    <title>Escaneo de Quiebres - Control Operativo v29.4</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -32,10 +31,8 @@
         <div id="navUsuario" class="hidden text-sm font-semibold flex items-center gap-4">
             <div class="flex flex-col text-right">
                 <span class="text-xs opacity-90">Colaborador</span>
-                <!-- REGLA 4 ANTERIOR: MANTENER FONDO NEGRO EXCLUSIVO PARA COLABORADOR -->
                 <span id="nombreUsuarioActivo" class="font-bold font-mono text-sm bg-black text-white px-2 py-0.5 rounded shadow-sm"></span>
             </div>
-            <!-- REGLA 4 ANTERIOR: MANTENER FONDO NEGRO EXCLUSIVO PARA SALIR -->
             <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-3 rounded text-xs transition shadow-sm border border-gray-800">
                 Salir
             </button>
@@ -97,7 +94,7 @@
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar Archivo
                     </button>
-                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
+                    <p id="statusJSatelite" class="text-[11px] text-green-600 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
                 </div>
 
                 <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
@@ -121,7 +118,6 @@
                 </select>
             </div>
 
-            <!-- EXCLUSIVO REQUERIMIENTO 1: BUZÓN DE INCIDENCIAS CON ELIMINACIÓN EFECTIVA DESDE LA X -->
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
                     <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
@@ -247,7 +243,6 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
@@ -264,7 +259,6 @@
                     </select>
                 </div>
 
-                <!-- SUBMÓDULO A: ESCANEO Y FLUJO OPERATIVO -->
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
@@ -359,7 +353,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE REPORTES DE INCIDENCIA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -380,7 +373,6 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <!-- REGLA 3: EL BOTÓN DE ENVIAR ALERTA ESTÁ CONFIGURADO COMO APAGADO POR DEFECTO -->
                 <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
@@ -618,6 +610,7 @@
             });
         }
 
+        // ================= REQUERIMIENTO 1: CAMBIO A ESTADO COMPLETADO TRAS REVISIÓN DEL ADMIN =================
         function escucharAlertasIncidenciasGlobales() {
             msgRef.on("value", (snapshot) => {
                 const data = snapshot.val() || {};
@@ -629,6 +622,7 @@
                     let contadorPendientes = 0;
                     Object.keys(data).forEach(key => {
                         let m = data[key];
+                        // Mantenemos visible para el admin solo lo que está pendiente de corrección
                         if (m.estado === "Pendiente") {
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
@@ -638,7 +632,6 @@
                                     <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
                                     <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
                                     <td class="px-4 py-2 border text-center">
-                                        <!-- REGLA 1: LA X AHORA ELIMINA LA DATA REAL EN FIREBASE SIN DEJAR RESIDUOS -->
                                         <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto">✕</button>
                                     </td>
                                 </tr>`;
@@ -669,6 +662,7 @@
                                         </div>
                                     </div>`;
                             } else if (m.estado === "Completado") {
+                                // REQUERIMIENTO 1: Se mantiene el bloque para que el asistente visualice que ya fue Completado
                                 contenedorNotifAsistente.innerHTML += `
                                     <div class="bg-green-50 border border-green-200 text-green-950 p-3 rounded shadow-sm text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
                                         <div class="flex items-start gap-2.5">
@@ -693,9 +687,9 @@
             });
         }
 
-        // REGLA 1: ELIMINACIÓN DIRECTA DEL ELEMENTO EN FIREBASE CUANDO SE REALIZA LA REVISIÓN
+        // REQUERIMIENTO 1: Al pulsar la equis (✕) el Administrador cambia el estado a Completado en Firebase
         function subsanarIncidenciaAdmin(key) {
-            msgRef.child(key).remove();
+            msgRef.child(key).update({ estado: "Completado" });
         }
 
         function removerNotificacionCompletadaLocal(key) {
@@ -714,7 +708,6 @@
             const txtAlerta = document.getElementById('txtAlertaDuplicado');
             const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
 
-            // REGLA SOLICITADA ANTERIOR: SE MANTIENE EL APAGADO EN GRIS SI NO ESCRIBE EL MOTIVO O DETALLE
             if (!codIngresado || !motIngresado) {
                 btnEnviar.disabled = true;
                 btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
@@ -892,7 +885,7 @@
             }
         }
 
-        // ================= REGLA 2: MÓDULO GUARDAR OPTIMIZADO CON RETORNO FLUIDO AL INICIO DE RESERVA =================
+        // ================= REQUERIMIENTO 2: FUNCIÓN GUARDAR REPARADA DE SINTAXIS Y RETORNO SEGURO AL INICIO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || Math_cantidad <= 0) { 
@@ -918,7 +911,7 @@
             }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            // CORREGIDO: SE QUITÓ EL ESPACIO EN BLANCO QUE CONGELABA EL EVENTO
+            // CORREGIDO: Removido el espacio en blanco de 'primer LpnImplicado' que anulaba la ejecución del botón
             let primerLpnImplicado = lotesAsignados[0].lpn;
             let historialConsumosLpns = [];
 
@@ -941,7 +934,7 @@
             });
 
             dbRef.set(inventarioData1).then(() => {
-                // RETORNO COMPLETO AUTOMÁTICO AL INICIO DE RESERVAS TRAS ASIGNACIÓN EXITOSA
+                // REQUERIMIENTO 2: Retorna automáticamente al inicio y limpia el formulario tras guardar
                 cancelarRegistro();
             });
         }
@@ -1006,7 +999,6 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
-        // REGLA 1 EXTRA: CIERRE SIMPLE DE VENTANA
         function cerrarModalReporteIncidencia() { 
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
@@ -1116,6 +1108,42 @@
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion con ${matrixDetalleReposicion.length} registros listo.`;
             };
             lector.readAsArrayBuffer(file);
+        }
+
+        function ejecutarCruceMacroGlobal() {
+            const tbody = document.getElementById("tablaMacroGlobalBody");
+            if (matrixDetalleReposicion.length === 0) {
+                alert("Debe subir primero el archivo de Detalle_Reposicion.");
+                return;
+            }
+            tbody.innerHTML = "";
+            matrixDetalleReposicion.forEach(puesta => {
+                let txtColorRuta = "text-red-600 font-bold";
+                let rutaSugerida = "⚠️ SIN REGISTRO EN REPOTENCIAR_TIENDA";
+
+                let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+
+                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
+                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio &&
+                    log.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()
+                );
+
+                if (coincidenciaLog && coincidenciaLog.purgaCompletaRuta) {
+                    rutaSugerida = coincidenciaLog.purgaCompletaRuta;
+                    txtColorRuta = "text-green-700 font-semibold";
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
+                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
+                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
+                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
+                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs bg-purple-50/30">${rutaSugerida}</td>
+                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
+                    </tr>`;
+            });
         }
     </script>
 </body>
