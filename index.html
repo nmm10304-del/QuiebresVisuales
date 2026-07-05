@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escaneo de Quiebres - Control Operativo v29.5</title>
+    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- COMPONENTES EN LA NUBE DE FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
@@ -24,6 +26,7 @@
 </head>
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
 
+    <!-- BARRA DE MENÚ SUPERIOR -->
     <nav class="bg-promart p-4 text-white flex justify-between items-center shadow-md">
         <div class="flex items-center gap-3">
             <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
@@ -41,6 +44,7 @@
 
     <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
 
+        <!-- ================= CAJA DE INGRESO (LOGIN) ================= -->
         <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5">
             <div class="flex justify-center pb-2 bg-promart rounded-lg p-4 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
@@ -69,6 +73,7 @@
             </div>
         </div>
         
+        <!-- ================= MÓDULO DEL ADMINISTRADOR ================= -->
         <div id="panelAdmin" class="hidden space-y-6">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
@@ -100,12 +105,7 @@
                 <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-xs mb-1 uppercase tracking-wider pr-6">3. Detalle_Reposicion</h3>
-                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic para informe final.</p>
-                    <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden"/>
-                    <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
-                        Seleccionar Archivo
-                    </button>
-                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold">Waiting...</p>
+                    <p class="text-[11px] text-gray-400 mt-2 font-semibold">Waiting...</p>
                 </div>
             </div>
 
@@ -243,6 +243,7 @@
             </div>
         </div>
 
+        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
@@ -270,9 +271,10 @@
                         </div>
                     </div>
 
+                    <!-- CORREGIDO: MENSAJE DE TRADUCCIÓN COMPLETA AL ESPAÑOL LATINO -->
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div>ADVERTENCIA: This product does not have stock.</div>
+                        <div>ADVERTENCIA: Este producto no cuenta con stock disponible.</div>
                     </div>
 
                     <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
@@ -366,7 +368,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detallado..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
@@ -647,7 +649,7 @@
                         if (m.idAsistente === idUsuarioLogueado) {
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
-                                contenedorNotifAsistente.innerHTML += `
+                                contenedorNotifAsifAsistente.innerHTML += `
                                     <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-3 rounded shadow-sm text-xs font-mono flex items-start gap-2.5 animate-pulse">
                                         <span class="text-xl">⏳</span>
                                         <div>
@@ -686,7 +688,7 @@
         }
 
         function removerNotificacionCompletadaLocal(key) {
-            msgRef.child(key).remove();
+            msgRef.child(key).set(null);
         }
 
         function evaluarBloqueoDuplicadosEnVivo() {
@@ -848,9 +850,10 @@
 
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item.sku) return false;
-                    let skuInventarioExcel = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let skuBuscadoExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
-                    return skuInventarioExcel === skuBuscadoExcel && parseInt(item.unidades || 0) > 0;
+                    // ALTERNATIVA DE CONTROL: Forzar la lectura matemática entera para evadir decimales del XLSX (.00)
+                    let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                    let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
+                    return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
@@ -879,6 +882,7 @@
             }
         }
 
+        // ================= FUNCIÓN GUARDAR REPARADA LOGICAMENTE (MATEMÁTICA ENTERA BLINDADA) =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || Math_cantidad <= 0) { 
@@ -886,14 +890,15 @@
                 return; 
             }
             
-            let remanente = parseInt(Math_cantidad);
+            let remanente = parseInt(Math_cantidad, 10);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
             let lotesAsignados = inventarioData1.filter(item => {
                 if (!item.sku) return false;
-                let skuInventario = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let skuBuscado = skuPuroBusqueda.replace(/^0+/, "");
-                return skuInventario === skuBuscado && item.unidades > 0;
+                // ALTERNATIVA DE CONTROL: Filtro matemático estricto anti decimales flotantes del XLSX
+                let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                let skuBuscadoMat = parseInt(skuPuroBusqueda, 10);
+                return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
             });
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
@@ -905,7 +910,6 @@
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             let primerLpnImplicado = lotesAsignados[0].lpn;
-            // SINTAXIS ARREGLADA AL 100% (SIN ESPACIOS)
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
@@ -918,10 +922,10 @@
 
             logRef.push({
                 operador: nombreOperador,
-                sku: skuPuroBusqueda,
+                sku: parseInt(skuPuroBusqueda, 10).toString(),
                 fifoLpnOptimizado: primerLpnImplicado, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
-                cant: parseInt(Math_cantidad),
+                cant: parseInt(Math_cantidad, 10),
                 fv: lotesAsignados[0].vencimiento || "SIN FECHA",
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
