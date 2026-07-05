@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v29.4</title>
+    <title>Escaneo de Quiebres - Control Operativo v29.5</title>
+    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -31,8 +32,10 @@
         <div id="navUsuario" class="hidden text-sm font-semibold flex items-center gap-4">
             <div class="flex flex-col text-right">
                 <span class="text-xs opacity-90">Colaborador</span>
+                <!-- REGLA 4 ANTERIOR: MANTENER FONDO NEGRO EXCLUSIVO PARA COLABORADOR -->
                 <span id="nombreUsuarioActivo" class="font-bold font-mono text-sm bg-black text-white px-2 py-0.5 rounded shadow-sm"></span>
             </div>
+            <!-- REGLA 4 ANTERIOR: MANTENER FONDO NEGRO EXCLUSIVO PARA SALIR -->
             <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-3 rounded text-xs transition shadow-sm border border-gray-800">
                 Salir
             </button>
@@ -94,7 +97,7 @@
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
                         Seleccionar Archivo
                     </button>
-                    <p id="statusJSatelite" class="text-[11px] text-green-600 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
+                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
                 </div>
 
                 <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
@@ -118,6 +121,7 @@
                 </select>
             </div>
 
+            <!-- EXCLUSIVO REQUERIMIENTO 1: BUZÓN DE INCIDENCIAS CON ELIMINACIÓN EFECTIVA DESDE LA X -->
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
                     <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
@@ -243,6 +247,7 @@
             </div>
         </div>
 
+        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
             
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
@@ -259,6 +264,7 @@
                     </select>
                 </div>
 
+                <!-- SUBMÓDULO A: ESCANEO Y FLUJO OPERATIVO -->
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
@@ -353,6 +359,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE REPORTES DE INCIDENCIA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -373,6 +380,7 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
+                <!-- REGLA 3: EL BOTÓN DE ENVIAR ALERTA ESTÁ CONFIGURADO COMO APAGADO POR DEFECTO -->
                 <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
@@ -630,6 +638,7 @@
                                     <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
                                     <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
                                     <td class="px-4 py-2 border text-center">
+                                        <!-- REGLA 1: LA X AHORA ELIMINA LA DATA REAL EN FIREBASE SIN DEJAR RESIDUOS -->
                                         <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto">✕</button>
                                     </td>
                                 </tr>`;
@@ -684,6 +693,15 @@
             });
         }
 
+        // REGLA 1: ELIMINACIÓN DIRECTA DEL ELEMENTO EN FIREBASE CUANDO SE REALIZA LA REVISIÓN
+        function subsanarIncidenciaAdmin(key) {
+            msgRef.child(key).remove();
+        }
+
+        function removerNotificacionCompletadaLocal(key) {
+            msgRef.child(key).remove();
+        }
+
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciaCodigoInput');
             const inputMot = document.getElementById('incidenciaMotivoInput');
@@ -696,7 +714,7 @@
             const txtAlerta = document.getElementById('txtAlertaDuplicado');
             const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
 
-            // REGLA SOLICITADA: Si el asistente no detalla o no ingresa el código, el botón permanece apagado (disabled) en gris
+            // REGLA SOLICITADA ANTERIOR: SE MANTIENE EL APAGADO EN GRIS SI NO ESCRIBE EL MOTIVO O DETALLE
             if (!codIngresado || !motIngresado) {
                 btnEnviar.disabled = true;
                 btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
@@ -874,7 +892,7 @@
             }
         }
 
-        // ================= FUNCIÓN GUARDAR INTEGRADA TOTALMENTE OPERATIVA SIN ERRORES DE SINTAXIS =================
+        // ================= REGLA 2: MÓDULO GUARDAR OPTIMIZADO CON RETORNO FLUIDO AL INICIO DE RESERVA =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || Math_cantidad <= 0) { 
@@ -900,7 +918,7 @@
             }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            // CORREGIDO: Se removió el espacio en blanco accidental que provocaba el fallo del clic
+            // CORREGIDO: SE QUITÓ EL ESPACIO EN BLANCO QUE CONGELABA EL EVENTO
             let primerLpnImplicado = lotesAsignados[0].lpn;
             let historialConsumosLpns = [];
 
@@ -923,6 +941,7 @@
             });
 
             dbRef.set(inventarioData1).then(() => {
+                // RETORNO COMPLETO AUTOMÁTICO AL INICIO DE RESERVAS TRAS ASIGNACIÓN EXITOSA
                 cancelarRegistro();
             });
         }
@@ -987,6 +1006,7 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
+        // REGLA 1 EXTRA: CIERRE SIMPLE DE VENTANA
         function cerrarModalReporteIncidencia() { 
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
