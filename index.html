@@ -405,7 +405,7 @@
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
             "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
             "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
-            "HP47431216": { font_mono: "Moses", clave: "Hpsa2027" },
+            "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
             "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
             "HP46411164": { nombre: "Jhon", clave: "Hpsa2027" },
             "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
@@ -847,8 +847,7 @@
 
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item.sku) return false;
-
-                    // REQUERIMIENTO 2: EXCLUSIÓN DE LAS UBICACIONES BLOQUEADAS ENTREGADAS EN LA IMAGEN 3
+                    
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -856,11 +855,10 @@
                         }
                     }
 
-                    let skuInventarioExcel = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let skuBuscadoExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
-                    
-                    // REQUERIMIENTO 2 EXTRA: ANULAR COMPLETAMENTE SI LAS UNIDADES ACTUALES ESTÁN EN 0
-                    return skuInventarioExcel === skuBuscadoExcel && parseInt(item.unidades || 0) > 0;
+                    // CORRECCIÓN DE MATCH: Forzar comparación matemática estricta de enteros puros en la búsqueda inicial
+                    let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                    let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
+                    return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
@@ -889,20 +887,20 @@
             }
         }
 
+        // ================= FUNCIÓN GUARDAR COMPLETAMENTE OPERATIVA CON ALGORITMO DE MATCH ENTERO BLINDADO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
-            if(!Math_cantidad || Math_cantidad <= 0) { 
+            if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
             
-            let remanente = parseInt(Math_cantidad);
+            let remanente = parseInt(Math_cantidad, 10);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
             let lotesAsignados = inventarioData1.filter(item => {
                 if (!item.sku) return false;
 
-                // REQUERIMIENTO 2: EXCLUSIÓN OPERATIVA AL MOMENTO DE CONFIRMAR EL DESCUENTO EN NUBE
                 if (item.ubicacion) {
                     let u = item.ubicacion.toString().toUpperCase().trim();
                     if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -910,12 +908,12 @@
                     }
                 }
 
-                let skuInventario = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let skuBuscado = skuPuroBusqueda.replace(/^0+/, "");
-                return skuInventario === skuBuscado && item.unidades > 0;
+                // CORRECCIÓN DE MATCH: Forzar la lectura matemática de enteros puros para evadir decimales flotantes del XLSX (.00)
+                let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                let skuBuscadoMat = parseInt(skuPuroBusqueda, 10);
+                return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
             });
             
-            // FILTRADO FIFO: SE EVALÚAN LOS LOTES DE CAJAS_TIENDA ORDENADOS ESTRICTAMENTE POR FECHA DE CADUCIDAD
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
             
             if (lotesAsignados.length === 0) { 
@@ -937,10 +935,10 @@
 
             logRef.push({
                 operador: nombreOperador,
-                sku: skuPuroBusqueda,
+                sku: parseInt(skuPuroBusqueda, 10).toString(),
                 fifoLpnOptimizado: primerLpnImplicado, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
-                cant: parseInt(Math_cantidad),
+                cant: parseInt(Math_cantidad, 10),
                 fv: lotesAsignados[0].vencimiento || "SIN FECHA",
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
@@ -980,7 +978,6 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // REQUERIMIENTO 1 CUMPLIDO: SE ELIMINARON LAS VENTANAS DE POP-UPS (CONFIRM/ALERT) EJECUTANDO LA LIMPIEZA INMEDIATA
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1111,7 +1108,6 @@
                 })).filter(x => {
                     if (!x.sku || !x.pantalla) return false;
                     let uDestino = x.pantalla.toString().trim().toUpperCase();
-                    // REQUERIMIENTO 4: CRUCE CONFIGURADO SÓLO PARA LAS 3 UBICACIONES SOLICITADAS
                     return uDestino === "RF_REPONER_RESERVA" || uDestino === "RF_DIVIDIR LPN" || uDestino === "RF_REPONER_PUERTA";
                 });
 
@@ -1121,7 +1117,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // ================= REQUERIMIENTO 5: EVALUACIÓN DE LPNS CONSUMIDOS POR RF CONTRA REGLA FIFO PUESTA EN VIVO =================
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
@@ -1140,7 +1135,6 @@
                 );
 
                 if (coincidenciaLog) {
-                    // Verificamos si el LPN ejecutado en Radiofrecuencia coincide con el que pidió el sistema por fecha de vencimiento
                     if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()) {
                         rutaSugerida = `✔ LPN CORRECTO: ${coincidenciaLog.fifoLpnOptimizado} (Cumple FIFO - Caducidad Asegurada)`;
                         txtColorRuta = "text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded";
@@ -1149,7 +1143,6 @@
                         txtColorRuta = "text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded";
                     }
                 } else {
-                    // Si no tiene las ubicaciones requeridas o no se ha cargado la data, se queda vacío o en alerta limpia
                     rutaSugerida = ""; 
                     txtColorRuta = "text-gray-400";
                 }
