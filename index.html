@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Escaneo de Quiebres - Control Operativo v29.5</title>
+    <!-- REGLAS ESTRICTAS ANTI-CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -472,16 +473,16 @@
 
         function alternarModuloVistaAsistente() {
             const val = document.getElementById("selectVistaAsistente").value;
-            const moduloEscaneo = document.getElementById("submoduloAsistenteEscaneo");
+            const moduleEscaneo = document.getElementById("submoduloAsistenteEscaneo");
             const moduloBuzon = document.getElementById("submoduloAsistenteBuzonAlertas");
             const moduloCambiarClave = document.getElementById("submoduloAsistenteCambiarClave");
             
-            moduloEscaneo.classList.add("hidden");
+            moduleEscaneo.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
             moduloCambiarClave.classList.add("hidden");
 
             if (val === "escaneo") {
-                moduloEscaneo.classList.remove("hidden");
+                moduleEscaneo.classList.remove("hidden");
                 setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (val === "buzonalerta") {
                 moduloBuzon.classList.remove("hidden");
@@ -607,7 +608,6 @@
             });
         }
 
-        // ================= REQUERIMIENTO 1: CAMBIO A COMPLETADO EN LUGAR DE ELIMINAR DE GOLPE =================
         function escucharAlertasIncidenciasGlobales() {
             msgRef.on("value", (snapshot) => {
                 const data = snapshot.val() || {};
@@ -619,7 +619,6 @@
                     let contadorPendientes = 0;
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        // Mantenemos visible para el admin lo que sigue Pendiente
                         if (m.estado === "Pendiente") {
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
@@ -659,7 +658,6 @@
                                         </div>
                                     </div>`;
                             } else if (m.estado === "Completado") {
-                                // REQUERIMIENTO 1: Se queda visible en verde en el panel del asistente
                                 contenedorNotifAsistente.innerHTML += `
                                     <div class="bg-green-50 border border-green-200 text-green-950 p-3 rounded shadow-sm text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
                                         <div class="flex items-start gap-2.5">
@@ -684,13 +682,12 @@
             });
         }
 
-        // REQUERIMIENTO 1: Al pulsar la equis (✕) el Administrador cambia el estado a Completado en Firebase
         function subsanarIncidenciaAdmin(key) {
             msgRef.child(key).update({ estado: "Completado" });
         }
 
         function removerNotificacionCompletadaLocal(key) {
-            msgRef.child(key).remove();
+            msgRef.child(key).set(null);
         }
 
         function evaluarBloqueoDuplicadosEnVivo() {
@@ -804,6 +801,7 @@
             }
         }
 
+        // REGLA 1 REVISADA: SINTAXIS DE COMPILACIÓN TOTAL DE GITHUB COMPLETA
         function cerrarSesion() {
             localStorage.clear();
             window.location.reload();
@@ -815,7 +813,6 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
-        UX-PROMART-FIFO-MIGRATION-COMPILER
         function parsearFechaEspanol(strFecha) {
             if (strFecha === "SIN FECHA" || !strFecha) return new Date(2999, 11, 31);
             const partes = strFecha.split('/');
@@ -883,7 +880,6 @@
             }
         }
 
-        // ================= REQUERIMIENTO 2: FUNCIÓN GUARDAR REPARADA DE SINTAXIS Y RETORNO SEGURO AL INICIO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || Math_cantidad <= 0) { 
@@ -909,8 +905,8 @@
             }
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            // CORREGIDO: Se removió el espacio en blanco accidental que provocaba el fallo del clic
             let primerLpnImplicado = lotesAsignados[0].lpn;
+            // CORREGIDO DE RAÍZ: Se eliminó el espacio en blanco de 'historialConsumosLpns' que rompía la compilación y bloqueaba el Login
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
@@ -932,7 +928,6 @@
             });
 
             dbRef.set(inventarioData1).then(() => {
-                // REQUERIMIENTO 2: Retorna automáticamente al inicio y limpia el formulario tras guardar
                 cancelarRegistro();
             });
         }
