@@ -242,7 +242,7 @@
 
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div>ADVERTENCIA: Este producto no cuenta con stock disponible.</div>
+                        <div>ADVERTENCIA: This product doesn't have current inventory.</div>
                     </div>
 
                     <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
@@ -347,7 +347,7 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
-        // CORRECCIÓN SINTAXIS MEMORIA (LÍNEA 672): Puente de retención FIFO intacto globalizado
+        // CORRECCIÓN GLOBAL (LÍNEA 672): Variable global para retener match de lotes entre procesos
         let lotesFiltradosTurno = [];
 
         let usuariosDB = {
@@ -638,7 +638,7 @@
                             let skuLimpio = rawSku.toString().replace(/["']/g, "").trim().toUpperCase();
                             let descLimpia = rawDesc ? rawDesc.toString().replace(/["']/g, "").trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
                             
-                            // GATILLADO FIABLE: Garantiza que la búsqueda encierre la llave entre comillas dobles literales ocultas ("")
+                            // INTEGRACIÓN DE GATILLADO EXCLUSIVA: Envuelve los códigos del JSON entre comillas dobles literales ocultas ("")
                             let llaveSkuOculta = '"' + skuLimpio + '"';
                             databaseCat_Ean[llaveSkuOculta] = { sku: skuLimpio, desc: descLimpia };
 
@@ -725,7 +725,7 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().replace(/["']/g, "").toUpperCase();
                 if (!entradaOriginal) return;
 
-                // REAJUSTE DE GATILLADO: Envuelve de forma inmediata el código entre comillas dobles literales invisibles ("")
+                // REAJUSTE DE GATILLADO: Abre y cierra de forma interna el código entre comillas dobles literales invisibles ("")
                 let llaveBusquedaOculta = '"' + entradaOriginal + '"';
                 
                 let skuTraducido = entradaOriginal; 
@@ -747,11 +747,11 @@
 
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
 
-                // LÍNEA 742 CORREGIDA: Almacena de forma directa las coincidencias en la memoria global puente
+                // LÍNEA 742 CORREGIDA: Sincroniza las coincidencias de stock directamente en la memoria global puente
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
-                    // REQUERIMIENTO: Omitir ubicaciones bloqueadas operativas de merma/averías
+                    // REQUERIMIENTO 2: EXCLUSIÓN DE LAS UBICACIONES BLOQUEADAS ENTREGADAS EN LA IMAGEN 3
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -759,6 +759,7 @@
                         }
                     }
 
+                    // MATCH NUMÉRICO EN AMBOS EXTREMOS EVITANDO VARIACIONES DE TIPADO
                     let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
                     let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
                     return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
@@ -790,7 +791,7 @@
             }
         }
 
-        // ================= FUNCIÓN GUARDAR CORREGIDA OPERANDO AL 100% CON LA DATA DEL PUENTE DE MEMORIA GLOBAL =================
+        // ================= FUNCIÓN GUARDAR COMPLETAMENTE ENLAZADA: ENVÍA EL REPORTE Y RESTABLECE LA PANTALLA EN VIVO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -799,9 +800,8 @@
             }
             
             let remanente = parseInt(Math_cantidad, 10);
-            let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
-            // LÍNEA 771 REAJUSTADA: Carga con total fluidez el arreglo retenido en memoria para no abortar el guardado
+            // LÍNEA 771 REAJUSTADA: Lee de forma exitosa los lotes pre-validados desde la variable global compartida
             let lotesAsignados = [...lotesFiltradosTurno];
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
@@ -814,7 +814,7 @@
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             let primerLpnImplicado = lotesAsignados[0].lpn;
             
-            // LÍNEA 769 CORREGIDA: Variable limpia de espacios accidentales para compilar sin bloqueos
+            // LÍNEA 769 CORREGIDA: Saneada sin espacios accidentales
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
@@ -830,7 +830,7 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
-            // GATILLADO EN VIVO HACIA EL PANEL DEL ADMINISTRADOR EN FIREBASE
+            // GATILLADO DEFINITIVO HACIA EL PANEL DEL ADMINISTRADOR EN FIREBASE
             logRef.push({
                 operador: nombreOperador,
                 sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
@@ -841,6 +841,7 @@
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
+            // Sincroniza la rebaja de inventario en la nube y restablece la interfaz automáticamente
             dbRef.set(inventarioData1).then(() => {
                 cancelarRegistro();
             });
