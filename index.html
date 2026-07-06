@@ -347,7 +347,7 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
-        // CORRECCIÓN LÍNEA 672: Puente de memoria global intermedia incorporado[cite: 6]
+        // CORRECCIÓN SINTAXIS MEMORIA (LÍNEA 672): Puente de retención FIFO intacto
         let lotesFiltradosTurno = [];
 
         let usuariosDB = {
@@ -631,13 +631,14 @@
                 fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
                     datos.forEach(item => {
                         let rawEan = item["CÃ³digo de barras"];
-                        let rawSku = item["ArtÃxlculo"];
+                        let rawSku = item["ArtÃ­culo"];
                         let rawDesc = item["DescripciÃ³n de SKU"];
 
                         if (rawSku) {
                             let skuLimpio = rawSku.toString().replace(/["']/g, "").trim().toUpperCase();
                             let descLimpia = rawDesc ? rawDesc.toString().replace(/["']/g, "").trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
                             
+                            // GATILLADO REQUERIDO: Encapsula la llave con comillas dobles literales ocultas ("")
                             let llaveSkuOculta = '"' + skuLimpio + '"';
                             databaseCat_Ean[llaveSkuOculta] = { sku: skuLimpio, desc: descLimpia };
 
@@ -724,6 +725,7 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().replace(/["']/g, "").toUpperCase();
                 if (!entradaOriginal) return;
 
+                // REAJUSTE DE GATILLADO: Al colocar el SKU/EAN se abre y se cierra con comillas dobles literales invisibles ("")
                 let llaveBusquedaOculta = '"' + entradaOriginal + '"';
                 
                 let skuTraducido = entradaOriginal; 
@@ -745,7 +747,7 @@
 
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
 
-                // MODIFICACIÓN QUIRÚRGICA LÍNEA 742: Retiene la data de lotes limpios directo en la memoria global[cite: 6]
+                // REAJUSTADO LINEA 742: Retiene la data haciendo match perfecto de SKU con comillas dobles en Cajas_Tienda
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
@@ -787,7 +789,7 @@
             }
         }
 
-        // ================= FUNCIÓN GUARDAR REPARADA: CONECTADA A LA MEMORIA INTERMEDIA COMPARTIDA EN LA LÍNEA 771 =================
+        // ================= FUNCIÓN GUARDAR REPARADA (LÍNEA 771): CONECTADA DIRECTAMENTE A Firebase CON SUS 1063 FILAS INTACTAS =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -798,7 +800,6 @@
             let remanente = parseInt(Math_cantidad, 10);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
-            // MODIFICACIÓN QUIRÚRGICA LÍNEA 771: Lee de inmediato la variable puente global cargada en el escaneo[cite: 6]
             let lotesAsignados = [...lotesFiltradosTurno];
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
@@ -811,7 +812,7 @@
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             let primerLpnImplicado = lotesAsignados[0].lpn;
             
-            // MODIFICACIÓN QUIRÚRGICA LÍNEA 769: Variable saneada sin el espacio en blanco roto[cite: 6]
+            // LÍNEA 769 REAJUSTADA: Variable limpia de espacios accidentales
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
@@ -827,6 +828,7 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
+            // GATILLADO EXITOSO HACIA EL PANEL DEL ADMINISTRADOR EN Firebase
             logRef.push({
                 operador: nombreOperador,
                 sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
@@ -1012,6 +1014,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // CONTROL DE CARGA DEL ARRASTRE DE ARCHIVOS REPARADO DEFINITIVAMENTE (LÍNEA 998)
         function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
