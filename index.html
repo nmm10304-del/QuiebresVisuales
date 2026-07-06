@@ -140,34 +140,6 @@
                 </div>
             </div>
 
-            <div id="wrapperModuloClaveAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-blue-200 bg-blue-50/10 space-y-3">
-                <div class="border-b border-blue-100 pb-2">
-                    <h3 class="text-sm font-bold text-blue-700 uppercase flex items-center gap-2">🔑 Panel de Restablecimiento de Credenciales de Personal</h3>
-                </div>
-                <div class="max-w-md space-y-3 p-2 bg-white rounded border">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Seleccionar Usuario de Asistente:</label>
-                        <select id="selectResetUserAdmin" class="w-full p-2 border rounded text-xs focus:outline-none font-mono font-bold text-gray-800 bg-gray-50">
-                            <option value="HP72545443">Andy (HP72545443)</option>
-                            <option value="HP74139234">Ale (HP74139234)</option>
-                            <option value="HP70729960">Farro (HP70729960)</option>
-                            <option value="HP75235329">Jairo (HP75235329)</option>
-                            <option value="HP47431216">Moses (HP47431216)</option>
-                            <option value="HP74315583">Job (HP74315583)</option>
-                            <option value="HP46411164">Jhon (HP46411164)</option>
-                            <option value="HP48848362">Rommel (HP48848362)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Nueva Contraseña Temporal:</label>
-                        <input type="text" id="inputResetPassAdmin" placeholder="Coloca la nueva clave aquí" class="w-full p-2 border rounded text-xs font-semibold focus:outline-none">
-                    </div>
-                    <button onclick="ejecutarFuerzaClaveAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded shadow-sm transition">
-                        Guardar Nueva Contraseña
-                    </button>
-                </div>
-            </div>
-
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
@@ -313,28 +285,6 @@
                         <p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>
                     </div>
                 </div>
-
-                <div id="submoduloAsistenteCambiarClave" class="hidden space-y-4">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-blue-600 pl-2">🔑 Cambiar contraseña</h2>
-                    <p class="text-xs text-gray-500 italic">Actualiza tu clave de acceso personal del sistema en la nube.</p>
-                    <div class="p-4 border rounded-lg bg-gray-50/50 space-y-3 max-w-sm">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1">Nueva contraseña:</label>
-                            <div class="relative">
-                                <input type="password" id="inputClaveNuevaAsistente" placeholder="Escribe tu nueva clave" class="w-full p-2.5 pr-10 border rounded text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                <button type="button" onclick="alternarVisibilidadPassword('inputClaveNuevaAsistente', 'iconoOjoAsistente')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-500">
-                                    <svg id="iconoOjoAsistente" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        <button onclick="guardarClaveNuevaDesdeAsistente()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-xs transition shadow-sm uppercase tracking-wide">
-                            Actualizar Clave
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -366,7 +316,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detallado..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
@@ -386,7 +336,6 @@
         const dbRef = db.ref("inventarioMaestro");
         const logRef = db.ref("logsRepotenciacion");
         const msgRef = db.ref("alertasIncidencias");
-        const passRef = db.ref("credencialesForzadas");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -405,7 +354,7 @@
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
             "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
             "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
-            "HP47431216": { font_mono: "Moses", clave: "Hpsa2027" },
+            "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
             "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
             "HP46411164": { nombre: "Jhon", clave: "Hpsa2027" },
             "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
@@ -433,7 +382,6 @@
             escucharInventarioEnTiempoReal();
             escucharLogsRepotenciacionTiempoReal();
             escucharAlertasIncidenciasGlobales();
-            escucharClavesForzadasTiempoReal();
             verificarSesionGuardada();
         });
 
@@ -472,44 +420,18 @@
 
         function alternarModuloVistaAsistente() {
             const val = document.getElementById("selectVistaAsistente").value;
-            const moduloEscaneo = document.getElementById("submoduloAsistenteEscaneo");
+            const moduleEscaneo = document.getElementById("submoduloAsistenteEscaneo");
             const moduloBuzon = document.getElementById("submoduloAsistenteBuzonAlertas");
-            const moduloCambiarClave = document.getElementById("submoduloAsistenteCambiarClave");
             
-            moduloEscaneo.classList.add("hidden");
+            moduleEscaneo.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
-            moduloCambiarClave.classList.add("hidden");
 
             if (val === "escaneo") {
-                moduloEscaneo.classList.remove("hidden");
+                moduleEscaneo.classList.remove("hidden");
                 setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (val === "buzonalerta") {
                 moduloBuzon.classList.remove("hidden");
-            } else if (val === "cambiarclave") {
-                moduloCambiarClave.classList.remove("hidden");
-                document.getElementById('inputClaveNuevaAsistente').value = "";
             }
-        }
-
-        function guardarClaveNuevaDesdeAsistente() {
-            const nuevaClave = document.getElementById('inputClaveNuevaAsistente').value.trim();
-            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            
-            if (!nuevaClave) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor, escriba la contraseña que desea asignar.");
-                return;
-            }
-
-            passRef.child(idUsuarioLogueado).set(nuevaClave).then(() => {
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionExitoTitulo').innerText = `Estimado ${nombreUser}`;
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada correctamente en el servidor.";
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
-                
-                document.getElementById("selectVistaAsistente").value = "escaneo";
-                alternarModuloVistaAsistente();
-            });
         }
 
         function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
@@ -524,36 +446,13 @@
             const val = document.getElementById("selectVistaModuloAdmin").value;
             if (val === "todos") {
                 document.getElementById("wrapperModuloBuzonAdmin").classList.add("hidden");
-                document.getElementById("wrapperModuloClaveAdmin").classList.add("hidden");
                 document.getElementById("containerCuadroRepotenciar").classList.remove("hidden");
                 document.getElementById("containerCuadroCruceMacropurga").classList.remove("hidden");
             } else {
                 document.getElementById("containerCuadroRepotenciar").classList.add("hidden");
                 document.getElementById("containerCuadroCruceMacropurga").classList.add("hidden");
                 document.getElementById("wrapperModuloBuzonAdmin").classList.toggle("hidden", val !== "buzon");
-                document.getElementById("wrapperModuloClaveAdmin").classList.toggle('hidden', val !== 'password');
             }
-        }
-
-        function escucharClavesForzadasTiempoReal() {
-            passRef.on("value", (snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    Object.keys(data).forEach(u => {
-                        if(usuariosDB[u]) usuariosDB[u].clave = data[u];
-                    });
-                }
-            });
-        }
-
-        function ejecutarFuerzaClaveAdmin() {
-            const targetUser = document.getElementById("selectResetUserAdmin").value;
-            const newPass = document.getElementById("inputResetPassAdmin").value.trim();
-            if(!newPass) { alert("Escriba la nueva contraseña temporal."); return; }
-            passRef.child(targetUser).set(newPass).then(() => {
-                alert(`Contraseña de ${usuariosDB[targetUser]?.nombre || targetUser} actualizada con éxito.`);
-                document.getElementById("inputResetPassAdmin").value = "";
-            });
         }
 
         function escucharInventarioEnTiempoReal() {
@@ -847,8 +746,7 @@
 
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item.sku) return false;
-
-                    // REQUERIMIENTO 2: EXCLUSIÓN DE LAS UBICACIONES BLOQUEADAS ENTREGADAS EN LA IMAGEN 3
+                    
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -856,11 +754,10 @@
                         }
                     }
 
-                    let skuInventarioExcel = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let skuBuscadoExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
-                    
-                    // REQUERIMIENTO 2 EXTRA: ANULAR COMPLETAMENTE SI LAS UNIDADES ACTUALES ESTÁN EN 0
-                    return skuInventarioExcel === skuBuscadoExcel && parseInt(item.unidades || 0) > 0;
+                    // MATCH DE ESCANEO ORIGINAL: Conversión numérica robusta para evitar quiebres por celdas del XLSX
+                    let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                    let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
+                    return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
@@ -889,20 +786,20 @@
             }
         }
 
+        // ================= FUNCIÓN GUARDAR REPARADA: MATCH DE SKU FORZADO POR PARSEINT DE MANERA COHERENTE =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
-            if(!Math_cantidad || Math_cantidad <= 0) { 
+            if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
             
-            let remanente = parseInt(Math_cantidad);
+            let remanente = parseInt(Math_cantidad, 10);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
             let lotesAsignados = inventarioData1.filter(item => {
                 if (!item.sku) return false;
 
-                // REQUERIMIENTO 2: EXCLUSIÓN OPERATIVA AL MOMENTO DE CONFIRMAR EL DESCUENTO EN NUBE
                 if (item.ubicacion) {
                     let u = item.ubicacion.toString().toUpperCase().trim();
                     if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -910,12 +807,12 @@
                     }
                 }
 
-                let skuInventario = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let skuBuscado = skuPuroBusqueda.replace(/^0+/, "");
-                return skuInventario === skuBuscado && item.unidades > 0;
+                // CORRECCIÓN CLAVE DE MATCH: Forzar la lectura matemática de enteros puros para evadir decimales del XLSX (.00)
+                let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                let skuBuscadoMat = parseInt(skuPuroBusqueda, 10);
+                return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
             });
             
-            // FILTRADO FIFO: SE EVALÚAN LOS LOTES DE CAJAS_TIENDA ORDENADOS ESTRICTAMENTE POR FECHA DE CADUCIDAD
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
             
             if (lotesAsignados.length === 0) { 
@@ -937,10 +834,10 @@
 
             logRef.push({
                 operador: nombreOperador,
-                sku: skuPuroBusqueda,
+                sku: parseInt(skuPuroBusqueda, 10).toString(),
                 fifoLpnOptimizado: primerLpnImplicado, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
-                cant: parseInt(Math_cantidad),
+                cant: parseInt(Math_cantidad, 10),
                 fv: lotesAsignados[0].vencimiento || "SIN FECHA",
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
@@ -980,7 +877,6 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // REQUERIMIENTO 1 CUMPLIDO: SE ELIMINARON LAS VENTANAS DE POP-UPS (CONFIRM/ALERT) EJECUTANDO LA LIMPIEZA INMEDIATA
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1111,7 +1007,6 @@
                 })).filter(x => {
                     if (!x.sku || !x.pantalla) return false;
                     let uDestino = x.pantalla.toString().trim().toUpperCase();
-                    // REQUERIMIENTO 4: CRUCE CONFIGURADO SÓLO PARA LAS 3 UBICACIONES SOLICITADAS
                     return uDestino === "RF_REPONER_RESERVA" || uDestino === "RF_DIVIDIR LPN" || uDestino === "RF_REPONER_PUERTA";
                 });
 
@@ -1121,7 +1016,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // ================= REQUERIMIENTO 5: EVALUACIÓN DE LPNS CONSUMIDOS POR RF CONTRA REGLA FIFO PUESTA EN VIVO =================
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
@@ -1140,7 +1034,6 @@
                 );
 
                 if (coincidenciaLog) {
-                    // Verificamos si el LPN ejecutado en Radiofrecuencia coincide con el que pidió el sistema por fecha de vencimiento
                     if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()) {
                         rutaSugerida = `✔ LPN CORRECTO: ${coincidenciaLog.fifoLpnOptimizado} (Cumple FIFO - Caducidad Asegurada)`;
                         txtColorRuta = "text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded";
@@ -1149,7 +1042,6 @@
                         txtColorRuta = "text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded";
                     }
                 } else {
-                    // Si no tiene las ubicaciones requeridas o no se ha cargado la data, se queda vacío o en alerta limpia
                     rutaSugerida = ""; 
                     txtColorRuta = "text-gray-400";
                 }
