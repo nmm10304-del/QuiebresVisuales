@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escaneo de Quiebres - Control Operativo v29.5</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        .bg-promart { background-color: #ff6e00; }
+        .text-promart { color: #ff6e00; }
+        .border-promart { border-color: #ff6e00; }
+        .focus-promart:focus { border-color: #ff6e00; --tw-ring-color: #ff6e00; }
+        .drop-zone--over { border-color: #ff6e00; background-color: #fff7ed; }
+        .drop-zone-blue--over { border-color: #2563eb; background-color: #eff6ff; }
+        .drop-zone-purple--over { border-color: #9333ea; background-color: #faf5ff; }
+    </style>
+</head>
+<body class="bg-white font-sans min-h-screen flex flex-col relative">
+
+    <nav class="bg-promart p-4 text-white flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
+        </div>
+        <div id="navUsuario" class="hidden text-sm font-semibold flex items-center gap-4">
+            <div class="flex flex-col text-right">
+                <span class="text-xs opacity-90">Colaborador</span>
+                <span id="nombreUsuarioActivo" class="font-bold font-mono text-sm bg-black text-white px-2 py-0.5 rounded shadow-sm"></span>
+            </div>
+            <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-3 rounded text-xs transition shadow-sm border border-gray-800">
+                Salir
+            </button>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
+
+        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5">
+            <div class="flex justify-center pb-2 bg-promart rounded-lg p-4 shadow-inner">
+                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
+            </div>
+            <h2 class="text-lg font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                    <input type="text" id="userInput" onkeypress="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <div class="relative">
+                        <input type="password" id="passwordInput" onkeypress="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2.5 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none">
+                        <button type="button" onclick="alternarVisibilidadPassword('passwordInput', 'iconoOjoLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-orange-500">
+                            <svg id="iconoOjoLogin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <button onclick="autenticarUsuario()" class="w-full bg-promart hover:opacity-95 text-white font-bold py-2.5 rounded shadow transition uppercase text-sm tracking-wider">
+                    Ingresar al Sistema
+                </button>
+            </div>
+        </div>
+        
+        <div id="panelAdmin" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="dropZoneData1" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Cajas_Tienda</h3>
+                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
+                    <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden"/>
+                    <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                        Seleccionar e Inyectar Stock
+                    </button>
+                    <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold">⚠️ Conectando base de datos...</p>
+                </div>
+
+                <div id="dropZoneJ_Satelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">JSatélite</h3>
+                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para la ruta solicitada.</p>
+                    <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden"/>
+                    <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                        Seleccionar Archivo
+                    </button>
+                    <p id="statusJSatelite" class="text-[11px] text-green-600 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
+                </div>
+
+                <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Detalle_Reposición</h3>
+                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic para informe final.</p>
+                    <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden"/>
+                    <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                        Seleccionar Archivo
+                    </button>
+                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold">Waiting...</p>
+                </div>
+            </div>
+
+            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">Seleccionar módulo de visualización:</label>
+                <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
+                    <option value="todos">📋 Mostrar Monitores de Control Operativo</option>
+                    <option value="buzon">📥 Buzón de incidencias</option>
+                </select>
+            </div>
+
+            <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
+                    <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
+                </div>
+                <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table class="min-w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-red-100 text-red-900 uppercase text-xs sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border">Asistente</th>
+                                <th class="px-4 py-2 border">Código Reportado</th>
+                                <th class="px-4 py-2 border">Detalle / Motivo de Alerta</th>
+                                <th class="px-4 py-2 border text-center">Fecha y Hora</th>
+                                <th class="px-4 py-2 border text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMensajesBody" class="divide-y divide-gray-200 text-gray-700 text-xs bg-white">
+                            <tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                            <div class="flex items-center gap-1.5">
+                                <span>Unidades Validadas:</span>
+                                <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span>Cantidad SKUs (Únicos):</span>
+                                <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
+                            Descargar Excel Repotenciación
+                        </button>
+                        <button onclick="eliminarData('repotenciacion', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
+                            Eliminar data
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-[440px] overflow-y-auto">
+                    <table class="min-w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border">Operador</th>
+                                <th class="px-4 py-2 border">SKU</th>
+                                <th class="px-4 py-2 border bg-orange-100 text-orange-900">LPN</th>
+                                <th class="px-4 py-2 border">Descripción</th>
+                                <th class="px-4 py-2 border text-center">Cant</th>
+                                <th class="px-4 py-2 border text-center">F. Caducidad</th>
+                                <th class="px-4 py-2 border text-purple-700 bg-purple-50">🔮 LPNS Consumidos por RF</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
+                            <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 Monitor de Cruce Macropurga</h3>
+                        <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.</p>
+                    </div>
+                    <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
+                        Procesar y Cruzar Archivos
+                    </button>
+                </div>
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                    <table class="min-w-full text-sm text-left border border-gray-200">
+                        <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 border">Nro LPN Mapeado</th>
+                                <th class="px-4 py-2 border">SKU</th>
+                                <th class="px-4 py-2 border">Pantalla RF</th>
+                                <th class="px-4 py-2 border text-center">Cant. Original</th>
+                                <th class="px-4 py-2 border text-center : font-bold">Cant. Ajustada</th>
+                                <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">🔮 LPNS Consumidos por RF</th>
+                                <th class="px-4 py-2 border">Usuario Actividad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
+                            <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
+            
+            <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
+                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
+            </div>
+
+            <div class="px-6 mt-4 space-y-4">
+                <div class="bg-gray-50 p-2 border rounded flex items-center gap-3 shadow-inner">
+                    <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wide">Módulo:</label>
+                    <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-2 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-sm cursor-pointer flex-1">
+                        <option value="escaneo">🔍 Escaneo de reposición</option>
+                        <option value="buzonalerta">📥 Buzón de alertas recientes</option>
+                    </select>
+                </div>
+
+                <div id="submoduloAsistenteEscaneo" class="space-y-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
+                    
+                    <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
+                        <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
+                        <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
+                        <div class="pt-2 border-t border-orange-200/60 flex flex-col gap-1">
+                            <span class="text-xs text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900"></b></span>
+                        </div>
+                    </div>
+
+                    <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
+                        <span class="text-2xl">⚠️</span>
+                        <div>ADVERTENCIA: Este producto no cuenta con stock disponible.</div>
+                    </div>
+
+                    <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
+                                <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
+                                       class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
+                                       onkeypress="handleBarcode(event)">
+                            </div>
+                            <div id="containerInputLpn" class="invisible">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
+                                <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
+                                       class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
+                                       placeholder="00" onkeypress="handleCantidadKey(event)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="resultadoEscaneo" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+                        <div class="flex gap-3">
+                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition">Guardar</button>
+                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition">Cancelar</button>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t flex flex-col gap-2">
+                        <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
+                            🚨 SKU/EAN no escanea
+                        </button>
+                    </div>
+                </div>
+
+                <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
+                    <p class="text-xs text-gray-500 italic">Aquí verás el estado en tiempo real de tus incidencias enviadas al administrador.</p>
+                    <div id="contenedorNotificacionesAsistente" class="space-y-3 max-h-96 overflow-y-auto pt-1">
+                        <p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
+            <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
+            <div class="space-y-2">
+                <h4 id="txtNotificacionExitoTitulo" class="text-base font-bold text-gray-900">Estimado Usuario</h4>
+                <p id="txtNotificacionExitoDetalle" class="text-xs text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
+            </div>
+            <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow transition uppercase tracking-wider">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
+            <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
+            
+            <div id="graficoAlertaDuplicado" class="hidden bg-red-100 border border-red-400 text-red-900 p-3 rounded-lg flex items-start gap-2.5 shadow-sm text-xs font-semibold animate-pulse">
+                <span class="text-xl">🛡️</span>
+                <div id="txtAlertaDuplicado"></div>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
+                    <input type="text" id="incidenciaCodigoInput" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
+                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200">Enviar Alerta</button>
+                <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            projectId: "quiebresvisuales",
+            databaseURL: "https://quiebresvisuales-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const dbRef = db.ref("inventarioMaestro");
+        const logRef = db.ref("logsRepotenciacion");
+        const msgRef = db.ref("alertasIncidencias");
+
+        let data1Cargada = false;
+        let inventarioData1 = [];     
+        let reqJ_Satelite = {};
+        let matrixDetalleReposicion = []; 
+        let registrosHistoricosRepotenciar = []; 
+        let databaseCat_Ean = {}; 
+        let cacheAlertasGlobales = {}; 
+        let rolUsuarioActivo = "";
+        let idUsuarioLogueado = "";
+        let totalUnidadesRepotenciar = 0;
+        let skuEscaneadoTemporal = "";
+        
+        // CORRECCIÓN LÍNEA 672: Puente de memoria global intermedia incorporado[cite: 6]
+        let lotesFiltradosTurno = [];
+
+        let usuariosDB = {
+            "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
+            "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
+            "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
+            "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
+            "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
+            "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
+            "HP46411164": { nombre: "Jhon", clave: "Hpsa2027" },
+            "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
+            "ADMIN": { nombre: "Administrador", clave: "Admin2026" }
+        };
+
+        const urlActual = window.location.href;
+        let pathBaseGitHub = "";
+
+        if (urlActual.includes("github.io")) {
+            let partesUrl = urlActual.split("/"); 
+            let usuario = partesUrl[2].split(".")[0];
+            let repositorio = partesUrl[3];
+            pathBaseGitHub = `https://raw.githubusercontent.com/${usuario}/${repositorio}/main/`;
+        } else {
+            pathBaseGitHub = "./"; 
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDrop("dropZoneData1", "fileData1", "btnClickData1", procesarData1, "drop-zone--over");
+            setupDragAndDrop("dropZoneJ_Satelite", "fileJSatelite", "btnClickJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
+            setupDragAndDrop("dropZoneData2", "fileData2", "btnClickData2", procesarData2, "drop-zone-purple--over");
+            
+            descargarCatalogoAutomaticoRemoto();
+            escucharInventarioEnTiempoReal();
+            escucharLogsRepotenciacionTiempoReal();
+            escucharAlertasIncidenciasGlobales();
+            verificarSesionGuardada();
+        });
+
+        function verificarSesionGuardada() {
+            const usuarioGuardado = localStorage.getItem("sesion_usuario");
+            const rolGuardado = localStorage.getItem("sesion_rol");
+            if (usuarioGuardado && rolGuardado) {
+                rolUsuarioActivo = rolGuardado; idUsuarioLogueado = usuarioGuardado;
+                document.getElementById('seccionLogin').classList.add('hidden');
+                document.getElementById('navUsuario').classList.remove('hidden');
+                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
+                switchRole();
+            }
+        }
+
+        function alternarVisibilidadPassword(idInput, idIcono) {
+            const input = document.getElementById(idInput);
+            const icono = document.getElementById(idIcono);
+            if (!input || !icono) return;
+
+            if (input.type === "password") {
+                input.type = "text";
+                icono.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>`;
+            } else {
+                input.type = "password";
+                icono.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>`;
+            }
+        }
+
+        function alternarModuloVistaAsistente() {
+            const val = document.getElementById("selectVistaAsistente").value;
+            const moduleEscaneo = document.getElementById("submoduloAsistenteEscaneo");
+            const moduloBuzon = document.getElementById("submoduloAsistenteBuzonAlertas");
+            
+            moduleEscaneo.classList.add("hidden");
+            moduloBuzon.classList.add("hidden");
+
+            if (val === "escaneo") {
+                moduleEscaneo.classList.remove("hidden");
+                setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+            } else if (val === "buzonalerta") {
+                moduloBuzon.classList.remove("hidden");
+            }
+        }
+
+        function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
+            document.getElementById('iconoNotificacionDinamico').innerText = "⚠️";
+            document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+            document.getElementById('txtNotificacionExitoTitulo').innerText = titulo;
+            document.getElementById('txtNotificacionExitoDetalle').innerText = mensaje;
+            document.getElementById('modalNotificacionExito').classList.remove('hidden');
+        }
+
+        function alternarModuloAdminView() {
+            const val = document.getElementById("selectVistaModuloAdmin").value;
+            if (val === "todos") {
+                document.getElementById("wrapperModuloBuzonAdmin").classList.add("hidden");
+                document.getElementById("containerCuadroRepotenciar").classList.remove("hidden");
+                document.getElementById("containerCuadroCruceMacropurga").classList.remove("hidden");
+            } else {
+                document.getElementById("containerCuadroRepotenciar").classList.add("hidden");
+                document.getElementById("containerCuadroCruceMacropurga").classList.add("hidden");
+                document.getElementById("wrapperModuloBuzonAdmin").classList.toggle("hidden", val !== "buzon");
+            }
+        }
+
+        function escucharInventarioEnTiempoReal() {
+            dbRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    inventarioData1 = Object.values(data);
+                    data1Cargada = true;
+                    document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
+                    document.getElementById('statusData1').innerText = ` Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
+                } else {
+                    inventarioData1 = []; data1Cargada = false;
+                    document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
+                    document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+                }
+            });
+        }
+
+        function escucharLogsRepotenciacionTiempoReal() {
+            logRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                const tbody = document.getElementById('tablaRepotenciarBody');
+                if (data) {
+                    registrosHistoricosRepotenciar = Object.values(data);
+                    registrosHistoricosRepotenciar.reverse(); 
+                    tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
+                    const skusUnicosSet = new Set();
+                    
+                    registrosHistoricosRepotenciar.forEach(item => {
+                        totalUnidadesRepotenciar += parseInt(item.cant || 0);
+                        if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
+                        
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 font-mono text-xs">
+                                <td class="px-4 py-2 border font-sans text-gray-500">${item.operador || "Anonimo"}</td>
+                                <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                                <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${item.fifoLpnOptimizado || "N/A"}</td>
+                                <td class="px-4 py-2 border font-sans text-sm">${item.desc}</td>
+                                <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${item.cant}</td>
+                                <td class="px-4 py-2 border text-center font-bold">${item.fv === "SIN FECHA" ? "" : item.fv}</td>
+                                <td class="px-4 py-2 border font-sans text-purple-950 font-semibold text-xs bg-purple-50/30">${item.purgaCompletaRuta || "N/A"}</td>
+                            </tr>`;
+                    });
+                    document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
+                    document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
+                    document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
+                    document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
+                }
+            });
+        }
+
+        function escucharAlertasIncidenciasGlobales() {
+            msgRef.on("value", (snapshot) => {
+                const data = snapshot.val() || {};
+                cacheAlertasGlobales = data; 
+                
+                const tbodyAdmin = document.getElementById('tablaMensajesBody');
+                if (tbodyAdmin) {
+                    tbodyAdmin.innerHTML = "";
+                    let contadorPendientes = 0;
+                    Object.keys(data).forEach(key => {
+                        let m = data[key];
+                        if (m.estado === "Pendiente") {
+                            contadorPendientes++;
+                            tbodyAdmin.innerHTML += `
+                                <tr class="hover:bg-red-50/50 text-xs">
+                                    <td class="px-4 py-2 border font-bold text-gray-800">${m.remitente}</td>
+                                    <td class="px-4 py-2 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                    <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
+                                    <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
+                                    <td class="px-4 py-2 border text-center">
+                                        <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto">✕</button>
+                                    </td>
+                                </tr>`;
+                        }
+                    });
+                    if (contadorPendientes === 0) {
+                        tbodyAdmin.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>`;
+                    }
+                }
+
+                const contenedorNotifAsistente = document.getElementById('contenedorNotificacionesAsistente');
+                if (contenedorNotifAsistente && rolUsuarioActivo === "asistente") {
+                    contenedorNotifAsistente.innerHTML = "";
+                    let contadorAlertasAsistente = 0;
+
+                    Object.keys(data).forEach(key => {
+                        let m = data[key];
+                        if (m.idAsistente === idUsuarioLogueado) {
+                            contadorAlertasAsistente++;
+                            if (m.estado === "Pendiente") {
+                                contenedorNotifAsistente.innerHTML += `
+                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-3 rounded shadow-sm text-xs font-mono flex items-start gap-2.5 animate-pulse">
+                                        <span class="text-xl">⏳</span>
+                                        <div>
+                                            <span class="font-bold text-gray-900">Reportado: ${m.codigo}</span>
+                                            <p class="text-[11px] text-gray-600 font-sans mt-0.5">Motivo: ${m.motivo}</p>
+                                            <div class="mt-1.5 inline-block text-[10px] bg-orange-500 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">Estado: Pendiente por el Admin</div>
+                                        </div>
+                                    </div>`;
+                            } else if (m.estado === "Completado") {
+                                contenedorNotifAsistente.innerHTML += `
+                                    <div class="bg-green-50 border border-green-200 text-green-950 p-3 rounded shadow-sm text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
+                                        <div class="flex items-start gap-2.5">
+                                            <span class="text-xl text-green-600 font-bold">✔</span>
+                                            <div>
+                                                <span class="font-bold text-gray-900">Completado: ${m.codigo}</span>
+                                                <p class="text-[11px] text-gray-600 font-sans mt-0.5">¡La base de datos ya fue corregida!</p>
+                                                <div class="mt-1.5 inline-block text-[10px] bg-green-600 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">Estado: Completado</div>
+                                            </div>
+                                        </div>
+                                        <button onclick="removerNotificacionCompletadaLocal('${key}')" class="text-gray-400 hover:text-gray-700 font-sans font-bold text-sm px-1.5">✕</button>
+                                    </div>`;
+                            }
+                        }
+                    });
+                    if (contadorAlertasAsistente === 0) {
+                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>`;
+                    }
+                }
+
+                evaluarBloqueoDuplicadosEnVivo();
+            });
+        }
+
+        function subsanarIncidenciaAdmin(key) {
+            msgRef.child(key).update({ estado: "Completado" });
+        }
+
+        function removerNotificacionCompletadaLocal(key) {
+            msgRef.child(key).remove();
+        }
+
+        function evaluarBloqueoDuplicadosEnVivo() {
+            const inputCod = document.getElementById('incidenciaCodigoInput');
+            const inputMot = document.getElementById('incidenciaMotivoInput');
+            if (!inputCod || !inputMot) return;
+            
+            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
+            let motIngresado = inputMot.value.trim();
+            
+            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
+            const txtAlerta = document.getElementById('txtAlertaDuplicado');
+            const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
+
+            if (!codIngresado || !motIngresado) {
+                btnEnviar.disabled = true;
+                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
+                if (!codIngresado) wrapperGrafico.classList.add('hidden');
+                return;
+            }
+
+            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
+                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
+                m.estado === "Pendiente" && 
+                m.idAsistente !== idUsuarioLogueado
+            );
+
+            if (coincidenciaDuplicada) {
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                wrapperGrafico.classList.remove('hidden');
+                btnEnviar.disabled = true;
+                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed border border-gray-200";
+            } else {
+                wrapperGrafico.classList.add('hidden');
+                btnEnviar.disabled = false;
+                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
+            }
+        }
+
+        function descargarCatalogoAutomaticoRemoto() {
+            for (let i = 1; i <= 43; i++) {
+                fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
+                    datos.forEach(item => {
+                        let rawEan = item["CÃ³digo de barras"];
+                        let rawSku = item["ArtÃxlculo"];
+                        let rawDesc = item["DescripciÃ³n de SKU"];
+
+                        if (rawSku) {
+                            let skuLimpio = rawSku.toString().replace(/["']/g, "").trim().toUpperCase();
+                            let descLimpia = rawDesc ? rawDesc.toString().replace(/["']/g, "").trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
+                            
+                            let llaveSkuOculta = '"' + skuLimpio + '"';
+                            databaseCat_Ean[llaveSkuOculta] = { sku: skuLimpio, desc: descLimpia };
+
+                            if (rawEan) {
+                                let eanLimpio = rawEan.toString().replace(/["']/g, "").trim().toUpperCase();
+                                let llaveEanOculta = '"' + eanLimpio + '"';
+                                databaseCat_Ean[llaveEanOculta] = { sku: skuLimpio, desc: descLimpia };
+                            }
+                        }
+                    });
+                })).catch(e => {});
+            }
+        }
+
+        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
+            const dropZone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            
+            dropZone.addEventListener("click", (e) => {
+                if (e.target === btn || btn.contains(e.target) || e.target.tagName === 'BUTTON') return;
+                input.click();
+            });
+            btn.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
+            input.addEventListener("change", () => { callback(); });
+
+            dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); });
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.remove(overClass);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+                    input.files = e.dataTransfer.files; callback(); 
+                }
+            });
+        }
+
+        function handleLoginKey(event) { if (event.key === 'Enter') { event.preventDefault(); autenticarUsuario(); } }
+
+        function autenticarUsuario() {
+            const user = document.getElementById('userInput').value.trim().toUpperCase();
+            const pass = document.getElementById('passwordInput').value;
+            if (usuariosDB[user] && usuariosDB[user].clave === pass) {
+                rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
+                idUsuarioLogueado = user;
+                localStorage.setItem("sesion_usuario", user);
+                localStorage.setItem("sesion_rol", rolUsuarioActivo);
+                document.getElementById('seccionLogin').classList.add('hidden');
+                document.getElementById('navUsuario').classList.remove('hidden');
+                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+                switchRole();
+                
+                if (rolUsuarioActivo === "asistente") {
+                    document.getElementById("selectVistaAsistente").value = "escaneo";
+                    alternarModuloVistaAsistente();
+                }
+            } else { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.clear();
+            window.location.reload();
+        }
+
+        function switchRole() {
+            document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
+            document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
+            if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+        }
+
+        function parsearFechaEspanol(strFecha) {
+            if (strFecha === "SIN FECHA" || !strFecha) return new Date(2999, 11, 31);
+            const partes = strFecha.split('/');
+            return new Date(partes[2], partes[1] - 1, partes[0]);
+        }
+
+        function handleBarcode(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                let entradaOriginal = document.getElementById('barcodeInput').value.trim().replace(/["']/g, "").toUpperCase();
+                if (!entradaOriginal) return;
+
+                let llaveBusquedaOculta = '"' + entradaOriginal + '"';
+                
+                let skuTraducido = entradaOriginal; 
+                let descripcionTraducida = "PRODUCTO IDENTIFICADO";
+
+                if (databaseCat_Ean[llaveBusquedaOculta]) {
+                    skuTraducido = databaseCat_Ean[llaveBusquedaOculta].sku;
+                    descripcionTraducida = databaseCat_Ean[llaveBusquedaOculta].desc;
+                } else {
+                    let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
+                    let llaveBusquedaOcultaSinCeros = '"' + entradaSinCeros + '"';
+                    if (databaseCat_Ean[llaveBusquedaOcultaSinCeros]) {
+                        skuTraducido = databaseCat_Ean[llaveBusquedaOcultaSinCeros].sku;
+                        descripcionTraducida = databaseCat_Ean[llaveBusquedaOcultaSinCeros].desc;
+                    }
+                }
+
+                skuEscaneadoTemporal = skuTraducido;
+
+                let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
+
+                // MODIFICACIÓN QUIRÚRGICA LÍNEA 742: Retiene la data de lotes limpios directo en la memoria global[cite: 6]
+                lotesFiltradosTurno = inventarioData1.filter(item => {
+                    if (!item.sku) return false;
+                    
+                    if (item.ubicacion) {
+                        let u = item.ubicacion.toString().toUpperCase().trim();
+                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
+                            return false;
+                        }
+                    }
+
+                    let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
+                    let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
+                    return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
+                });
+                
+                document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                
+                if (lotesFiltradosTurno.length > 0) {
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida;
+                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+                    document.getElementById('containerInputLpn').classList.remove('invisible');
+                    document.getElementById('resultadoEscaneo').classList.remove('hidden');
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
+                } else {
+                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('resultadoEscaneo').classList.add('hidden');
+                }
+
+                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
+                document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
+            }
+        }
+
+        function handleCantidadKey(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                guardarRegistro();
+            }
+        }
+
+        // ================= FUNCIÓN GUARDAR REPARADA: CONECTADA A LA MEMORIA INTERMEDIA COMPARTIDA EN LA LÍNEA 771 =================
+        function guardarRegistro() {
+            const Math_cantidad = document.getElementById('cantidadInput').value;
+            if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                return; 
+            }
+            
+            let remanente = parseInt(Math_cantidad, 10);
+            let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
+
+            // MODIFICACIÓN QUIRÚRGICA LÍNEA 771: Lee de inmediato la variable puente global cargada en el escaneo[cite: 6]
+            let lotesAsignados = [...lotesFiltradosTurno];
+            
+            lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
+            
+            if (lotesAsignados.length === 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Este producto no cuenta con stock disponible en Cajas_Tienda."); 
+                return; 
+            }
+
+            let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+            let primerLpnImplicado = lotesAsignados[0].lpn;
+            
+            // MODIFICACIÓN QUIRÚRGICA LÍNEA 769: Variable saneada sin el espacio en blanco roto[cite: 6]
+            let historialConsumosLpns = [];
+
+            for (let lote of lotesAsignados) {
+                if (remanente <= 0) break;
+                let descontar = Math.min(lote.unidades, remanente); 
+                
+                let loteOriginalInventario = inventarioData1.find(i => i.lpn === lote.lpn && i.sku === lote.sku);
+                if (loteOriginalInventario) {
+                    loteOriginalInventario.unidades -= descontar;
+                }
+                
+                remanente -= descontar;
+                historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
+            }
+
+            logRef.push({
+                operador: nombreOperador,
+                sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
+                fifoLpnOptimizado: primerLpnImplicado, 
+                desc: document.getElementById('asistenteInfoDescripcion').innerText,
+                cant: parseInt(Math_cantidad, 10),
+                fv: lotesAsignados[0].vencimiento || "SIN FECHA",
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+            });
+
+            dbRef.set(inventarioData1).then(() => {
+                cancelarRegistro();
+            });
+        }
+
+        function cancelarRegistro() {
+            document.getElementById('barcodeInput').value = "";
+            document.getElementById('cantidadInput').value = "";
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+            document.getElementById('resultadoEscaneo').classList.add('hidden');
+            document.getElementById('containerInputLpn').classList.add('invisible');
+            document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            lotesFiltradosTurno = [];
+            document.getElementById('barcodeInput').focus();
+        }
+
+        function descargarExcelRepotenciar() {
+            if (registrosHistoricosRepotenciar.length === 0) {
+                alert("No hay datos de repotenciación para exportar.");
+                return;
+            }
+            const dataProcesada = registrosHistoricosRepotenciar.map(item => ({
+                "Operador": item.operador || "Anónimo",
+                "SKU": item.sku || "",
+                "LPN Maestro Sugerido": item.fifoLpnOptimizado || "N/A",
+                "Descripción del Producto": item.desc || "",
+                "Cantidad Validada": item.cant || 0,
+                "Fecha de Vencimiento": item.fv || "SIN FECHA",
+                "Trazabilidad de Consumos LPN": item.purgaCompletaRuta || "N/A"
+            }));
+            const hoja = XLSX.utils.json_to_sheet(dataProcesada);
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, "Repotenciacion");
+            XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
+        }
+
+        function eliminarData(tipo, event) {
+            if (event) event.stopPropagation();
+            if (tipo === 'cajas') {
+                dbRef.set(null);
+            } else if (tipo === 'satelite') {
+                reqJ_Satelite = {};
+                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+            } else if (tipo === 'reposicion') {
+                matrixDetalleReposicion = [];
+                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                document.getElementById('statusData2').innerText = "Waiting...";
+            } else if (tipo === 'repotenciacion') {
+                logRef.set(null);
+            }
+        }
+
+        function abrirModalReporteIncidencia() {
+            document.getElementById('modalReporte').classList.remove('hidden');
+            document.getElementById('incidenciaCodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciaMotivoInput').value = "";
+            evaluarBloqueoDuplicadosEnVivo();
+            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
+        }
+
+        function cerrarModalReporteIncidencia() { 
+            document.getElementById('modalReporte').classList.add('hidden'); 
+        }
+        
+        function enviarReporteIncidencia() {
+            let cod = document.getElementById('incidenciaCodigoInput').value.trim();
+            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+
+            if(!cod || !mot) return;
+            
+            msgRef.push({
+                idAsistente: idUsuarioLogueado,
+                remitente: nombreUser,
+                codigo: cod,
+                motivo: mot,
+                estado: "Pendiente",
+                timestamp: new Date().toLocaleString()
+            }).then(() => {
+                cerrarModalReporteIncidencia();
+                cancelarRegistro();
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                document.getElementById('txtNotificacionExitoTitulo').innerText = `Estimado ${nombreUser}`;
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            });
+        }
+
+        function cerrarNotificacionExitoPersonalizada() {
+            document.getElementById('modalNotificacionExito').classList.add('hidden');
+        }
+
+        function procesarData1() {
+            const file = document.getElementById("fileData1").files[0];
+            if (!file) return;
+            document.getElementById('statusData1').innerText = "⏳ Inyectando y Sincronizando Base Cloud...";
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                
+                let datosFormateados = filas.map(f => {
+                    let lpnVal = "", skuVal = "", descVal = "", uVal = 0, fvVal = "SIN FECHA", ubiVal = "";
+                    Object.keys(f).forEach(k => {
+                        let nk = k.toString().toLowerCase().replace(/[^a-z]/g, "");
+                        if(nk.includes("lpn")) lpnVal = f[k];
+                        else if(nk.includes("articulo") || nk.includes("sku")) skuVal = f[k];
+                        else if(nk.includes("descripcion")) descVal = f[k];
+                        else if(nk.includes("unidades") || nk.includes("cant")) uVal = parseInt(f[k] || 0);
+                        else if(nk.includes("vencimiento") || nk.includes("caducidad") || nk.includes("fecha")) fvVal = f[k];
+                        else if(nk.includes("ubicacion") || nk.includes("posicion")) ubiVal = f[k];
+                    });
+                    return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
+                }).filter(x => x.sku && x.lpn);
+
+                dbRef.set(datosFormateados);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarJ_Satelite() {
+            const file = document.getElementById("fileJSatelite").files[0];
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                reqJ_Satelite = {};
+                filas.forEach(f => {
+                    let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
+                    let lpn = f["LPN"] || f["Nro LPN"];
+                    if(sku && lpn) reqJ_Satelite[sku.toString().trim()] = lpn.toString().trim();
+                });
+                document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold";
+                document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarData2() {
+            const file = document.getElementById("fileData2").files[0];
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array' });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja);
+                
+                matrixDetalleReposicion = filas.map(f => ({
+                    lpn: f["LPN"] || f["Contenedor Origen"] || "",
+                    sku: f["Articulo"] || f["SKU"] || "",
+                    pantalla: f["Estado"] || f["Ubicación Destino"] || "",
+                    cantOriginal: f["Cantidad Solicitada"] || f["Cant"] || 0,
+                    cantAjustada: f["Cantidad Confirmada"] || f["Cant"] || 0,
+                    usuario: f["Usuario Actividad"] || f["Operador"] || "SISTEMA"
+                })).filter(x => {
+                    if (!x.sku || !x.pantalla) return false;
+                    let uDestino = x.pantalla.toString().trim().toUpperCase();
+                    return uDestino === "RF_REPONER_RESERVA" || uDestino === "RF_DIVIDIR LPN" || uDestino === "RF_REPONER_PUERTA";
+                });
+
+                document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
+                document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
+            const dropZone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            
+            dropZone.addEventListener("click", (e) => {
+                if (e.target === btn || btn.contains(e.target) || e.target.tagName === 'BUTTON') return;
+                input.click();
+            });
+            btn.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
+            input.addEventListener("change", () => { callback(); });
+
+            dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); });
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.remove(overClass);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+                    input.files = e.dataTransfer.files; callback(); 
+                }
+            });
+        }
+
+        function ejecutarCruceMacroGlobal() {
+            const tbody = document.getElementById("tablaMacroGlobalBody");
+            if (matrixDetalleReposicion.length === 0) {
+                alert("Debe subir primero el archivo de Detalle_Reposicion.");
+                return;
+            }
+            tbody.innerHTML = "";
+            matrixDetalleReposicion.forEach(puesta => {
+                let txtColorRuta = "text-red-600 font-bold";
+                let rutaSugerida = "⚠️ REPOSICIÓN MANUAL DESVINCULADA";
+
+                let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+
+                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
+                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio
+                );
+
+                if (coincidenciaLog) {
+                    if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()) {
+                        rutaSugerida = `✔ LPN CORRECTO: ${coincidenciaLog.fifoLpnOptimizado} (Cumple FIFO - Caducidad Asegurada)`;
+                        txtColorRuta = "text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded";
+                    } else {
+                        rutaSugerida = `❌ ALERTA FIFO: Se pidió ${coincidenciaLog.fifoLpnOptimizado} pero RF escaneó ${puesta.lpn}`;
+                        txtColorRuta = "text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded";
+                    }
+                } else {
+                    rutaSugerida = ""; 
+                    txtColorRuta = "text-gray-400";
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
+                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
+                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
+                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
+                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
+                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs">${rutaSugerida}</td>
+                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
+                    </tr>`;
+            });
+        }
+    </script>
+</body>
+</html>
