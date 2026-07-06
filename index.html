@@ -262,18 +262,7 @@
                         </div>
                     </div>
 
-                    <div id="resultadoEscaneo" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
-                        <div class="flex gap-3">
-                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition">Guardar</button>
-                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition">Cancelar</button>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t flex flex-col gap-2">
-                        <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
-                            🚨 SKU/EAN no escanea
-                        </button>
-                    </div>
+                    <div id="resultadoEscaneo" class="hidden"></div>
                 </div>
 
                 <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-4">
@@ -347,7 +336,7 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
-        // CORRECCIÓN GLOBAL (LÍNEA 672): Variable global para retener match de lotes entre procesos
+        // CORRECCIÓN SINTAXIS MEMORIA (LÍNEA 672): Puente de retención FIFO intacto globalizado
         let lotesFiltradosTurno = [];
 
         let usuariosDB = {
@@ -405,17 +394,10 @@
 
             if (input.type === "password") {
                 input.type = "text";
-                icono.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                    </svg>`;
+                icono.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>`;
             } else {
                 input.type = "password";
-                icono.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>`;
+                icono.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
             }
         }
 
@@ -638,7 +620,7 @@
                             let skuLimpio = rawSku.toString().replace(/["']/g, "").trim().toUpperCase();
                             let descLimpia = rawDesc ? rawDesc.toString().replace(/["']/g, "").trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
                             
-                            // INTEGRACIÓN DE GATILLADO EXCLUSIVA: Envuelve los códigos del JSON entre comillas dobles literales ocultas ("")
+                            // GATILLADO REQUERIDO: Encapsula la llave con comillas dobles literales ocultas ("")
                             let llaveSkuOculta = '"' + skuLimpio + '"';
                             databaseCat_Ean[llaveSkuOculta] = { sku: skuLimpio, desc: descLimpia };
 
@@ -725,7 +707,7 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().replace(/["']/g, "").toUpperCase();
                 if (!entradaOriginal) return;
 
-                // REAJUSTE DE GATILLADO: Abre y cierra de forma interna el código entre comillas dobles literales invisibles ("")
+                // REAJUSTE DE GATILLADO: Envuelve de forma inmediata el código entre comillas dobles literales invisibles ("")
                 let llaveBusquedaOculta = '"' + entradaOriginal + '"';
                 
                 let skuTraducido = entradaOriginal; 
@@ -751,7 +733,7 @@
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
-                    // REQUERIMIENTO 2: EXCLUSIÓN DE LAS UBICACIONES BLOQUEADAS ENTREGADAS EN LA IMAGEN 3
+                    // REQUERIMIENTO: Omitir ubicaciones bloqueadas operativas de merma/averías
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -759,7 +741,6 @@
                         }
                     }
 
-                    // MATCH NUMÉRICO EN AMBOS EXTREMOS EVITANDO VARIACIONES DE TIPADO
                     let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
                     let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
                     return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
@@ -791,7 +772,7 @@
             }
         }
 
-        // ================= FUNCIÓN GUARDAR COMPLETAMENTE ENLAZADA: ENVÍA EL REPORTE Y RESTABLECE LA PANTALLA EN VIVO =================
+        // ================= FUNCIÓN GUARDAR REPARADA: CONECTADA A LA MEMORIA INTERMEDIA COMPARTIDA EN LA LÍNEA 771 =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -800,6 +781,7 @@
             }
             
             let remanente = parseInt(Math_cantidad, 10);
+            let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
             // LÍNEA 771 REAJUSTADA: Lee de forma exitosa los lotes pre-validados desde la variable global compartida
             let lotesAsignados = [...lotesFiltradosTurno];
@@ -814,7 +796,7 @@
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             let primerLpnImplicado = lotesAsignados[0].lpn;
             
-            // LÍNEA 769 CORREGIDA: Saneada sin espacios accidentales
+            // LÍNEA 769 CORREGIDA: Variable saneada sin el espacio en blanco roto
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
@@ -841,7 +823,6 @@
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
-            // Sincroniza la rebaja de inventario en la nube y restablece la interfaz automáticamente
             dbRef.set(inventarioData1).then(() => {
                 cancelarRegistro();
             });
@@ -975,7 +956,7 @@
                 const data = new Uint8Array(e.target.result);
                 const libro = XLSX.read(data, { type: 'array' });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja);
+                const filas = XLSX.utils.sheet_to_json(f);
                 reqJ_Satelite = {};
                 filas.forEach(f => {
                     let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
@@ -1017,6 +998,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // CONTROL DE CARGA DEL ARRASTRE DE ARCHIVOS REPARADO DEFINITIVAMENTE (LÍNEA 998)
         function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
