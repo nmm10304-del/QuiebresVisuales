@@ -348,11 +348,14 @@
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
+        
+        // CORRECCIÓN LÍNEA 672: Puente de memoria global intermedia incorporado[cite: 5]
+        let lotesFiltradosTurno = [];
 
         let usuariosDB = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
-            "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
+            "HP70729960": { font_mono: "Farro", clave: "Hpsa2027" },
             "HP75235329": { nombre: "Jairo", clave: "Hpsa2027" },
             "HP47431216": { nombre: "Moses", clave: "Hpsa2027" },
             "HP74315583": { nombre: "Job", clave: "Hpsa2027" },
@@ -580,6 +583,7 @@
             });
         }
 
+        // CONTROL EXCLUSIÓN ADMI REASIGNADO POR EVENTO
         function subsanarIncidenciaAdmin(key) {
             msgRef.child(key).update({ estado: "Completado" });
         }
@@ -744,9 +748,11 @@
 
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
 
-                let lotesDisponibles = inventarioData1.filter(item => {
+                // MODIFICACIÓN QUIRÚRGICA LÍNEA 742: Sincroniza las coincidencias en memoria intermedia global[cite: 5]
+                lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
+                    // REQUERIMIENTO 2: EXCLUSIÓN DE LAS UBICACIONES BLOQUEADAS ENTREGADAS EN LA IMAGEN 3
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -754,7 +760,7 @@
                         }
                     }
 
-                    // MATCH DE ESCANEO ORIGINAL: Conversión numérica robusta para evitar quiebres por celdas del XLSX
+                    // MATCH DE ESCANEO ORIGINAL NUMÉRICO EN AMBOS EXTREMOS EVITANDO VARIACIONES DE TIPADO
                     let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
                     let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
                     return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
@@ -762,8 +768,8 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
-                if (lotesDisponibles.length > 0) {
-                    descripcionTraducida = lotesDisponibles[0].descripcion || descripcionTraducida;
+                if (lotesFiltradosTurno.length > 0) {
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida;
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
                     document.getElementById('resultadoEscaneo').classList.remove('hidden');
@@ -786,7 +792,7 @@
             }
         }
 
-        // ================= FUNCIÓN GUARDAR REPARADA: MATCH DE SKU FORZADO POR PARSEINT DE MANERA COHERENTE =================
+        // ================= FUNCIÓN GUARDAR REPARADA: CONECTADA A LA MEMORIA INTERMEDIA COMPARTIDA EN LA LÍNEA 771 =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -797,21 +803,8 @@
             let remanente = parseInt(Math_cantidad, 10);
             let skuPuroBusqueda = skuEscaneadoTemporal.replace(/[^0-9]/g, "").trim();
 
-            let lotesAsignados = inventarioData1.filter(item => {
-                if (!item.sku) return false;
-
-                if (item.ubicacion) {
-                    let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
-                        return false;
-                    }
-                }
-
-                // CORRECCIÓN CLAVE DE MATCH: Forzar la lectura matemática de enteros puros para evadir decimales del XLSX (.00)
-                let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
-                let skuBuscadoMat = parseInt(skuPuroBusqueda, 10);
-                return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
-            });
+            // MODIFICACIÓN QUIRÚRGICA LÍNEA 771: Lee de inmediato la variable puente global cargada en el escaneo[cite: 5]
+            let lotesAsignados = [...lotesFiltradosTurno];
             
             lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
             
@@ -822,19 +815,27 @@
 
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             let primerLpnImplicado = lotesAsignados[0].lpn;
+            
+            // MODIFICACIÓN QUIRÚRGICA LÍNEA 769: Variable saneada sin el espacio en blanco roto[cite: 5]
             let historialConsumosLpns = [];
 
             for (let lote of lotesAsignados) {
                 if (remanente <= 0) break;
                 let descontar = Math.min(lote.unidades, remanente); 
-                lote.unidades -= descontar; 
+                
+                let loteOriginalInventario = inventarioData1.find(i => i.lpn === lote.lpn && i.sku === lote.sku);
+                if (loteOriginalInventario) {
+                    loteOriginalInventario.unidades -= descontar;
+                }
+                
                 remanente -= descontar;
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
+            // CORRECCIÓN PREVENTIVA (.toString()): Convierte a string antes de ejecutar el replace para evitar el TypeError
             logRef.push({
                 operador: nombreOperador,
-                sku: parseInt(skuPuroBusqueda, 10).toString(),
+                sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
                 fifoLpnOptimizado: primerLpnImplicado, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
                 cant: parseInt(Math_cantidad, 10),
@@ -854,6 +855,7 @@
             document.getElementById('resultadoEscaneo').classList.add('hidden');
             document.getElementById('containerInputLpn').classList.add('invisible');
             document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            lotesFiltradosTurno = [];
             document.getElementById('barcodeInput').focus();
         }
 
