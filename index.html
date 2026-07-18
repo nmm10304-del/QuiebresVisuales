@@ -590,6 +590,7 @@
             msgRef.child(key).remove();
         }
 
+        // CORRECCIÓN DE CASING ID: Sincroniza con 'incidenciacodigoInput' en minúsculas del HTML[cite: 4]
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciacodigoInput');
             const inputMot = document.getElementById('incidenciaMotivoInput');
@@ -604,7 +605,7 @@
 
             if (!codIngresado || !motIngresado) {
                 btnEnviar.disabled = true;
-                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
+                btnEnviar.className = "w-full bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200 block";
                 if (!codIngresado) wrapperGrafico.classList.add('hidden');
                 return;
             }
@@ -619,11 +620,11 @@
                 txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
                 wrapperGrafico.classList.remove('hidden');
                 btnEnviar.disabled = true;
-                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed border border-gray-200";
+                btnEnviar.className = "w-full bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed border border-gray-200 block";
             } else {
                 wrapperGrafico.classList.add('hidden');
                 btnEnviar.disabled = false;
-                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
+                btnEnviar.className = "w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer block";
             }
         }
 
@@ -677,7 +678,6 @@
 
         function handleLoginKey(event) { if (event.key === 'Enter') { event.preventDefault(); autenticarUsuario(); } }
 
-        // REPARACIÓN EN AUTENTICACIÓN: Evita bloqueos de ejecución en login[cite: 4]
         function autenticarUsuario() {
             const user = document.getElementById('userInput').value.trim().toUpperCase();
             const pass = document.getElementById('passwordInput').value;
@@ -717,6 +717,7 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
+        // CORRECCIÓN MATCHER: Remueve de manera robusta los ceros y valida de forma cruzada SKU/EAN[cite: 4]
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -724,22 +725,21 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
 
+                let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
                 let skuTraducido = entradaOriginal; 
-                let descripcionTraducida = "PRODUCTO IDENTIFICADO";
+                let descripcionTraducida = "";
 
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
-                } else {
-                    let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
-                    if (databaseCat_Ean[entradaSinCeros]) {
-                        skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
-                        descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
-                    }
+                } else if (databaseCat_Ean[entradaSinCeros]) {
+                    skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
+                    descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
                 }
 
                 skuEscaneadoTemporal = skuTraducido;
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
+                let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
@@ -751,19 +751,19 @@
                         }
                     }
 
-                    let skuInventarioMat = parseInt(item.sku.toString().replace(/[^0-9]/g, "").trim(), 10);
-                    let skuBuscadoMat = parseInt(numeroSkuLimpioExcel, 10);
-                    return skuInventarioMat === skuBuscadoMat && parseInt(item.unidades || 0, 10) > 0;
+                    let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    return skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel;
                 });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
                 if (lotesFiltradosTurno.length > 0) {
-                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida;
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
+                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
                     document.getElementById('containerInputLpn').classList.add('invisible');
                 }
@@ -878,7 +878,7 @@
 
         function abrirModalReporteIncidencia() {
             document.getElementById('modalReporte').classList.remove('hidden');
-            document.getElementById('incidenciaCodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
             document.getElementById('incidenciaMotivoInput').value = "";
             evaluarBloqueoDuplicadosEnVivo();
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
@@ -888,8 +888,9 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
         
+        // CORRECCIÓN ID ENVÍO: Extrae el valor exacto de 'incidenciacodigoInput'[cite: 4]
         function enviarReporteIncidencia() {
-            let cod = document.getElementById('incidenciaCodigoInput').value.trim();
+            let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
             let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
 
@@ -1000,6 +1001,30 @@
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
             };
             lector.readAsArrayBuffer(file);
+        }
+
+        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
+            const dropZone = document.getElementById(zoneId);
+            const input = document.getElementById(inputId);
+            const btn = document.getElementById(btnId);
+            
+            dropZone.addEventListener("click", (e) => {
+                if (e.target === btn || btn.contains(e.target) || e.target.tagName === 'BUTTON') return;
+                input.click();
+            });
+            btn.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
+            input.addEventListener("change", () => { callback(); });
+
+            dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
+            dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); });
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault(); e.stopPropagation();
+                dropZone.classList.remove(overClass);
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+                    input.files = e.dataTransfer.files; callback(); 
+                }
+            });
         }
 
         function ejecutarCruceMacroGlobal() {
