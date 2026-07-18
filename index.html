@@ -288,11 +288,12 @@
         </div>
     </div>
 
+    <!-- MODAL DINÁMICO DE NOTIFICACIONES (ÉXITO / ALERTA) -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
             <div class="space-y-2">
-                <h4 id="txtNotificacionExitoTitulo" class="text-base font-bold text-gray-900">Estimado Usuario</h4>
+                <h4 id="txtNotificacionDinamicoTitulo" class="text-base font-bold text-gray-900">Estimado Usuario</h4>
                 <p id="txtNotificacionExitoDetalle" class="text-xs text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
             </div>
             <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow transition uppercase tracking-wider">Aceptar</button>
@@ -438,7 +439,7 @@
         function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
             document.getElementById('iconoNotificacionDinamico').innerText = "⚠️";
             document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-            document.getElementById('txtNotificacionExitoTitulo').innerText = titulo;
+            document.getElementById('txtNotificacionDinamicoTitulo').innerText = titulo;
             document.getElementById('txtNotificacionExitoDetalle').innerText = mensaje;
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
         }
@@ -581,6 +582,51 @@
             });
         }
 
+        function subsanarIncidenciaAdmin(key) {
+            msgRef.child(key).update({ estado: "Completado" });
+        }
+
+        function removerNotificacionCompletadaLocal(key) {
+            msgRef.child(key).remove();
+        }
+
+        function evaluarBloqueoDuplicadosEnVivo() {
+            const inputCod = document.getElementById('incidenciacodigoInput');
+            const inputMot = document.getElementById('incidenciaMotivoInput');
+            if (!inputCod || !inputMot) return;
+            
+            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
+            let motIngresado = inputMot.value.trim();
+            
+            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
+            const txtAlerta = document.getElementById('txtAlertaDuplicado');
+            const btnEnviar = document.getElementById('btnEnviarAlertaIncidencia');
+
+            if (!codIngresado || !motIngresado) {
+                btnEnviar.disabled = true;
+                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200";
+                if (!codIngresado) wrapperGrafico.classList.add('hidden');
+                return;
+            }
+
+            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
+                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
+                m.estado === "Pendiente" && 
+                m.idAsistente !== idUsuarioLogueado
+            );
+
+            if (coincidenciaDuplicada) {
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                wrapperGrafico.classList.remove('hidden');
+                btnEnviar.disabled = true;
+                btnEnviar.className = "flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed border border-gray-200";
+            } else {
+                wrapperGrafico.classList.add('hidden');
+                btnEnviar.disabled = false;
+                btnEnviar.className = "flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer";
+            }
+        }
+
         function descargarCatalogoAutomaticoRemoto() {
             for (let i = 1; i <= 43; i++) {
                 fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
@@ -631,6 +677,7 @@
 
         function handleLoginKey(event) { if (event.key === 'Enter') { event.preventDefault(); autenticarUsuario(); } }
 
+        // REPARACIÓN EN AUTENTICACIÓN: Evita bloqueos de ejecución en login[cite: 4]
         function autenticarUsuario() {
             const user = document.getElementById('userInput').value.trim().toUpperCase();
             const pass = document.getElementById('passwordInput').value;
@@ -861,13 +908,12 @@
                 
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                 document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionExitoTitulo').innerText = `Estimado ${nombreUser}`;
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
                 document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             });
         }
 
-        // MODIFICACIÓN QUIRÚRGICA COMPLETA DE FLUJO DE CIERRE DE ALERTA DE ACCESO
         function cerrarNotificacionExitoPersonalizada() {
             document.getElementById('modalNotificacionExito').classList.add('hidden');
             if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
@@ -970,7 +1016,7 @@
                 let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
 
                 let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLinter)
+                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio
                 );
 
                 if (coincidenciaLog) {
