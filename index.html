@@ -227,6 +227,7 @@
                     <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-2 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-sm cursor-pointer flex-1">
                         <option value="escaneo">🔍 Escaneo de reposición</option>
                         <option value="buzonalerta">📥 Buzón de alertas recientes</option>
+                        <option value="cambiarclave">🔑 Cambiar contraseña</option>
                     </select>
                 </div>
 
@@ -243,7 +244,7 @@
 
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div>ADVERTENCIA: This product doesn't have current inventory.</div>
+                        <div id="txtMensajeAdvertenciaStock">This product doesn't have current inventory.</div>
                     </div>
 
                     <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
@@ -284,11 +285,24 @@
                         <p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>
                     </div>
                 </div>
+
+                <div id="submoduloAsistenteCambiarClave" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña</h2>
+                    <p class="text-xs text-gray-500 italic">Modifica tu clave de acceso al sistema de forma inmediata.</p>
+                    <div class="p-4 border border-gray-200 rounded-lg bg-gray-50/50 space-y-3 max-w-sm">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nueva Contraseña</label>
+                            <input type="password" id="txtNuevaClaveAsistente" placeholder="Escribe tu nueva contraseña" class="w-full p-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-sans text-sm">
+                        </div>
+                        <button onclick="procesarCambioClaveAsistente()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded text-xs transition tracking-wide uppercase shadow-sm cursor-pointer">
+                            Actualizar Contraseña
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DINÁMICO DE NOTIFICACIONES (ÉXITO / ALERTA) -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -320,7 +334,7 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200">Enviar Alerta</button>
+                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="w-full bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200 block">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -424,15 +438,38 @@
             const val = document.getElementById("selectVistaAsistente").value;
             const moduleEscaneo = document.getElementById("submoduloAsistenteEscaneo");
             const moduloBuzon = document.getElementById("submoduloAsistenteBuzonAlertas");
+            const moduloClave = document.getElementById("submoduloAsistenteCambiarClave");
             
             moduleEscaneo.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
+            moduloClave.classList.add("hidden");
 
             if (val === "escaneo") {
                 moduleEscaneo.classList.remove("hidden");
                 setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (val === "buzonalerta") {
                 moduloBuzon.classList.remove("hidden");
+            } else if (val === "cambiarclave") {
+                moduloClave.classList.remove("hidden");
+                setTimeout(() => document.getElementById('txtNuevaClaveAsistente').focus(), 100);
+            }
+        }
+
+        function procesarCambioClaveAsistente() {
+            const nuevaClave = document.getElementById('txtNuevaClaveAsistente').value.trim();
+            if (!nuevaClave) {
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
+                return;
+            }
+            if (usuariosDB[idUsuarioLogueado]) {
+                usuariosDB[idUsuarioLogueado].clave = nuevaClave;
+                document.getElementById('txtNuevaClaveAsistente').value = "";
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excelente";
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
             }
         }
 
@@ -582,15 +619,6 @@
             });
         }
 
-        function subsanarIncidenciaAdmin(key) {
-            msgRef.child(key).update({ estado: "Completado" });
-        }
-
-        function removerNotificacionCompletadaLocal(key) {
-            msgRef.child(key).remove();
-        }
-
-        // CORRECCIÓN DE CASING ID: Sincroniza con 'incidenciacodigoInput' en minúsculas del HTML[cite: 4]
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciacodigoInput');
             const inputMot = document.getElementById('incidenciaMotivoInput');
@@ -717,7 +745,7 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // CORRECCIÓN MATCHER: Remueve de manera robusta los ceros y valida de forma cruzada SKU/EAN[cite: 4]
+        // ================= FLUJO DE MATCH DOBLE DE ENTRADA (SKU / EAN) CORREGIDO Y REMOCIÓN DE COMILLAS =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -725,10 +753,20 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
 
+                // REQUERIMIENTO 2: Validación si el Administrador no ha cargado Cajas_Tienda
+                if (!inventarioData1 || inventarioData1.length === 0) {
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    return;
+                }
+
                 let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
                 let skuTraducido = entradaOriginal; 
                 let descripcionTraducida = "";
 
+                // Validación Cruzada: Si es un EAN, traduce a SKU. Si ya es SKU, pasa directo
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
@@ -741,6 +779,7 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
+                // REQUERIMIENTO 3: Filtro estricto basado en las columnas exactas SKU, Descripción y Unidades actuales mayores a 0
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
@@ -752,7 +791,8 @@
                     }
 
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    return skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel;
+                    // Valida que el conteo de existencias de esa fila sea estrictamente mayor a 0 unidades actuales
+                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
@@ -764,6 +804,7 @@
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "This product doesn't have current inventory.";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
                     document.getElementById('containerInputLpn').classList.add('invisible');
                 }
@@ -814,6 +855,7 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
+            // GATILLADO HACIA REPOSICIÓN MAYORES A 0 UNIDADES EN PANEL DEL ADMIN
             logRef.push({
                 operador: nombreOperador,
                 sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
@@ -840,10 +882,7 @@
         }
 
         function descargarExcelRepotenciar() {
-            if (registrosHistoricosRepotenciar.length === 0) {
-                alert("No hay datos de repotenciación para exportar.");
-                return;
-            }
+            if (registrosHistoricionRepotenciar.length === 0) return;
             const dataProcesada = registrosHistoricosRepotenciar.map(item => ({
                 "Operador": item.operador || "Anónimo",
                 "SKU": item.sku || "",
@@ -888,7 +927,6 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
         
-        // CORRECCIÓN ID ENVÍO: Extrae el valor exacto de 'incidenciacodigoInput'[cite: 4]
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
@@ -923,6 +961,7 @@
             }
         }
 
+        // ================= DETECTOR DE ENTRADAS DEL EXCEL DE CAJAS_TIENDA CON NUEVAS COLUMNAS REQUERIDAS =================
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -935,18 +974,15 @@
                 const filas = XLSX.utils.sheet_to_json(hoja);
                 
                 let datosFormateados = filas.map(f => {
-                    let lpnVal = "", skuVal = "", descVal = "", uVal = 0, fvVal = "SIN FECHA", ubiVal = "";
-                    Object.keys(f).forEach(k => {
-                        let nk = k.toString().toLowerCase().replace(/[^a-z]/g, "");
-                        if(nk.includes("lpn")) lpnVal = f[k];
-                        else if(nk.includes("articulo") || nk.includes("sku")) skuVal = f[k];
-                        else if(nk.includes("descripcion")) descVal = f[k];
-                        else if(nk.includes("unidades") || nk.includes("cant")) uVal = parseInt(f[k] || 0);
-                        else if(nk.includes("vencimiento") || nk.includes("caducidad") || nk.includes("fecha")) fvVal = f[k];
-                        else if(nk.includes("ubicacion") || nk.includes("posicion")) ubiVal = f[k];
-                    });
+                    let lpnVal = f["Nro LPN"] || "";
+                    let skuVal = f["SKU"] || "";
+                    let descVal = f["Descripción"] || "";
+                    let uVal = parseInt(f["Unidades actuales"] || 0, 10);
+                    let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
+                    let ubiVal = f["Ubicación Actual"] || f["Ubicacion Actual"] || "";
+                    
                     return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                }).filter(x => x.sku && x.lpn);
+                }).filter(x => x.sku);
 
                 dbRef.set(datosFormateados);
             };
