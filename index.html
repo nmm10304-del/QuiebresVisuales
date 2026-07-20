@@ -620,33 +620,7 @@
             });
         }
 
-        function evaluarBloqueoDuplicadosEnVivo() {
-            const inputCod = document.getElementById('incidenciacodigoInput');
-            if (!inputCod) return;
-            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
-            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
-            const txtAlerta = document.getElementById('txtAlertaDuplicado');
-
-            if (!codIngresado) {
-                wrapperGrafico.classList.add('hidden');
-                return;
-            }
-
-            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
-                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
-                m.estado === "Pendiente" && 
-                m.idAsistente !== idUsuarioLogueado
-            );
-
-            if (coincidenciaDuplicada) {
-                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
-                wrapperGrafico.classList.remove('hidden');
-            } else {
-                wrapperGrafico.classList.add('hidden');
-            }
-        }
-
-        // ================= PUNTO 1: MOTOR DE DESCARGA PARALELA EN RÁFAGA CORREGIDO =================
+        // ================= PUNTO 1: MOTOR DE DESCARGA PARALELA EN RÁFAGA REPARADO =================
         function descargarCatalogoAutomaticoRemoto() {
             const ráfagaParalela = 15;
             let baseIndex = 1;
@@ -841,7 +815,7 @@
             }
         }
 
-        // ================= PUNTO 2: COMPLEMENTACIÓN DE TIPOS PARA RESTRICCIÓN DE GUARDADO =================
+        // ================= PUNTO 2: LÓGICA CON FILTRO DE CAMPOS NULOS / VACÍOS PARA EL GUARDADO SEGURO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -867,8 +841,9 @@
                 if (remanente <= 0) break;
                 let descontar = Math.min(lote.unidades, remanente); 
                 
-                // Conversión forzada de texto (.toString().trim()) para romper el bloqueo de tipos de celdas
+                // Validación de campos nulos en caliente para prevenir crasheos inesperados al guardar
                 let loteOriginalInventario = inventarioData1.find(i => 
+                    i && i.lpn && i.sku &&
                     i.lpn.toString().trim() === lote.lpn.toString().trim() && 
                     i.sku.toString().trim() === lote.sku.toString().trim()
                 );
@@ -1010,7 +985,7 @@
                     let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
                     
                     return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                }).filter(x => x.sku);
+                }).filter(x => x && x.sku);
 
                 dbRef.set(datosFormateados);
             };
