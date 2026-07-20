@@ -358,7 +358,13 @@
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
-        let alertasOcultadasAsistente = []; 
+        
+        // Re-inicialización inteligente de la caché local persistente para las alertas que borra el asistente
+        let alertasOcultadasAsistente = [];
+        try {
+            const guardadas = localStorage.getItem("alertas_ocultas_cache");
+            if (guardadas) alertasOcultadasAsistente = JSON.parse(guardadas);
+        } catch(e) { alertasOcultadasAsistente = []; }
         
         let lotesFiltradosTurno = [];
 
@@ -616,8 +622,15 @@
             });
         }
 
+        // ================= PUNTO 1 CORREGIDO: VINCULACIÓN CON LOCALSTORAGE PARA ELIMINACIÓN LOCAL DE ALERTAS COMPLETADAS =================
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
+            try {
+                // Guarda la matriz en la memoria del dispositivo para persistencia total
+                localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
+            } catch(e) {}
+            
+            // Forzamos el refresco inmediato recreando la vista localmente con los datos guardados
             msgRef.setValue = Object.assign({}, cacheAlertasGlobales);
             dbRef.child("dummy_trigger").transaction(() => 0); 
         }
@@ -843,7 +856,6 @@
             }
         }
 
-        // ================= OPTIMIZACIÓN ULTRA VELOZ: GUARDADO EN SEGUNDO PLANO (GUARDADO OPTIMISTA) =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -858,7 +870,6 @@
             let fvSugerida = "SIN FECHA";
             let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
-            // Clonamos localmente el estado de los lotes para procesar la deducción de stock inmediatamente
             let copiaLotesFiltrados = [...lotesFiltradosTurno];
 
             if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
@@ -887,13 +898,11 @@
                 }
             }
 
-            // ACCIÓN ULTRA RÁPIDA: Limpia la pantalla e interactúa con el operador al instante (0 milisegundos de espera)
             let copiaSkuTemporal = skuEscaneadoTemporal.toString().replace(/[^0-9]/g, "");
             let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText;
 
-            cancelarRegistro(); // Cierra los cuadros de texto y enfoca el lector de inmediato para el siguiente quiebre
+            cancelarRegistro(); 
 
-            // SINCRONIZACIÓN EN SEGUNDO PLANO: Se ejecuta de forma asíncrona hacia Firebase mientras el operador ya está escaneando
             logRef.push({
                 operador: nombreOperador,
                 sku: copiaSkuTemporal,
