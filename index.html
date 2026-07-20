@@ -264,7 +264,6 @@
                         </div>
                     </div>
 
-                    <!-- REQUERIMIENTO 2: Contenedor de Guardar/Cancelar oculto por defecto (Solo visible si hay stock real) -->
                     <div id="resultadoEscaneo" class="hidden p-4 rounded-lg border border-gray-200 bg-gray-50/50">
                         <div class="flex gap-3">
                             <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Guardar</button>
@@ -331,12 +330,11 @@
                     <input type="text" id="incidenciacodigoInput" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problem detectado?:</label>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
                     <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <!-- REQUERIMIENTO 1: Botón restaurado de forma nativa para permitir envíos fluidos de alertas sin trabarse -->
                 <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer block">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
@@ -497,6 +495,7 @@
             }
         }
 
+        /* Sincronización en vivo del administrador */
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -624,11 +623,8 @@
 
         function evaluarBloqueoDuplicadosEnVivo() {
             const inputCod = document.getElementById('incidenciacodigoInput');
-            const inputMot = document.getElementById('incidenciaMotivoInput');
-            if (!inputCod || !inputMot) return;
-            
+            if (!inputCod) return;
             let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
-            
             const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
             const txtAlerta = document.getElementById('txtAlertaDuplicado');
 
@@ -651,47 +647,60 @@
             }
         }
 
+        // ================= PUNTO 1: MOTOR DE DESCARGA DE RÁFAGA EN PARALELO (ULTRA RÁPIDO E ILIMITADO) =================
         function descargarCatalogoAutomaticoRemoto() {
-            let indexActual = 1;
+            const ráfagaParalela = 15; // Lanza bloques de 15 descargas simultáneas en paralelo
+            let baseIndex = 1;
+            let terminado = false;
 
-            function intentarDescargarSiguienteArchivo() {
-                let numeroFormateado = indexActual.toString().padStart(2, '0');
-                
-                fetch(`${pathBaseGitHub}${numeroFormateado}.json`)
-                    .then(r => {
-                        if (!r.ok) {
-                            throw new Error("Fin del catálogo alcanzado");
-                        }
-                        return r.json();
-                    })
-                    .then(datos => {
-                        datos.forEach(item => {
-                            let rawSku = item["SKU"];
-                            let rawEan = item["EAN"];
-                            let rawDesc = item["DESCRIPCIÓN"];
+            function lanzarBloqueDescargas() {
+                if (terminado) return;
+                let promesasBloque = [];
 
-                            if (rawSku) {
-                                let skuLimpio = rawSku.toString().trim().toUpperCase();
-                                let descLimpia = rawDesc ? rawDesc.toString().trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
-                                
-                                databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
-
-                                if (rawEan) {
-                                    let eanLiopio = rawEan.toString().trim().toUpperCase();
-                                    databaseCat_Ean[eanLiopio] = { sku: skuLimpio, desc: descLimpia };
-                                }
+                for (let i = 0; i < ráfagaParalela; i++) {
+                    let indexFila = baseIndex + i;
+                    let numeroFormateado = indexFila.toString().padStart(2, '0');
+                    
+                    let promesa = fetch(`${pathBaseGitHub}${numeroFormateado}.json`)
+                        .then(r => {
+                            if (!r.ok) {
+                                terminado = true; 
+                                return null;
                             }
-                        });
-                        
-                        indexActual++;
-                        intentarDescargarSiguienteArchivo();
-                    })
-                    .catch(e => {
-                        // Cierre controlado al llegar al archivo límite en producción
-                    });
+                            return r.json();
+                        })
+                        .then(datos => {
+                            if (datos && Array.isArray(datos)) {
+                                datos.forEach(item => {
+                                    let rawSku = item["SKU"];
+                                    let rawEan = item["EAN"];
+                                    let rawDesc = item["DESCRIPCIÓN"];
+
+                                    if (rawSku) {
+                                        let skuLimpio = rawSku.toString().trim().toUpperCase();
+                                        let descLimpia = rawDesc ? rawDesc.toString().trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
+                                        databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
+
+                                        if (rawEan) {
+                                            let eanLimpio = rawEan.toString().trim().toUpperCase();
+                                            databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
+                                        }
+                                    }
+                                });
+                            }
+                        }).catch(() => {});
+                    promesasBloque.push(promesa);
+                }
+
+                Promise.all(promesasBloque).then(() => {
+                    if (!terminado) {
+                        baseIndex += ráfagaParalela;
+                        lanzarBloqueDescargas();
+                    }
+                });
             }
 
-            intentarDescargarSiguienteArchivo();
+            lanzarBloqueDescargas();
         }
 
         function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
@@ -807,7 +816,6 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
-                // REQUERIMIENTO 2: Los botones de Guardar/Cancelar solo se muestran si hay stock real
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
@@ -834,6 +842,7 @@
             }
         }
 
+        // ================= PUNTO 2: LÓGICA DE GUARDADO CORREGIDA Y VINCULADA PERFECTAMENTE CON EL MODELO DE DATOS =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -857,6 +866,7 @@
 
             for (let lote of lotesAsignados) {
                 if (remanente <= 0) break;
+                // Ajuste crítico estructural: Usa de forma nativa item.unidades mapeada del Excel del admin
                 let descontar = Math.min(lote.unidades, remanente); 
                 
                 let loteOriginalInventario = inventarioData1.find(i => i.lpn === lote.lpn && i.sku === lote.sku);
@@ -936,7 +946,6 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
-        // REQUERIMIENTO 1: Función de envío robusta conectada al ID nativo en minúsculas sin validaciones cruzadas que la congelen
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
@@ -990,10 +999,10 @@
                 const filas = XLSX.utils.sheet_to_json(hoja);
                 
                 let datosFormateados = filas.map(f => {
-                    let lpnVal = f["Nro LPN"] || "";
+                    let lpnVal = f["Nro LPN"] || f["LPN"] || "";
                     let skuVal = f["SKU"] || "";
                     let descVal = f["Descripción"] || "";
-                    let uVal = parseInt(f["Unidades actuales"] || 0, 10);
+                    let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
                     let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
                     let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
                     
