@@ -495,7 +495,6 @@
             }
         }
 
-        /* Sincronización en vivo del administrador */
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -647,9 +646,9 @@
             }
         }
 
-        // ================= PUNTO 1: MOTOR DE DESCARGA DE RÁFAGA EN PARALELO (ULTRA RÁPIDO E ILIMITADO) =================
+        // ================= PUNTO 1: MOTOR DE DESCARGA PARALELA EN RÁFAGA CORREGIDO =================
         function descargarCatalogoAutomaticoRemoto() {
-            const ráfagaParalela = 15; // Lanza bloques de 15 descargas simultáneas en paralelo
+            const ráfagaParalela = 15;
             let baseIndex = 1;
             let terminado = false;
 
@@ -842,7 +841,7 @@
             }
         }
 
-        // ================= PUNTO 2: LÓGICA DE GUARDADO CORREGIDA Y VINCULADA PERFECTAMENTE CON EL MODELO DE DATOS =================
+        // ================= PUNTO 2: COMPLEMENTACIÓN DE TIPOS PARA RESTRICCIÓN DE GUARDADO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -866,10 +865,14 @@
 
             for (let lote of lotesAsignados) {
                 if (remanente <= 0) break;
-                // Ajuste crítico estructural: Usa de forma nativa item.unidades mapeada del Excel del admin
                 let descontar = Math.min(lote.unidades, remanente); 
                 
-                let loteOriginalInventario = inventarioData1.find(i => i.lpn === lote.lpn && i.sku === lote.sku);
+                // Conversión forzada de texto (.toString().trim()) para romper el bloqueo de tipos de celdas
+                let loteOriginalInventario = inventarioData1.find(i => 
+                    i.lpn.toString().trim() === lote.lpn.toString().trim() && 
+                    i.sku.toString().trim() === lote.sku.toString().trim()
+                );
+                
                 if (loteOriginalInventario) {
                     loteOriginalInventario.unidades -= descontar;
                 }
