@@ -657,28 +657,51 @@
             }
         }
 
+        // ================= MOTOR DE DESCARGA AUTO-RECURSIVA TOTALMENTE ILIMITADA (01 AL INFINITO) =================
         function descargarCatalogoAutomaticoRemoto() {
-            for (let i = 1; i <= 43; i++) {
-                fetch(`${pathBaseGitHub}FV-${i}.json`).then(r => r.json().then(datos => {
-                    datos.forEach(item => {
-                        let rawSku = item["SKU"];
-                        let rawEan = item["EAN"];
-                        let rawDesc = item["DESCRIPCIÓN"];
+            let indexActual = 1;
 
-                        if (rawSku) {
-                            let skuLimpio = rawSku.toString().trim().toUpperCase();
-                            let descLimpia = rawDesc ? rawDesc.toString().trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
-                            
-                            databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
-
-                            if (rawEan) {
-                                let eanLimpio = rawEan.toString().trim().toUpperCase();
-                                databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
-                            }
+            function intentarDescargarSiguienteArchivo() {
+                let numeroFormateado = indexActual.toString().padStart(2, '0');
+                
+                fetch(`${pathBaseGitHub}${numeroFormateado}.json`)
+                    .then(r => {
+                        if (!r.ok) {
+                            // Si el servidor responde 404 (No encontrado), significa que llegamos al final de los archivos. Paramos.
+                            throw new Error("Fin del catálogo alcanzado");
                         }
+                        return r.json();
+                    })
+                    .then(datos => {
+                        datos.forEach(item => {
+                            let rawSku = item["SKU"];
+                            let rawEan = item["EAN"];
+                            let rawDesc = item["DESCRIPCIÓN"];
+
+                            if (rawSku) {
+                                let skuLimpio = rawSku.toString().trim().toUpperCase();
+                                let descLimpia = rawDesc ? rawDesc.toString().trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
+                                
+                                databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
+
+                                if (rawEan) {
+                                    let eanLimpio = rawEan.toString().trim().toUpperCase();
+                                    databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
+                                }
+                            }
+                        });
+                        
+                        // Si la descarga fue un éxito total, avanzamos al siguiente de manera ilimitada
+                        indexActual++;
+                        intentarDescargarSiguienteArchivo();
+                    })
+                    .catch(e => {
+                        // Captura el final del catálogo o fallas de red de forma limpia sin romper la pantalla
                     });
-                })).catch(e => {});
             }
+
+            // Arranca el motor recursivo desde el 01
+            intentarDescargarSiguienteArchivo();
         }
 
         function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
@@ -809,7 +832,7 @@
                 }
 
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
-                document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
+                document.getElementById('lblSkuConvertido').innerText = numeroSkuLinter = numeroSkuLimpioExcel;
             }
         }
 
@@ -1036,7 +1059,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // ================= CORRECCIÓN COMPLETA DE SINTAXIS DE CRUCE INTERNO =================
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
