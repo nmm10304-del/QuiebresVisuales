@@ -498,7 +498,7 @@
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
-                if (data) {
+                if (data && Object.keys(data).length > 0) {
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
                     document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
@@ -620,7 +620,33 @@
             });
         }
 
-        // ================= PUNTO 1: MOTOR DE DESCARGA PARALELA EN RÁFAGA REPARADO =================
+        function evaluarBloqueoDuplicadosEnVivo() {
+            const inputCod = document.getElementById('incidenciacodigoInput');
+            if (!inputCod) return;
+            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
+            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
+            const txtAlerta = document.getElementById('txtAlertaDuplicado');
+
+            if (!codIngresado) {
+                wrapperGrafico.classList.add('hidden');
+                return;
+            }
+
+            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
+                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
+                m.estado === "Pendiente" && 
+                m.idAsistente !== idUsuarioLogueado
+            );
+
+            if (coincidenciaDuplicada) {
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                wrapperGrafico.classList.remove('hidden');
+            } else {
+                wrapperGrafico.classList.add('hidden');
+            }
+        }
+
+        /* MOTOR DE DESCARGA PARALELA ASÍNCRONA EN RÁFAGA */
         function descargarCatalogoAutomaticoRemoto() {
             const ráfagaParalela = 15;
             let baseIndex = 1;
@@ -774,7 +800,7 @@
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
                 lotesFiltradosTurno = inventarioData1.filter(item => {
-                    if (!item.sku) return false;
+                    if (!item || !item.sku) return false;
                     
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
@@ -815,7 +841,6 @@
             }
         }
 
-        // ================= PUNTO 2: LÓGICA CON FILTRO DE CAMPOS NULOS / VACÍOS PARA EL GUARDADO SEGURO =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -841,7 +866,6 @@
                 if (remanente <= 0) break;
                 let descontar = Math.min(lote.unidades, remanente); 
                 
-                // Validación de campos nulos en caliente para prevenir crasheos inesperados al guardar
                 let loteOriginalInventario = inventarioData1.find(i => 
                     i && i.lpn && i.sku &&
                     i.lpn.toString().trim() === lote.lpn.toString().trim() && 
@@ -965,6 +989,7 @@
             }
         }
 
+        /* INYECTOR INTELIGENTE FLEXIBLE CON DETECCIÓN CRUCIAL DE ENCABEZADOS */
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -977,15 +1002,22 @@
                 const filas = XLSX.utils.sheet_to_json(hoja);
                 
                 let datosFormateados = filas.map(f => {
-                    let lpnVal = f["Nro LPN"] || f["LPN"] || "";
-                    let skuVal = f["SKU"] || "";
-                    let descVal = f["Descripción"] || "";
-                    let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
-                    let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
-                    let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
+                    let lpnVal = "", skuVal = "", descVal = "", uVal = 0, fvVal = "SIN FECHA", ubiVal = "";
+                    
+                    // Escaneo y normalización de textos para absorber variaciones en las columnas del WMS
+                    Object.keys(f).forEach(k => {
+                        let nk = k.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+                        
+                        if (nk.includes("lpn") || nk.includes("contenedor")) lpnVal = f[k];
+                        else if (nk.includes("sku") || nk.includes("articulo") || nk.includes("artculo")) skuVal = f[k];
+                        else if (nk.includes("descripcion")) descVal = f[k];
+                        else if (nk.includes("unactual") || nk.includes("unidadesactuales") || nk.includes("cant")) uVal = parseInt(f[k] || 0, 10);
+                        else if (nk.includes("caducidad") || nk.includes("vencimiento") || nk.includes("fecha")) fvVal = f[k];
+                        else if (nk.includes("ubicacion") || nk.includes("posicion")) ubiVal = f[k];
+                    });
                     
                     return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                }).filter(x => x && x.sku);
+                }).filter(x => x && x.sku); // Mantiene activo el registro si se detectó un SKU mapeado
 
                 dbRef.set(datosFormateados);
             };
