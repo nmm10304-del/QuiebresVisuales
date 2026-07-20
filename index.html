@@ -746,7 +746,6 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // ================= CORRECCIÓN SECUENCIA DE MATCH DOBLE SIN COMILLAS PARA PRODUCCIÓN =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -754,7 +753,6 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
 
-                // REQUERIMIENTO 2: Alertas preventivas si el administrador dejó vacía la data en la nube
                 if (!inventarioData1 || inventarioData1.length === 0) {
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
@@ -768,7 +766,6 @@
                 let skuTraducido = entradaOriginal; 
                 let descripcionTraducida = "";
 
-                // REQUERIMIENTO 1: Mapeo Inicial sobre el Catálogo JSON para definir SKU y Descripción oficial de forma atómica
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
@@ -781,7 +778,6 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
-                // REQUERIMIENTO 3: Una vez extraídos el SKU y Descripción oficiales, hace match filtrando Cajas_Tienda con unidades > 0
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
@@ -793,7 +789,6 @@
                     }
 
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    // Asegura que las unidades actuales registradas sean estrictamente mayores a cero
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
@@ -859,7 +854,6 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
-            // ENTRADA EXITOSA A LA REPO: Publica registros mayores a 0 unidades hacia Firebase en caliente
             logRef.push({
                 operador: nombreOperador,
                 sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
@@ -886,10 +880,7 @@
         }
 
         function descargarExcelRepotenciar() {
-            if (registrosHistoricosRepotenciar.length === 0) {
-                alert("No hay datos de repotenciación para exportar.");
-                return;
-            }
+            if (registrosHistoricosRepotenciar.length === 0) return;
             const dataProcesada = registrosHistoricosRepotenciar.map(item => ({
                 "Operador": item.operador || "Anónimo",
                 "SKU": item.sku || "",
@@ -934,7 +925,6 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
         
-        // CORRECCIÓN ATÓMICA DE ID DE ENVÍO DE ALERTA: Resuelve la vinculación con 'incidenciacodigoInput'
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
@@ -1046,6 +1036,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // ================= CORRECCIÓN COMPLETA DE SINTAXIS DE CRUCE INTERNO =================
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
