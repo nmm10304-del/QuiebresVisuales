@@ -244,7 +244,7 @@
 
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div id="txtMensajeAdvertenciaStock">This product doesn't have current inventory.</div>
+                        <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
                     </div>
 
                     <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
@@ -255,7 +255,6 @@
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        onkeypress="handleBarcode(event)">
                             </div>
-                            <!-- SECCIÓN CANTIDAD COMPACTADA PARA TRABAJAR DIRECTO CON EL TECLADO (ENTER) -->
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
@@ -265,7 +264,6 @@
                         </div>
                     </div>
 
-                    <!-- SECCIÓN OMITIDA: EL CONTENEDOR ANTERIOR SE REMUEVE PARA AGILIZAR FLUIDEZ SEGÚN SOLICITUD -->
                     <div id="resultadoEscaneo" class="hidden"></div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
@@ -360,6 +358,7 @@
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
+        let alertasOcultadasAsistente = []; // Cache en caliente local para ocultar los completados
         
         let lotesFiltradosTurno = [];
 
@@ -580,7 +579,8 @@
 
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        if (m.idAsistente === idUsuarioLogueado) {
+                        // REQUERIMIENTO a: Verifica si el asistente decidió borrar u ocultar localmente esta alerta completada
+                        if (m.idAsistente === idUsuarioLogueado && !alertasOcultadasAsistente.includes(key)) {
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
                                 contenedorNotifAsistente.innerHTML += `
@@ -603,7 +603,7 @@
                                                 <div class="mt-1.5 inline-block text-[10px] bg-green-600 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">Estado: Completado</div>
                                             </div>
                                         </div>
-                                        <button onclick="removerNotificacionCompletadaLocal('${key}')" class="text-gray-400 hover:text-gray-700 font-sans font-bold text-sm px-1.5">✕</button>
+                                        <button onclick="removerNotificacionCompletadaLocal('${key}')" class="text-gray-400 hover:text-gray-700 font-sans font-bold text-sm px-1.5 cursor-pointer">✕</button>
                                     </div>`;
                             }
                         }
@@ -615,6 +615,18 @@
 
                 evaluarBloqueoDuplicadosEnVivo();
             });
+        }
+
+        // REQUERIMIENTO a: Función optimizada para que el asistente pueda desaparecer los avisos verdes completados localmente
+        function removerNotificacionCompletadaLocal(key) {
+            alertasOcultadasAsistente.push(key);
+            // Re-gatillamos el renderizador en vivo de alertas usando la caché guardada
+            msgRef.setValue = Object.assign({}, cacheAlertasGlobales);
+            dbRef.child("dummy_trigger").transaction(() => 0); // Pequeño trigger inofensivo para refrescar la vista en caliente
+        }
+
+        function subsanarIncidenciaAdmin(key) {
+            msgRef.child(key).update({ estado: "Completado" });
         }
 
         function evaluarBloqueoDuplicadosEnVivo() {
@@ -763,13 +775,21 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // ================= CAMBIO CLAVE EN ENTRADA DE SKU/EAN: OMITE BLOQUEOS Y PERMITE FLUJO DIRECTO =================
+        // ================= REQUERIMIENTO b: FLUJO DE CONTROL OPERATIVO CON ALERTA DE RESERVA VACÍA =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
+
+                if (!inventarioData1 || inventarioData1.length === 0) {
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    return;
+                }
 
                 let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
                 let skuTraducido = entradaOriginal; 
@@ -787,31 +807,44 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
-                // Mapea la coincidencia directa de stock si existe en Cajas_Tienda
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item || !item.sku) return false;
+                    
+                    if (item.ubicacion) {
+                        let u = item.ubicacion.toString().toUpperCase().trim();
+                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
+                            return false;
+                        }
+                    }
+
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    return skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel;
+                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
-                // Omitimos franjas rojas y advertencias para el flujo: Abre el campo cantidad directo
-                descripcionTraducida = (lotesFiltradosTurno.length > 0 && lotesFiltradosTurno[0].descripcion) ? lotesFiltradosTurno[0].descripcion : (descripcionTraducida || "PRODUCTO IDENTIFICADO");
-                
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
-                document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
-                document.getElementById('containerInputLpn').classList.remove('invisible');
                 
+                // REQUERIMIENTO b: Lógica de gatillado si el producto cuenta o no con unidades físicas registradas en la reserva
+                if (lotesFiltradosTurno.length > 0) {
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+                    document.getElementById('containerInputLpn').classList.remove('invisible');
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
+                } else {
+                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('containerInputLpn').classList.add('invisible');
+                }
+
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
                 document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
-                setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
             }
         }
 
-        // ================= EVENTO ENTER EN CANTIDAD: CARGA DIRECTA DE INFORMACIÓN SIN SOLICITAR EL BOTÓN GUARDAR =================
         function handleCantidadKey(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                guardarRegistro(); // Ejecuta la acción de guardado directo mediante el teclado
+                guardarRegistro();
             }
         }
 
@@ -825,7 +858,6 @@
             let remanente = parseInt(Math_cantidad, 10);
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             
-            // Definición de variables de contingencia por si el producto es manual o nuevo
             let lpnSugerido = "LPN-MANUAL";
             let fvSugerida = "SIN FECHA";
             let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
@@ -857,7 +889,6 @@
                 }
             }
 
-            // Inserción directa en caliente hacia la base de datos de logs
             logRef.push({
                 operador: nombreOperador,
                 sku: skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""),
@@ -957,6 +988,7 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
 
+        // Cierre y reinicio de campos nulos en login
         function cerrarNotificacionExitoPersonalizada() {
             document.getElementById('modalNotificacionExito').classList.add('hidden');
             if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
