@@ -255,6 +255,7 @@
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        onkeypress="handleBarcode(event)">
                             </div>
+                            <!-- SECCIÓN CANTIDAD COMPACTADA PARA TRABAJAR DIRECTO CON EL TECLADO (ENTER) -->
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
@@ -264,12 +265,8 @@
                         </div>
                     </div>
 
-                    <div id="resultadoEscaneo" class="hidden p-4 rounded-lg border border-gray-200 bg-gray-50/50">
-                        <div class="flex gap-3">
-                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Guardar</button>
-                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Cancelar</button>
-                        </div>
-                    </div>
+                    <!-- SECCIÓN OMITIDA: EL CONTENEDOR ANTERIOR SE REMUEVE PARA AGILIZAR FLUIDEZ SEGÚN SOLICITUD -->
+                    <div id="resultadoEscaneo" class="hidden"></div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
                         <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
@@ -646,7 +643,6 @@
             }
         }
 
-        /* MOTOR DE DESCARGA PARALELA ASÍNCRONA EN RÁFAGA */
         function descargarCatalogoAutomaticoRemoto() {
             const ráfagaParalela = 15;
             let baseIndex = 1;
@@ -767,21 +763,13 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
+        // ================= CAMBIO CLAVE EN ENTRADA DE SKU/EAN: OMITE BLOQUEOS Y PERMITE FLUJO DIRECTO =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
-
-                if (!inventarioData1 || inventarioData1.length === 0) {
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
-                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
-                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-                    document.getElementById('containerInputLpn').classList.add('invisible');
-                    document.getElementById('resultadoEscaneo').classList.add('hidden');
-                    return;
-                }
 
                 let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
                 let skuTraducido = entradaOriginal; 
@@ -799,45 +787,31 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
+                // Mapea la coincidencia directa de stock si existe en Cajas_Tienda
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item || !item.sku) return false;
-                    
-                    if (item.ubicacion) {
-                        let u = item.ubicacion.toString().toUpperCase().trim();
-                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
-                            return false;
-                        }
-                    }
-
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && parseInt(item.unidades || 0, 10) > 0;
+                    return skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel;
                 });
                 
-                document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                // Omitimos franjas rojas y advertencias para el flujo: Abre el campo cantidad directo
+                descripcionTraducida = (lotesFiltradosTurno.length > 0 && lotesFiltradosTurno[0].descripcion) ? lotesFiltradosTurno[0].descripcion : (descripcionTraducida || "PRODUCTO IDENTIFICADO");
                 
-                if (lotesFiltradosTurno.length > 0) {
-                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
-                    document.getElementById('containerInputLpn').classList.remove('invisible');
-                    document.getElementById('resultadoEscaneo').classList.remove('hidden');
-                    setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
-                } else {
-                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "This product doesn't have current inventory.";
-                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
-                    document.getElementById('containerInputLpn').classList.add('invisible');
-                    document.getElementById('resultadoEscaneo').classList.add('hidden');
-                }
-
+                document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+                document.getElementById('containerInputLpn').classList.remove('invisible');
+                
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
                 document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
+                setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
             }
         }
 
+        // ================= EVENTO ENTER EN CANTIDAD: CARGA DIRECTA DE INFORMACIÓN SIN SOLICITAR EL BOTÓN GUARDAR =================
         function handleCantidadKey(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                guardarRegistro();
+                guardarRegistro(); // Ejecuta la acción de guardado directo mediante el teclado
             }
         }
 
@@ -849,44 +823,48 @@
             }
             
             let remanente = parseInt(Math_cantidad, 10);
-            let lotesAsignados = [...lotesFiltradosTurno];
-            
-            lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
-            
-            if (lotesAsignados.length === 0) { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Este producto no cuenta con stock disponible en Cajas_Tienda."); 
-                return; 
-            }
-
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            let primerLpnImplicado = lotesAsignados[0].lpn;
-            let historialConsumosLpns = [];
+            
+            // Definición de variables de contingencia por si el producto es manual o nuevo
+            let lpnSugerido = "LPN-MANUAL";
+            let fvSugerida = "SIN FECHA";
+            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
-            for (let lote of lotesAsignados) {
-                if (remanente <= 0) break;
-                let descontar = Math.min(lote.unidades, remanente); 
+            if (lotesFiltradosTurno && lotesFiltradosTurno.length > 0) {
+                let lotesAsignados = [...lotesFiltradosTurno];
+                lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
                 
-                let loteOriginalInventario = inventarioData1.find(i => 
-                    i && i.lpn && i.sku &&
-                    i.lpn.toString().trim() === lote.lpn.toString().trim() && 
-                    i.sku.toString().trim() === lote.sku.toString().trim()
-                );
-                
-                if (loteOriginalInventario) {
-                    loteOriginalInventario.unidades -= descontar;
+                lpnSugerido = lotesAsignados[0].lpn || "LPN-MAESTRO";
+                fvSugerida = lotesAsignados[0].vencimiento || "SIN FECHA";
+                historialConsumosLpns = [];
+
+                for (let lote of lotesAsignados) {
+                    if (remanente <= 0) break;
+                    let descontar = Math.min(lote.unidades || remanente, remanente); 
+                    
+                    let loteOriginalInventario = inventarioData1.find(i => 
+                        i && i.lpn && i.sku &&
+                        i.lpn.toString().trim() === lote.lpn.toString().trim() && 
+                        i.sku.toString().trim() === lote.sku.toString().trim()
+                    );
+                    
+                    if (loteOriginalInventario) {
+                        loteOriginalInventario.unidades = Math.max(0, loteOriginalInventario.unidades - descontar);
+                    }
+                    
+                    remanente -= descontar;
+                    historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
                 }
-                
-                remanente -= descontar;
-                historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
+            // Inserción directa en caliente hacia la base de datos de logs
             logRef.push({
                 operador: nombreOperador,
-                sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
-                fifoLpnOptimizado: primerLpnImplicado, 
+                sku: skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""),
+                fifoLpnOptimizado: lpnSugerido, 
                 desc: document.getElementById('asistenteInfoDescripcion').innerText,
                 cant: parseInt(Math_cantidad, 10),
-                fv: lotesAsignados[0].vencimiento || "SIN FECHA",
+                fv: fvSugerida,
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
@@ -901,7 +879,6 @@
             document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
             document.getElementById('containerInputLpn').classList.add('invisible');
             document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
-            document.getElementById('resultadoEscaneo').classList.add('hidden');
             lotesFiltradosTurno = [];
             document.getElementById('barcodeInput').focus();
         }
@@ -944,7 +921,6 @@
             document.getElementById('modalReporte').classList.remove('hidden');
             document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
             document.getElementById('incidenciaMotivoInput').value = "";
-            evaluarBloqueoDuplicadosEnVivo();
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
@@ -989,7 +965,6 @@
             }
         }
 
-        /* INYECTOR INTELIGENTE FLEXIBLE CON DETECCIÓN CRUCIAL DE ENCABEZADOS */
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1002,22 +977,15 @@
                 const filas = XLSX.utils.sheet_to_json(hoja);
                 
                 let datosFormateados = filas.map(f => {
-                    let lpnVal = "", skuVal = "", descVal = "", uVal = 0, fvVal = "SIN FECHA", ubiVal = "";
-                    
-                    // Escaneo y normalización de textos para absorber variaciones en las columnas del WMS
-                    Object.keys(f).forEach(k => {
-                        let nk = k.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
-                        
-                        if (nk.includes("lpn") || nk.includes("contenedor")) lpnVal = f[k];
-                        else if (nk.includes("sku") || nk.includes("articulo") || nk.includes("artculo")) skuVal = f[k];
-                        else if (nk.includes("descripcion")) descVal = f[k];
-                        else if (nk.includes("unactual") || nk.includes("unidadesactuales") || nk.includes("cant")) uVal = parseInt(f[k] || 0, 10);
-                        else if (nk.includes("caducidad") || nk.includes("vencimiento") || nk.includes("fecha")) fvVal = f[k];
-                        else if (nk.includes("ubicacion") || nk.includes("posicion")) ubiVal = f[k];
-                    });
+                    let lpnVal = f["Nro LPN"] || f["LPN"] || "";
+                    let skuVal = f["SKU"] || "";
+                    let descVal = f["Descripción"] || "";
+                    let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
+                    let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
+                    let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
                     
                     return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                }).filter(x => x && x.sku); // Mantiene activo el registro si se detectó un SKU mapeado
+                }).filter(x => x && x.sku);
 
                 dbRef.set(datosFormateados);
             };
