@@ -255,7 +255,6 @@
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        onkeypress="handleBarcode(event)">
                             </div>
-                            <!-- BOTÓN AZUL/VERDE ENTER ESCUCHA CON PRECISION DESDE EL TECLADO VIRTUAL -->
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
@@ -837,14 +836,14 @@
             }
         }
 
-        // ================= RE-INCORPORACIÓN DEL BOTÓN ENTER PARA EL GUARDADO SEGURO =================
         function handleCantidadKey(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                guardarRegistro(); // Ejecuta la acción de guardado directo mediante el teclado
+                guardarRegistro(); 
             }
         }
 
+        // ================= OPTIMIZACIÓN ULTRA VELOZ: GUARDADO EN SEGUNDO PLANO (GUARDADO OPTIMISTA) =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -859,15 +858,17 @@
             let fvSugerida = "SIN FECHA";
             let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
-            if (lotesFiltradosTurno && lotesFiltradosTurno.length > 0) {
-                let lotesAsignados = [...lotesFiltradosTurno];
-                lotesAsignados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
+            // Clonamos localmente el estado de los lotes para procesar la deducción de stock inmediatamente
+            let copiaLotesFiltrados = [...lotesFiltradosTurno];
+
+            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                copiaLotesFiltrados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
                 
-                lpnSugerido = lotesAsignados[0].lpn || "LPN-MAESTRO";
-                fvSugerida = lotesAsignados[0].vencimiento || "SIN FECHA";
+                lpnSugerido = copiaLotesFiltrados[0].lpn || "LPN-MAESTRO";
+                fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
                 historialConsumosLpns = [];
 
-                for (let lote of lotesAsignados) {
+                for (let lote of copiaLotesFiltrados) {
                     if (remanente <= 0) break;
                     let descontar = Math.min(lote.unidades || remanente, remanente); 
                     
@@ -886,19 +887,24 @@
                 }
             }
 
+            // ACCIÓN ULTRA RÁPIDA: Limpia la pantalla e interactúa con el operador al instante (0 milisegundos de espera)
+            let copiaSkuTemporal = skuEscaneadoTemporal.toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText;
+
+            cancelarRegistro(); // Cierra los cuadros de texto y enfoca el lector de inmediato para el siguiente quiebre
+
+            // SINCRONIZACIÓN EN SEGUNDO PLANO: Se ejecuta de forma asíncrona hacia Firebase mientras el operador ya está escaneando
             logRef.push({
                 operador: nombreOperador,
-                sku: skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""),
+                sku: copiaSkuTemporal,
                 fifoLpnOptimizado: lpnSugerido, 
-                desc: document.getElementById('asistenteInfoDescripcion').innerText,
+                desc: copiaDescripcion,
                 cant: parseInt(Math_cantidad, 10),
                 fv: fvSugerida,
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
-            dbRef.set(inventarioData1).then(() => {
-                cancelarRegistro();
-            });
+            dbRef.set(inventarioData1);
         }
 
         function cancelarRegistro() {
