@@ -303,6 +303,7 @@
         </div>
     </div>
 
+    <!-- MODAL DINÁMICO DE NOTIFICACIONES (ÉXITO / ALERTA) -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -334,7 +335,7 @@
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="w-full bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200 block">Enviar Alerta</button>
+                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200 block">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -467,7 +468,7 @@
                 
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                 document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excelente";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent";
                 document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             }
@@ -745,7 +746,7 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // ================= FLUJO DE MATCH DOBLE DE ENTRADA (SKU / EAN) CORREGIDO Y REMOCIÓN DE COMILLAS =================
+        // ================= CORRECCIÓN SECUENCIA DE MATCH DOBLE SIN COMILLAS PARA PRODUCCIÓN =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -753,12 +754,13 @@
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
                 if (!entradaOriginal) return;
 
-                // REQUERIMIENTO 2: Validación si el Administrador no ha cargado Cajas_Tienda
+                // REQUERIMIENTO 2: Alertas preventivas si el administrador dejó vacía la data en la nube
                 if (!inventarioData1 || inventarioData1.length === 0) {
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('resultadoEscaneo').classList.add('hidden');
                     return;
                 }
 
@@ -766,7 +768,7 @@
                 let skuTraducido = entradaOriginal; 
                 let descripcionTraducida = "";
 
-                // Validación Cruzada: Si es un EAN, traduce a SKU. Si ya es SKU, pasa directo
+                // REQUERIMIENTO 1: Mapeo Inicial sobre el Catálogo JSON para definir SKU y Descripción oficial de forma atómica
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
@@ -779,7 +781,7 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
-                // REQUERIMIENTO 3: Filtro estricto basado en las columnas exactas SKU, Descripción y Unidades actuales mayores a 0
+                // REQUERIMIENTO 3: Una vez extraídos el SKU y Descripción oficiales, hace match filtrando Cajas_Tienda con unidades > 0
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item.sku) return false;
                     
@@ -791,7 +793,7 @@
                     }
 
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    // Valida que el conteo de existencias de esa fila sea estrictamente mayor a 0 unidades actuales
+                    // Asegura que las unidades actuales registradas sean estrictamente mayores a cero
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && parseInt(item.unidades || 0, 10) > 0;
                 });
                 
@@ -801,12 +803,14 @@
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
+                    document.getElementById('resultadoEscaneo').classList.remove('hidden');
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "This product doesn't have current inventory.";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
                     document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('resultadoEscaneo').classList.add('hidden');
                 }
 
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
@@ -855,7 +859,7 @@
                 historialConsumosLpns.push(`${lote.lpn} (-${descontar} Uds)`);
             }
 
-            // GATILLADO HACIA REPOSICIÓN MAYORES A 0 UNIDADES EN PANEL DEL ADMIN
+            // ENTRADA EXITOSA A LA REPO: Publica registros mayores a 0 unidades hacia Firebase en caliente
             logRef.push({
                 operador: nombreOperador,
                 sku: parseInt(skuEscaneadoTemporal.toString().replace(/[^0-9]/g, ""), 10).toString(),
@@ -882,7 +886,10 @@
         }
 
         function descargarExcelRepotenciar() {
-            if (registrosHistoricionRepotenciar.length === 0) return;
+            if (registrosHistoricosRepotenciar.length === 0) {
+                alert("No hay datos de repotenciación para exportar.");
+                return;
+            }
             const dataProcesada = registrosHistoricosRepotenciar.map(item => ({
                 "Operador": item.operador || "Anónimo",
                 "SKU": item.sku || "",
@@ -927,6 +934,7 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
         
+        // CORRECCIÓN ATÓMICA DE ID DE ENVÍO DE ALERTA: Resuelve la vinculación con 'incidenciacodigoInput'
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
@@ -961,7 +969,6 @@
             }
         }
 
-        // ================= DETECTOR DE ENTRADAS DEL EXCEL DE CAJAS_TIENDA CON NUEVAS COLUMNAS REQUERIDAS =================
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1037,30 +1044,6 @@
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
             };
             lector.readAsArrayBuffer(file);
-        }
-
-        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
-            const dropZone = document.getElementById(zoneId);
-            const input = document.getElementById(inputId);
-            const btn = document.getElementById(btnId);
-            
-            dropZone.addEventListener("click", (e) => {
-                if (e.target === btn || btn.contains(e.target) || e.target.tagName === 'BUTTON') return;
-                input.click();
-            });
-            btn.addEventListener("click", (e) => { e.stopPropagation(); input.click(); });
-            input.addEventListener("change", () => { callback(); });
-
-            dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
-            dropZone.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
-            dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove(overClass); });
-            dropZone.addEventListener("drop", (e) => {
-                e.preventDefault(); e.stopPropagation();
-                dropZone.classList.remove(overClass);
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
-                    input.files = e.dataTransfer.files; callback(); 
-                }
-            });
         }
 
         function ejecutarCruceMacroGlobal() {
