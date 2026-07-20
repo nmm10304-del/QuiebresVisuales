@@ -255,6 +255,7 @@
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        onkeypress="handleBarcode(event)">
                             </div>
+                            <!-- BOTÓN AZUL/VERDE ENTER ESCUCHA CON PRECISION DESDE EL TECLADO VIRTUAL -->
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
@@ -358,7 +359,7 @@
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
-        let alertasOcultadasAsistente = []; // Cache en caliente local para ocultar los completados
+        let alertasOcultadasAsistente = []; 
         
         let lotesFiltradosTurno = [];
 
@@ -579,7 +580,6 @@
 
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        // REQUERIMIENTO a: Verifica si el asistente decidió borrar u ocultar localmente esta alerta completada
                         if (m.idAsistente === idUsuarioLogueado && !alertasOcultadasAsistente.includes(key)) {
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
@@ -617,12 +617,10 @@
             });
         }
 
-        // REQUERIMIENTO a: Función optimizada para que el asistente pueda desaparecer los avisos verdes completados localmente
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
-            // Re-gatillamos el renderizador en vivo de alertas usando la caché guardada
             msgRef.setValue = Object.assign({}, cacheAlertasGlobales);
-            dbRef.child("dummy_trigger").transaction(() => 0); // Pequeño trigger inofensivo para refrescar la vista en caliente
+            dbRef.child("dummy_trigger").transaction(() => 0); 
         }
 
         function subsanarIncidenciaAdmin(key) {
@@ -775,7 +773,6 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // ================= REQUERIMIENTO b: FLUJO DE CONTROL OPERATIVO CON ALERTA DE RESERVA VACÍA =================
         function handleBarcode(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -823,7 +820,6 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
-                // REQUERIMIENTO b: Lógica de gatillado si el producto cuenta o no con unidades físicas registradas en la reserva
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
@@ -841,10 +837,11 @@
             }
         }
 
+        // ================= RE-INCORPORACIÓN DEL BOTÓN ENTER PARA EL GUARDADO SEGURO =================
         function handleCantidadKey(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                guardarRegistro();
+                guardarRegistro(); // Ejecuta la acción de guardado directo mediante el teclado
             }
         }
 
@@ -988,7 +985,6 @@
             document.getElementById('modalReporte').classList.add('hidden'); 
         }
 
-        // Cierre y reinicio de campos nulos en login
         function cerrarNotificacionExitoPersonalizada() {
             document.getElementById('modalNotificacionExito').classList.add('hidden');
             if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
