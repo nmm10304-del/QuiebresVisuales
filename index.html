@@ -264,7 +264,13 @@
                         </div>
                     </div>
 
-                    <div id="resultadoEscaneo" class="hidden"></div>
+                    <!-- PUNTO 1: EL CONTENEDOR DE BOTONES SE MUESTRA EN PANTALLA SI HAY STOCK PARA ORDENADORES Y OTROS DISPOSITIVOS -->
+                    <div id="resultadoEscaneo" class="hidden p-4 rounded-lg border border-gray-200 bg-gray-50/50">
+                        <div class="flex gap-3">
+                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Guardar</button>
+                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Cancelar</button>
+                        </div>
+                    </div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
                         <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
@@ -359,7 +365,6 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
-        // Re-inicialización inteligente de la caché local persistente para las alertas que borra el asistente
         let alertasOcultadasAsistente = [];
         try {
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
@@ -622,16 +627,14 @@
             });
         }
 
-        // ================= PUNTO 1 CORREGIDO: VINCULACIÓN CON LOCALSTORAGE PARA ELIMINACIÓN LOCAL DE ALERTAS COMPLETADAS =================
+        // ================= PUNTO 2 CORREGIDO: SE GARANTIZA LA PERSISTENCIA Y ACTUALIZACIÓN DE INTERFAZ OPERATIVA EN EL INCIDENTADOR LOCAL =================
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
-                // Guarda la matriz en la memoria del dispositivo para persistencia total
                 localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
             } catch(e) {}
             
-            // Forzamos el refresco inmediato recreando la vista localmente con los datos guardados
-            msgRef.setValue = Object.assign({}, cacheAlertasGlobales);
+            // Disparador dinámico para refrescar el árbol local instantáneamente sin crasheos
             dbRef.child("dummy_trigger").transaction(() => 0); 
         }
 
@@ -832,16 +835,19 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
+                // PUNTO 1: El contenedor de botones se abre en paralelo a la cantidad si hay stock en reserva
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
+                    document.getElementById('resultadoEscaneo').classList.remove('hidden');
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
                     document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
                     document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('resultadoEscaneo').classList.add('hidden');
                 }
 
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
@@ -922,6 +928,7 @@
             document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
             document.getElementById('containerInputLpn').classList.add('invisible');
             document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            document.getElementById('resultadoEscaneo').classList.add('hidden');
             lotesFiltradosTurno = [];
             document.getElementById('barcodeInput').focus();
         }
@@ -960,6 +967,7 @@
             }
         }
 
+        // Secciones fijas del Administrador
         function abrirModalReporteIncidencia() {
             document.getElementById('modalReporte').classList.remove('hidden');
             document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
