@@ -257,7 +257,6 @@
                             </div>
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
-                                <!-- PUNTO 1: Permite el ingreso tanto con Enter desde ordenador como con el teclado virtual -->
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeypress="handleCantidadKey(event)">
@@ -265,6 +264,7 @@
                         </div>
                     </div>
 
+                    <!-- PUNTO 3: Se eliminan definitivamente los botones físicos Guardar y Cancelar del panel del asistente -->
                     <div id="resultadoEscaneo" class="hidden"></div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
@@ -360,6 +360,7 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
+        // PUNTO 2 CORREGIDO: Declaración de caché en caliente local para ocultar de inmediato las alertas borradas
         let alertasOcultadasAsistente = [];
         try {
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
@@ -451,6 +452,7 @@
                 moduleEscaneo.classList.remove("hidden");
                 setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (val === "buzonalerta") {
+                moduleEscaneo.classList.add("hidden");
                 moduloBuzon.classList.remove("hidden");
             } else if (val === "cambiarclave") {
                 moduloClave.classList.remove("hidden");
@@ -458,7 +460,7 @@
             }
         }
 
-        function procesarChangeClaveAsistente() {
+        function procesarCambioClaveAsistente() {
             const nuevaClave = document.getElementById('txtNuevaClaveAsistente').value.trim();
             if (!nuevaClave) {
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
@@ -585,7 +587,7 @@
 
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        // PUNTO 2 CORREGIDO: Mapeo exacto del nombre de función en el listener local de la pocket
+                        // PUNTO 2 CORREGIDO: Muestra tanto pendientes como completados con opción a borrado por el asistente
                         if (m.idAsistente === idUsuarioLogueado && !alertasOcultadasAsistente.includes(key)) {
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
@@ -623,13 +625,12 @@
             });
         }
 
-        // PUNTO 2 CORREGIDO: Lógica de persistencia local en caché persistente para que no vuelvan a figurar avisos ya descartados
+        // PUNTO 2 CORREGIDO: Guarda en localStorage para ocultar de inmediato el aviso verde en la pocket del asistente
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
                 localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
             } catch(e) {}
-            
             dbRef.child("dummy_trigger").transaction(() => 0); 
         }
 
@@ -834,10 +835,11 @@
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                     document.getElementById('containerInputLpn').classList.remove('invisible');
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
-                    document.getElementById('avisoAdvertenciaStock').classList.remove('hidden');
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('containerInputLpn').classList.add('invisible');
                 }
 
@@ -846,7 +848,7 @@
             }
         }
 
-        // PUNTO 1: Evento de teclado modificado para procesar el envío inmediato desde cualquier dispositivo u ordenador
+        // PUNTOS 1 y 3 CORREGIDOS: Los datos migran al presionar Enter en PC y móviles sin requerir clicks externos
         function handleCantidadKey(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -919,7 +921,7 @@
             document.getElementById('cantidadInput').value = "";
             document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
             document.getElementById('containerInputLpn').classList.add('invisible');
-            document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
             lotesFiltradosTurno = [];
             document.getElementById('barcodeInput').focus();
         }
