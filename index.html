@@ -264,10 +264,11 @@
                         </div>
                     </div>
 
-                    <div id="resultadoEscaneo" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+                    <!-- REQUERIMIENTO 2: Contenedor de Guardar/Cancelar oculto por defecto (Solo visible si hay stock real) -->
+                    <div id="resultadoEscaneo" class="hidden p-4 rounded-lg border border-gray-200 bg-gray-50/50">
                         <div class="flex gap-3">
-                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition">Guardar</button>
-                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition">Cancelar</button>
+                            <button onclick="guardarRegistro()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Guardar</button>
+                            <button onclick="cancelarRegistro()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded shadow transition text-center cursor-pointer">Cancelar</button>
                         </div>
                     </div>
 
@@ -330,12 +331,13 @@
                     <input type="text" id="incidenciacodigoInput" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problem detectado?:</label>
                     <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" disabled onclick="enviarReporteIncidencia()" class="flex-1 bg-gray-300 text-gray-500 font-bold py-2 rounded text-xs cursor-not-allowed transition shadow-sm border border-gray-200 block">Enviar Alerta</button>
+                <!-- REQUERIMIENTO 1: Botón restaurado de forma nativa para permitir envíos fluidos de alertas sin trabarse -->
+                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer block">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -620,7 +622,35 @@
             });
         }
 
-        // ================= MOTOR DE DESCARGA AUTO-RECURSIVA TOTALMENTE ILIMITADA CORREGIDO =================
+        function evaluarBloqueoDuplicadosEnVivo() {
+            const inputCod = document.getElementById('incidenciacodigoInput');
+            const inputMot = document.getElementById('incidenciaMotivoInput');
+            if (!inputCod || !inputMot) return;
+            
+            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
+            
+            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
+            const txtAlerta = document.getElementById('txtAlertaDuplicado');
+
+            if (!codIngresado) {
+                wrapperGrafico.classList.add('hidden');
+                return;
+            }
+
+            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
+                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
+                m.estado === "Pendiente" && 
+                m.idAsistente !== idUsuarioLogueado
+            );
+
+            if (coincidenciaDuplicada) {
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                wrapperGrafico.classList.remove('hidden');
+            } else {
+                wrapperGrafico.classList.add('hidden');
+            }
+        }
+
         function descargarCatalogoAutomaticoRemoto() {
             let indexActual = 1;
 
@@ -647,8 +677,8 @@
                                 databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
 
                                 if (rawEan) {
-                                    let eanLimpio = rawEan.toString().trim().toUpperCase();
-                                    databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
+                                    let eanLiopio = rawEan.toString().trim().toUpperCase();
+                                    databaseCat_Ean[eanLiopio] = { sku: skuLimpio, desc: descLimpia };
                                 }
                             }
                         });
@@ -777,6 +807,7 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
+                // REQUERIMIENTO 2: Los botones de Guardar/Cancelar solo se muestran si hay stock real
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
@@ -858,6 +889,7 @@
             document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
             document.getElementById('containerInputLpn').classList.add('invisible');
             document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+            document.getElementById('resultadoEscaneo').classList.add('hidden');
             lotesFiltradosTurno = [];
             document.getElementById('barcodeInput').focus();
         }
@@ -904,16 +936,16 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
-        function cerrarModalReporteIncidencia() { 
-            document.getElementById('modalReporte').classList.add('hidden'); 
-        }
-        
+        // REQUERIMIENTO 1: Función de envío robusta conectada al ID nativo en minúsculas sin validaciones cruzadas que la congelen
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
             let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
 
-            if(!cod || !mot) return;
+            if(!cod || !mot) {
+                alert("Por favor complete el código y el motivo de la alerta.");
+                return;
+            }
             
             msgRef.push({
                 idAsistente: idUsuarioLogueado,
@@ -934,6 +966,10 @@
             });
         }
 
+        function cerrarModalReporteIncidencia() { 
+            document.getElementById('modalReporte').classList.add('hidden'); 
+        }
+
         function cerrarNotificacionExitoPersonalizada() {
             document.getElementById('modalNotificacionExito').classList.add('hidden');
             if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
@@ -942,7 +978,6 @@
             }
         }
 
-        // ================= CONSOLIDACIÓN DE ENTRADA EXCEL FIJADA EN "Unidades actuales" =================
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -958,10 +993,7 @@
                     let lpnVal = f["Nro LPN"] || "";
                     let skuVal = f["SKU"] || "";
                     let descVal = f["Descripción"] || "";
-                    
-                    // Sincronización exacta con la columna de tu archivo de Cajas_Tienda
                     let uVal = parseInt(f["Unidades actuales"] || 0, 10);
-                    
                     let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
                     let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
                     
@@ -1022,8 +1054,6 @@
             };
             lector.readAsArrayBuffer(file);
         }
-
-        function verificarSesionGuardada() { return true; }
 
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
