@@ -247,29 +247,30 @@
                         </div>
                     </div>
 
-                    <!-- PUNTO 1 CORREGIDO: Botón Reset colocado al costado exacto de la caja del SKU/EAN -->
-                    <form id="formEscaneoAsistente" onsubmit="procesarSubmitFormulario(event)" class="p-4 border border-gray-300 rounded bg-gray-50/50">
-                        <div class="grid grid-cols-3 gap-4">
+                    <!-- PUNTO 1 CORREGIDO: El botón Reset se ubica al lado derecho del input cuando NO hay stock (col-span-1) -->
+                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                        <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
-                                <div class="flex justify-between items-center">
-                                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
-                                    <button type="button" onclick="cancelarRegistro()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-2 py-0.5 rounded text-[11px] transition shadow-xs cursor-pointer flex items-center gap-1">
-                                        🔄 Reset
-                                    </button>
-                                </div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
                                 <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
-                            <div id="containerInputLpn" class="invisible">
+                            <!-- Si SÍ hay stock: muestra la caja de Cantidad -->
+                            <div id="containerInputLpn" class="hidden">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
+                            <!-- Si NO hay stock: muestra el botón Reset en la posición del cuadro rojo marcado -->
+                            <div id="containerResetBtn" class="hidden">
+                                <button type="button" onclick="cancelarRegistro()" class="w-full p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-sm transition shadow-sm cursor-pointer flex justify-center items-center gap-1">
+                                    🔄 Reset
+                                </button>
+                            </div>
                         </div>
-                        <button type="submit" class="hidden"></button>
                     </form>
 
                     <div id="resultadoEscaneo" class="hidden"></div>
@@ -800,38 +801,16 @@
         }
 
         function alCambiarTextoBarcode() {
-            const containerLpn = document.getElementById('containerInputLpn');
-            if (containerLpn && !containerLpn.classList.contains('invisible')) {
-                containerLpn.classList.add('invisible');
-            }
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
         }
 
-        // PUNTO 2 CORREGIDO: Maneja el envío del formulario mediante la tecla Enter (para migrar si hay cantidad o limpiar si fue bloqueado)
-        function procesarSubmitFormulario(e) {
-            if (e) e.preventDefault();
-            const cantInput = document.getElementById('cantidadInput');
-            const containerLpn = document.getElementById('containerInputLpn');
-
-            // Si hay cantidad visible y mayor a cero, migra a Firebase
-            if (containerLpn && !containerLpn.classList.contains('invisible') && cantInput && cantInput.value && parseInt(cantInput.value, 10) > 0) {
-                guardarRegistro();
-            } else {
-                // Si el producto no tiene stock (bloqueado) o no hay cantidad, al presionar Enter resetea para ingresar otro SKU
-                cancelarRegistro();
-            }
-        }
-
+        // BÚSQUEDA Y EVALUACIÓN DE UNIDADES
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
                 
-                // Si ya había una advertencia activa y se vuelve a presionar Enter, se limpia la pantalla inmediatamente
-                if (!document.getElementById('avisoAdvertenciaStock').classList.contains('hidden') && document.getElementById('containerInputLpn').classList.contains('invisible')) {
-                    cancelarRegistro();
-                    return;
-                }
-
                 let inputElem = document.getElementById('barcodeInput');
                 let entradaOriginal = inputElem ? inputElem.value.trim().toUpperCase() : "";
                 if (!entradaOriginal) return;
@@ -840,7 +819,8 @@
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "hidden";
                     return;
                 }
 
@@ -876,18 +856,21 @@
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
                 });
 
+                // PUNTO 1 CORREGIDO: Muestra el botón Reset exactamente al costado si NO hay stock
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').className = "hidden";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
-                    document.getElementById('containerInputLpn').classList.remove('invisible');
+                    document.getElementById('containerInputLpn').className = "block";
+                    document.getElementById('containerResetBtn').className = "hidden";
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
-                    document.getElementById('containerInputLpn').classList.add('invisible');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "block"; // Se activa en el cuadro al lado del SKU
                 }
 
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
@@ -902,6 +885,7 @@
             }
         }
 
+        // PUNTO 2 CORREGIDO: Inyección garantizada de datos al presionar Enter
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad, 10) <= 0) { 
@@ -948,6 +932,7 @@
 
             cancelarRegistro(); 
 
+            // Publicación inmediata a la tabla de repotenciación del Administrador
             logRef.push({
                 operador: nombreOperador,
                 sku: copiaSkuTemporal,
@@ -961,11 +946,13 @@
             dbRef.set(inventarioData1);
         }
 
+        // LIMPIEZA / RESET TOTAL DE LA PANTALLA
         function cancelarRegistro() {
             document.getElementById('barcodeInput').value = "";
             document.getElementById('cantidadInput').value = "";
             document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-            document.getElementById('containerInputLpn').classList.add('invisible');
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
             lotesFiltradosTurno = [];
             setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
