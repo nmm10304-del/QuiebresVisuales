@@ -790,18 +790,22 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
+        // FUNCIÓN MEJORADA: Oculta estados anteriores suavemente sin interrumpir la digitación
         function alCambiarTextoBarcode() {
-            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-            document.getElementById('containerInputLpn').classList.add('invisible');
+            const containerLpn = document.getElementById('containerInputLpn');
+            if (containerLpn && !containerLpn.classList.contains('invisible')) {
+                containerLpn.classList.add('invisible');
+            }
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
         }
 
-        // BÚSQUEDA AJUSTADA: Descarta ubicaciones no deseadas (NO ENCONTRAR / mermas) y celdas sin stock (unidades <= 0)
+        // BÚSQUEDA ROBUSTA: Lee el valor en caliente y busca descripción tanto en Cajas Tienda como en Catálogo Maestro
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
                 
-                let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
+                let inputElem = document.getElementById('barcodeInput');
+                let entradaOriginal = inputElem ? inputElem.value.trim().toUpperCase() : "";
                 if (!entradaOriginal) return;
 
                 if (!inventarioData1 || inventarioData1.length === 0) {
@@ -816,6 +820,7 @@
                 let skuTraducido = entradaOriginal; 
                 let descripcionTraducida = "";
 
+                // 1. Revisa coincidencia en el catálogo maestro de JSONs
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
@@ -828,10 +833,10 @@
                 let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
+                // 2. Filtra lotes válidos en Cajas Tienda (excluyendo mermas)
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item || !item.sku) return false;
                     
-                    // Exclusión de ubicaciones de merma o no encontradas
                     if (item.ubicacion) {
                         let u = item.ubicacion.toString().toUpperCase().trim();
                         if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
@@ -845,6 +850,7 @@
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
                 });
 
+                // 3. Muestra la tarjeta del producto con su descripción actualizada
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').className = "hidden";
