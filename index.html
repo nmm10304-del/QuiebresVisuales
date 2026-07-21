@@ -242,6 +242,7 @@
                         </div>
                     </div>
 
+                    <!-- PUNTO 2: El aviso de advertencia ahora se posiciona de forma fija DELANTE de la alerta (arriba del input) -->
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
                         <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
@@ -496,6 +497,7 @@
             }
         }
 
+        // PUNTO 2 REAL: Al inyectar la data, limpia los errores de stock antiguos en caliente
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -626,7 +628,6 @@
             });
         }
 
-        // PUNTO 2 CORREGIDO: Elimina la incidencia de Firebase directamente cuando el asistente presiona "X"
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
@@ -836,6 +837,7 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
+                // PUNTO 2 REAL: El cartel amarillo de alerta se renderiza DELANTE (arriba del input de cantidad) de forma limpia
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
@@ -844,7 +846,7 @@
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block mb-2";
                     document.getElementById('containerInputLpn').classList.add('invisible');
                 }
 
@@ -860,6 +862,7 @@
             }
         }
 
+        // ================= PUNTO 1 REAL: MIGRACIÓN DE DATA SIN RESTRICCIÓN DE VOLUMEN DE UNIDADES AL DAR ENTER =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
             if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
@@ -971,7 +974,6 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
-        // PUNTO 1 CORREGIDO: Reemplazo del alert nativo por la ventana modal personalizada "No se pudo completar tu solicitud"
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
