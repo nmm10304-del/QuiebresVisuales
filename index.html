@@ -49,12 +49,12 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                    <input type="text" id="userInput" onkeypress="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono">
+                    <input type="text" id="userInput" onkeydown="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                     <div class="relative">
-                        <input type="password" id="passwordInput" onkeypress="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2.5 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none">
+                        <input type="password" id="passwordInput" onkeydown="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2.5 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none">
                         <button type="button" onclick="alternarVisibilidadPassword('passwordInput', 'iconoOjoLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-orange-500">
                             <svg id="iconoOjoLogin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -251,20 +251,21 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
+                                <!-- PUNTO 1: Evento onkeydown con soporte universal de Enter para PC, Celular y Pockets -->
                                 <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
-                                       onkeypress="handleBarcode(event)">
+                                       onkeydown="handleBarcode(event)">
                             </div>
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
+                                <!-- PUNTO 1: Evento onkeydown con soporte universal de Enter para PC, Celular y Pockets -->
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
-                                       placeholder="00" onkeypress="handleCantidadKey(event)">
+                                       placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                         </div>
                     </div>
 
-                    <!-- PUNTO 3: Se eliminan definitivamente los botones físicos Guardar y Cancelar del panel del asistente -->
                     <div id="resultadoEscaneo" class="hidden"></div>
 
                     <div class="pt-4 border-t flex flex-col gap-2">
@@ -360,7 +361,6 @@
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
         
-        // PUNTO 2 CORREGIDO: Declaración de caché en caliente local para ocultar de inmediato las alertas borradas
         let alertasOcultadasAsistente = [];
         try {
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
@@ -499,6 +499,7 @@
             }
         }
 
+        // PUNTO 2 CORREGIDO: Sincronización en vivo en el asistente cuando el admin inyecta data
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -507,6 +508,12 @@
                     data1Cargada = true;
                     document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
                     document.getElementById('statusData1').innerText = ` Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
+                    
+                    // Si el aviso previo decía que faltaba la data de Cajas_Tienda, la oculta en tiempo real sin obligar al asistente a reiniciar sesión
+                    const elemAdv = document.getElementById('txtMensajeAdvertenciaStock');
+                    if (elemAdv && elemAdv.innerText.includes("Pidele al encargado")) {
+                        document.getElementById('avisoAdvertenciaStock').className = "hidden";
+                    }
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
@@ -587,7 +594,6 @@
 
                     Object.keys(data).forEach(key => {
                         let m = data[key];
-                        // PUNTO 2 CORREGIDO: Muestra tanto pendientes como completados con opción a borrado por el asistente
                         if (m.idAsistente === idUsuarioLogueado && !alertasOcultadasAsistente.includes(key)) {
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
@@ -625,12 +631,12 @@
             });
         }
 
-        // PUNTO 2 CORREGIDO: Guarda en localStorage para ocultar de inmediato el aviso verde en la pocket del asistente
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
                 localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
             } catch(e) {}
+            
             dbRef.child("dummy_trigger").transaction(() => 0); 
         }
 
@@ -743,7 +749,11 @@
             });
         }
 
-        function handleLoginKey(event) { if (event.key === 'Enter') { event.preventDefault(); autenticarUsuario(); } }
+        function handleLoginKey(event) { 
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) { 
+                event.preventDefault(); autenticarUsuario(); 
+            } 
+        }
 
         function autenticarUsuario() {
             const user = document.getElementById('userInput').value.trim().toUpperCase();
@@ -784,8 +794,9 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
+        // PUNTO 1 CORREGIDO: Detección universal de la tecla Enter para pistolas escáner, celulares y teclados PC
         function handleBarcode(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
                 
                 let entradaOriginal = document.getElementById('barcodeInput').value.trim().toUpperCase();
@@ -848,9 +859,9 @@
             }
         }
 
-        // PUNTOS 1 y 3 CORREGIDOS: Los datos migran al presionar Enter en PC y móviles sin requerir clicks externos
+        // PUNTO 1 CORREGIDO: Disparador nativo universal con prevención de submit para migrar la cantidad en el acto
         function handleCantidadKey(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
                 guardarRegistro(); 
             }
