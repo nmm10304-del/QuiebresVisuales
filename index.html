@@ -247,8 +247,7 @@
                         </div>
                     </div>
 
-                    <!-- PUNTO 1 CORREGIDO: El botón Reset se ubica al lado derecho del input cuando NO hay stock (col-span-1) -->
-                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); guardarRegistro();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
                         <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
@@ -257,20 +256,19 @@
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
-                            <!-- Si SÍ hay stock: muestra la caja de Cantidad -->
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
-                            <!-- Si NO hay stock: muestra el botón Reset en la posición del cuadro rojo marcado -->
                             <div id="containerResetBtn" class="hidden">
                                 <button type="button" onclick="cancelarRegistro()" class="w-full p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-sm transition shadow-sm cursor-pointer flex justify-center items-center gap-1">
                                     🔄 Reset
                                 </button>
                             </div>
                         </div>
+                        <button type="submit" class="hidden"></button>
                     </form>
 
                     <div id="resultadoEscaneo" class="hidden"></div>
@@ -806,7 +804,6 @@
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
         }
 
-        // BÚSQUEDA Y EVALUACIÓN DE UNIDADES
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
@@ -856,7 +853,6 @@
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
                 });
 
-                // PUNTO 1 CORREGIDO: Muestra el botón Reset exactamente al costado si NO hay stock
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').className = "hidden";
@@ -870,7 +866,7 @@
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
-                    document.getElementById('containerResetBtn').className = "block"; // Se activa en el cuadro al lado del SKU
+                    document.getElementById('containerResetBtn').className = "block";
                 }
 
                 document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
@@ -885,15 +881,18 @@
             }
         }
 
-        // PUNTO 2 CORREGIDO: Inyección garantizada de datos al presionar Enter
+        // PUNTO 2 CORREGIDO: Captura segura de cantidad previa a la limpieza y migración instantánea al Administrador
         function guardarRegistro() {
-            const Math_cantidad = document.getElementById('cantidadInput').value;
-            if(!Math_cantidad || parseInt(Math_cantidad, 10) <= 0) { 
+            const inputCantElem = document.getElementById('cantidadInput');
+            const cantidadString = inputCantElem ? inputCantElem.value : "";
+            
+            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
-            
-            let remanente = parseInt(Math_cantidad, 10);
+
+            const cantidadNumerica = parseInt(cantidadString, 10);
+            let remanente = cantidadNumerica;
             let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
             
             let lpnSugerido = "LPN-MANUAL";
@@ -930,23 +929,24 @@
             let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
             let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
 
-            cancelarRegistro(); 
-
-            // Publicación inmediata a la tabla de repotenciación del Administrador
+            // Inyección garantizada a la base del Administrador en vivo ANTES de resetear los campos
             logRef.push({
                 operador: nombreOperador,
                 sku: copiaSkuTemporal,
                 fifoLpnOptimizado: lpnSugerido, 
                 desc: copiaDescripcion,
-                cant: parseInt(Math_cantidad, 10),
+                cant: cantidadNumerica,
                 fv: fvSugerida,
                 purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
             });
 
-            dbRef.set(inventarioData1);
+            dbRef.set(inventarioData1).then(() => {
+                cancelarRegistro();
+            }).catch(() => {
+                cancelarRegistro();
+            });
         }
 
-        // LIMPIEZA / RESET TOTAL DE LA PANTALLA
         function cancelarRegistro() {
             document.getElementById('barcodeInput').value = "";
             document.getElementById('cantidadInput').value = "";
