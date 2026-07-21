@@ -234,6 +234,12 @@
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
+                    <!-- PUNTO 2 CORREGIDO: La advertencia aparece DELANTE (arriba) de la tarjeta del producto -->
+                    <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
+                        <span class="text-2xl">⚠️</span>
+                        <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
+                    </div>
+
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                         <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
                         <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
@@ -242,13 +248,8 @@
                         </div>
                     </div>
 
-                    <!-- PUNTO 2: El aviso de advertencia ahora se posiciona de forma fija DELANTE de la alerta (arriba del input) -->
-                    <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
-                        <span class="text-2xl">⚠️</span>
-                        <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
-                    </div>
-
-                    <div class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                    <!-- PUNTO 1 CORREGIDO: Formulario nativo para asegurar la migración con la tecla Enter en PC/Móviles/Pockets -->
+                    <form id="formEscaneoAsistente" onsubmit="handleFormEscaneoSubmit(event)" class="p-4 border border-gray-300 rounded bg-gray-50/50">
                         <div class="grid grid-cols-3 gap-4">
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
@@ -263,7 +264,9 @@
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                         </div>
-                    </div>
+                        <!-- Botón submit invisible para forzar el gatillado del formulario mediante la tecla Enter -->
+                        <button type="submit" class="hidden"></button>
+                    </form>
 
                     <div id="resultadoEscaneo" class="hidden"></div>
 
@@ -497,7 +500,6 @@
             }
         }
 
-        // PUNTO 2 REAL: Al inyectar la data, limpia los errores de stock antiguos en caliente
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -628,6 +630,7 @@
             });
         }
 
+        // PUNTO 2 CORREGIDO: Elimina la incidencia directamente de Firebase al hacer clic en 'X'
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
@@ -790,6 +793,17 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
+        // PUNTO 1 CORREGIDO: Manejador del formulario para procesar Enter de forma universal en PC, Móviles y Pockets
+        function handleFormEscaneoSubmit(event) {
+            if (event) event.preventDefault();
+            const cantidadVal = document.getElementById('cantidadInput').value;
+            
+            // Si el campo cantidad está activo con un valor válido, procesa la migración inmediata
+            if (!document.getElementById('containerInputLpn').classList.contains('invisible') && cantidadVal && parseInt(cantidadVal, 10) > 0) {
+                guardarRegistro();
+            }
+        }
+
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
@@ -837,7 +851,6 @@
                 
                 document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                 
-                // PUNTO 2 REAL: El cartel amarillo de alerta se renderiza DELANTE (arriba del input de cantidad) de forma limpia
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
@@ -846,7 +859,7 @@
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block mb-2";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('containerInputLpn').classList.add('invisible');
                 }
 
@@ -862,10 +875,9 @@
             }
         }
 
-        // ================= PUNTO 1 REAL: MIGRACIÓN DE DATA SIN RESTRICCIÓN DE VOLUMEN DE UNIDADES AL DAR ENTER =================
         function guardarRegistro() {
             const Math_cantidad = document.getElementById('cantidadInput').value;
-            if(!Math_cantidad || parseInt(Math_cantidad) <= 0) { 
+            if(!Math_cantidad || parseInt(Math_cantidad, 10) <= 0) { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
@@ -897,7 +909,7 @@
                     );
                     
                     if (loteOriginalInventario) {
-                        loteOriginalInventario.unidades = Math.max(0, loteOriginalInventario.unidades - descontar);
+                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
                     }
                     
                     remanente -= descontar;
@@ -905,11 +917,12 @@
                 }
             }
 
-            let copiaSkuTemporal = skuEscaneadoTemporal.toString().replace(/[^0-9]/g, "");
-            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText;
+            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
 
             cancelarRegistro(); 
 
+            // PUNTO 1 CORREGIDO: Envía directamente el registro a Firebase para poblar la tabla del Administrador en vivo
             logRef.push({
                 operador: nombreOperador,
                 sku: copiaSkuTemporal,
@@ -974,6 +987,7 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
+        // PUNTO 1 CORREGIDO: Lógica de envío mediante modal personalizado estilizado sin textos nativos de URLs
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
