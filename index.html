@@ -251,14 +251,12 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
-                                <!-- PUNTO 1: Evento onkeydown con soporte universal de Enter para PC, Celular y Pockets -->
                                 <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        onkeydown="handleBarcode(event)">
                             </div>
                             <div id="containerInputLpn" class="invisible">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
-                                <!-- PUNTO 1: Evento onkeydown con soporte universal de Enter para PC, Celular y Pockets -->
                                 <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
@@ -452,7 +450,6 @@
                 moduleEscaneo.classList.remove("hidden");
                 setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
             } else if (val === "buzonalerta") {
-                moduleEscaneo.classList.add("hidden");
                 moduloBuzon.classList.remove("hidden");
             } else if (val === "cambiarclave") {
                 moduloClave.classList.remove("hidden");
@@ -499,7 +496,6 @@
             }
         }
 
-        // PUNTO 2 CORREGIDO: Sincronización en vivo en el asistente cuando el admin inyecta data
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -509,7 +505,6 @@
                     document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
                     document.getElementById('statusData1').innerText = ` Base Cloud sincronizada en vivo (${inventarioData1.length} registros disponibles).`;
                     
-                    // Si el aviso previo decía que faltaba la data de Cajas_Tienda, la oculta en tiempo real sin obligar al asistente a reiniciar sesión
                     const elemAdv = document.getElementById('txtMensajeAdvertenciaStock');
                     if (elemAdv && elemAdv.innerText.includes("Pidele al encargado")) {
                         document.getElementById('avisoAdvertenciaStock').className = "hidden";
@@ -631,13 +626,13 @@
             });
         }
 
+        // PUNTO 2 CORREGIDO: Elimina la incidencia de Firebase directamente cuando el asistente presiona "X"
         function removerNotificacionCompletadaLocal(key) {
             alertasOcultadasAsistente.push(key);
             try {
                 localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
             } catch(e) {}
-            
-            dbRef.child("dummy_trigger").transaction(() => 0); 
+            msgRef.child(key).remove();
         }
 
         function subsanarIncidenciaAdmin(key) {
@@ -794,7 +789,6 @@
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
-        // PUNTO 1 CORREGIDO: Detección universal de la tecla Enter para pistolas escáner, celulares y teclados PC
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
@@ -859,7 +853,6 @@
             }
         }
 
-        // PUNTO 1 CORREGIDO: Disparador nativo universal con prevención de submit para migrar la cantidad en el acto
         function handleCantidadKey(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
@@ -978,13 +971,14 @@
             setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
         }
 
+        // PUNTO 1 CORREGIDO: Reemplazo del alert nativo por la ventana modal personalizada "No se pudo completar tu solicitud"
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
             let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
 
             if(!cod || !mot) {
-                alert("Por favor complete el código y el motivo de la alerta.");
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
                 return;
             }
             
@@ -1099,7 +1093,7 @@
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
-                alert("Debe subir primero el archivo de Detalle_Reposicion.");
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Debe subir primero el archivo de Detalle_Reposicion.");
                 return;
             }
             tbody.innerHTML = "";
