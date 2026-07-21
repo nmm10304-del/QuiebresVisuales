@@ -792,9 +792,22 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
+        // PARSER DE FECHAS SEGURO: Soporta textos, fechas formateadas de Excel y números de serie
         function parsearFechaEspanol(strFecha) {
-            if (strFecha === "SIN FECHA" || !strFecha) return new Date(2999, 11, 31);
-            const partes = strFecha.split('/');
+            if (!strFecha || strFecha === "SIN FECHA") return new Date(2999, 11, 31);
+            if (typeof strFecha === 'number') {
+                return new Date((strFecha - (25567 + 2)) * 86400 * 1000);
+            }
+            let str = strFecha.toString().trim();
+            if (!str.includes('/')) {
+                let num = Number(str);
+                if (!isNaN(num) && num > 10000) {
+                    return new Date((num - (25567 + 2)) * 86400 * 1000);
+                }
+                return new Date(2999, 11, 31);
+            }
+            const partes = str.split('/');
+            if (partes.length < 3) return new Date(2999, 11, 31);
             return new Date(partes[2], partes[1] - 1, partes[0]);
         }
 
@@ -881,70 +894,73 @@
             }
         }
 
-        // PUNTO 2 CORREGIDO: Captura segura de cantidad previa a la limpieza y migración instantánea al Administrador
         function guardarRegistro() {
-            const inputCantElem = document.getElementById('cantidadInput');
-            const cantidadString = inputCantElem ? inputCantElem.value : "";
-            
-            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
-                return; 
-            }
-
-            const cantidadNumerica = parseInt(cantidadString, 10);
-            let remanente = cantidadNumerica;
-            let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-            
-            let lpnSugerido = "LPN-MANUAL";
-            let fvSugerida = "SIN FECHA";
-            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
-
-            let copiaLotesFiltrados = [...lotesFiltradosTurno];
-
-            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
-                copiaLotesFiltrados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
+            try {
+                const inputCantElem = document.getElementById('cantidadInput');
+                const cantidadString = inputCantElem ? inputCantElem.value : "";
                 
-                lpnSugerido = copiaLotesFiltrados[0].lpn || "LPN-MAESTRO";
-                fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
-                historialConsumosLpns = [];
-
-                for (let lote of copiaLotesFiltrados) {
-                    if (remanente <= 0) break;
-                    let descontar = Math.min(lote.unidades || remanente, remanente); 
-                    
-                    let loteOriginalInventario = inventarioData1.find(i => 
-                        i && i.sku &&
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
-                    );
-                    
-                    if (loteOriginalInventario) {
-                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
-                    }
-                    
-                    remanente -= descontar;
-                    historialConsumosLpns.push(`${lote.lpn || 'S/LPN'} (-${descontar} Uds)`);
+                if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
+                    lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                    return; 
                 }
+
+                const cantidadNumerica = parseInt(cantidadString, 10);
+                let remanente = cantidadNumerica;
+                let nombreOperador = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+                
+                let lpnSugerido = "LPN-MANUAL";
+                let fvSugerida = "SIN FECHA";
+                let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+
+                let copiaLotesFiltrados = [...lotesFiltradosTurno];
+
+                if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                    try {
+                        copiaLotesFiltrados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
+                    } catch(eSort) {}
+                    
+                    lpnSugerido = copiaLotesFiltrados[0].lpn || "LPN-MAESTRO";
+                    fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
+                    historialConsumosLpns = [];
+
+                    for (let lote of copiaLotesFiltrados) {
+                        if (remanente <= 0) break;
+                        let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
+                        
+                        let loteOriginalInventario = inventarioData1.find(i => 
+                            i && i.sku &&
+                            i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
+                        );
+                        
+                        if (loteOriginalInventario) {
+                            loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
+                        }
+                        
+                        remanente -= descontar;
+                        historialConsumosLpns.push(`${lote.lpn || 'S/LPN'} (-${descontar} Uds)`);
+                    }
+                }
+
+                let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+                let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+
+                // Publica la repotenciación en tiempo real a Firebase
+                logRef.push({
+                    operador: nombreOperador,
+                    sku: copiaSkuTemporal,
+                    fifoLpnOptimizado: lpnSugerido, 
+                    desc: copiaDescripcion,
+                    cant: cantidadNumerica,
+                    fv: fvSugerida,
+                    purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+                });
+
+                dbRef.set(inventarioData1);
+            } catch (errGeneral) {
+                console.error("Error capturado en guardarRegistro:", errGeneral);
+            } finally {
+                cancelarRegistro();
             }
-
-            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
-            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
-
-            // Inyección garantizada a la base del Administrador en vivo ANTES de resetear los campos
-            logRef.push({
-                operador: nombreOperador,
-                sku: copiaSkuTemporal,
-                fifoLpnOptimizado: lpnSugerido, 
-                desc: copiaDescripcion,
-                cant: cantidadNumerica,
-                fv: fvSugerida,
-                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
-            });
-
-            dbRef.set(inventarioData1).then(() => {
-                cancelarRegistro();
-            }).catch(() => {
-                cancelarRegistro();
-            });
         }
 
         function cancelarRegistro() {
@@ -1040,6 +1056,7 @@
             }
         }
 
+        // LECTURA DE CAJAS TIENDA CON raw: false PARA RETENER TEXTO EXACTO DE EXCEL
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1049,7 +1066,9 @@
                 const data = new Uint8Array(e.target.result);
                 const libro = XLSX.read(data, { type: 'array' });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja);
+                
+                // Configuración raw: false extrae las fechas formateadas exactamente como se ven en Excel
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
                 
                 let datosFormateados = filas.map(f => {
                     let lpnVal = f["Nro LPN"] || f["LPN"] || "";
