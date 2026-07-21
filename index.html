@@ -239,15 +239,22 @@
                         <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
                     </div>
 
+                    <!-- PUNTO 2 CORREGIDO: Se agregó el botón (Reset) al costado del SKU -->
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
-                        <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
+                            <button type="button" onclick="cancelarRegistro()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-2.5 py-1 rounded text-xs transition shadow-sm cursor-pointer">
+                                🔄 Reset
+                            </button>
+                        </div>
                         <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
-                        <div class="pt-2 border-t border-orange-200/60 flex flex-col gap-1">
+                        <div class="pt-2 border-t border-orange-200/60 flex items-center justify-between">
                             <span class="text-xs text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900"></b></span>
                         </div>
                     </div>
 
-                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); guardarRegistro();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                    <!-- PUNTO 1 CORREGIDO: Formulario con manejador universal onsubmit y disparo nativo al dar Enter -->
+                    <form id="formEscaneoAsistente" onsubmit="procesarSubmitFormulario(event)" class="p-4 border border-gray-300 rounded bg-gray-50/50">
                         <div class="grid grid-cols-3 gap-4">
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Pistolea el SKU/EAN</label>
@@ -263,7 +270,7 @@
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                         </div>
-                        <input type="submit" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;" tabindex="-1">
+                        <button type="submit" class="hidden"></button>
                     </form>
 
                     <div id="resultadoEscaneo" class="hidden"></div>
@@ -665,7 +672,7 @@
             }
         }
 
-        // MOTOR DE DESCARGA PARALELA ASÍNCRONA ROBUSTO (SIN CORTES)
+        // PUNTOS 3 Y 4 CORREGIDOS: Motor de lectura JSON ultra veloz con conversión segura a String para evitar bloqueos
         function descargarCatalogoAutomaticoRemoto() {
             const ráfagaParalela = 15;
             let baseIndex = 1;
@@ -687,23 +694,25 @@
                                 datos.forEach(item => {
                                     if (!item) return;
                                     
-                                    // Búsqueda flexible de llaves ignorando mayúsculas/minúsculas y tildes
                                     let rawSku = "", rawEan = "", rawDesc = "";
                                     
+                                    // Parseo ultra robusto de llaves con conversión segura a String
                                     Object.keys(item).forEach(k => {
                                         let keyLimpia = k.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
-                                        if (keyLimpia === "sku") rawSku = item[k];
-                                        else if (keyLimpia === "ean") rawEan = item[k];
-                                        else if (keyLimpia.includes("descripcion") || keyLimpia.includes("desc")) rawDesc = item[k];
+                                        let val = item[k] !== null && item[k] !== undefined ? item[k].toString() : "";
+                                        
+                                        if (keyLimpia === "sku") rawSku = val;
+                                        else if (keyLimpia === "ean") rawEan = val;
+                                        else if (keyLimpia.includes("descripcion") || keyLimpia.includes("desc")) rawDesc = val;
                                     });
 
                                     if (rawSku) {
-                                        let skuLimpio = rawSku.toString().trim().toUpperCase();
-                                        let descLimpia = rawDesc ? rawDesc.toString().trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
+                                        let skuLimpio = rawSku.trim().toUpperCase();
+                                        let descLimpia = rawDesc ? rawDesc.trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
                                         databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
 
                                         if (rawEan) {
-                                            let eanLimpio = rawEan.toString().trim().toUpperCase();
+                                            let eanLimpio = rawEan.trim().toUpperCase();
                                             databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
                                         }
                                     }
@@ -713,8 +722,7 @@
                     promesasBloque.push(promesa);
                 }
 
-                Promise.all(promesasBloque).then(respuestas => {
-                    // Si al menos una petición del bloque respondió con datos válidos, continua descargando los siguientes índices
+                Promise.all(promesasBloque).then(() => {
                     if (baseIndex < 150) { 
                         baseIndex += ráfagaParalela;
                         lanzarBloqueDescargas();
@@ -802,6 +810,16 @@
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
         }
 
+        // PUNTO 1 Y 4 CORREGIDOS: Manejador universal de envío del formulario al presionar Enter en PC o celular
+        function procesarSubmitFormulario(e) {
+            if (e) e.preventDefault();
+            const cantInput = document.getElementById('cantidadInput');
+            if (cantInput && cantInput.value && parseInt(cantInput.value, 10) > 0) {
+                guardarRegistro();
+            }
+        }
+
+        // BÚSQUEDA ULTRA RÁPIDA DE SKU / EAN
         function handleBarcode(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
@@ -935,6 +953,7 @@
             dbRef.set(inventarioData1);
         }
 
+        // PUNTO 2 CORREGIDO: Función Reset mejorada para reiniciar por completo la tarjeta y enfocar la entrada
         function cancelarRegistro() {
             document.getElementById('barcodeInput').value = "";
             document.getElementById('cantidadInput').value = "";
@@ -942,7 +961,7 @@
             document.getElementById('containerInputLpn').classList.add('invisible');
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
             lotesFiltradosTurno = [];
-            document.getElementById('barcodeInput').focus();
+            setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
         function descargarExcelRepotenciar() {
