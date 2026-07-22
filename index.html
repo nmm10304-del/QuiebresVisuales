@@ -575,11 +575,9 @@
             });
         }
 
-        // FUNCIÓN AUXILIAR PARA FORMATEAR A DD/MM/YYYY GARANTIZADO
         function formatearAFechaDDMMYYYY(valFecha) {
             if (!valFecha || valFecha === "SIN FECHA") return "SIN FECHA";
             
-            // Si es un número serie de Excel (e.g. 46568)
             let num = Number(valFecha);
             if (!isNaN(num) && num > 10000) {
                 let d = new Date((num - (25567 + 2)) * 86400 * 1000);
@@ -601,9 +599,9 @@
             } else if (str.includes('-')) {
                 let partes = str.split('-');
                 if (partes.length === 3) {
-                    if (partes[0].length === 4) { // YYYY-MM-DD
+                    if (partes[0].length === 4) {
                         return `${partes[2].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[0]}`;
-                    } else { // DD-MM-YYYY
+                    } else {
                         return `${partes[0].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[2]}`;
                     }
                 }
@@ -611,7 +609,6 @@
             return str;
         }
 
-        // RENDERIZADO DE TABLA REPOTENCIAR CON ESTADO EN BLANCO HASTA PEGAR LA DATA
         function escucharLogsRepotenciacionTiempoReal() {
             logRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -619,6 +616,7 @@
             });
         }
 
+        // RENDERIZADO CON AUDITORÍA DINÁMICA DE LPNs MULTIPLES
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -633,7 +631,6 @@
                     totalUnidadesRepotenciar += parseInt(item.cant || 0);
                     if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
                     
-                    // Extraer Zona y Descripción Limpia
                     let rawDesc = item.desc || "";
                     let zonaExtraida = "General";
                     let descLimpia = rawDesc;
@@ -644,29 +641,32 @@
                         zonaExtraida = partes[1].replace("]", "").trim();
                     }
 
-                    // Formatear Fecha de Caducidad estricta (DD/MM/YYYY)
                     let fvFormateada = formatearAFechaDDMMYYYY(item.fv);
 
-                    // PUNTO 2: SI NO HAY DATA EN Detalle_Reposicion -> SE MUESTRA EN BLANCO (TEXTO VACÍO)
+                    // ESTADO EN BLANCO MIENTRAS NO HAYA DETALLE_REPOSICIÓN
                     let badgeFifoHtml = ""; 
                     
                     if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                         let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                        let lpnSugerido = (item.fifoLpnOptimizado || "").toString().trim().toUpperCase();
+                        let lpnSugeridoRaw = (item.fifoLpnOptimizado || "").toString().trim().toUpperCase();
+                        let lpnsSugeridosArr = lpnSugeridoRaw.split(",").map(x => x.trim()).filter(x => x);
 
                         let coincidenciasRF = matrixDetalleReposicion.filter(m => 
                             m.sku && m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuLogLimpio
                         );
 
                         if (coincidenciasRF.length > 0) {
-                            let realizoExacto = coincidenciasRF.some(m => m.lpn.toString().trim().toUpperCase() === lpnSugerido);
+                            let lpnsRF = coincidenciasRF.map(m => m.lpn.toString().trim().toUpperCase());
+                            
+                            // Evalúa si todos los LPNs sugeridos fueron procesados en RF
+                            let realizoExacto = lpnsSugeridosArr.length > 0 && lpnsSugeridosArr.every(lpnSug => lpnsRF.includes(lpnSug));
                             
                             if (realizoExacto) {
                                 badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                             } else {
-                                // Verificar si el LPN bajado en RF tiene la misma FV en Cajas_Tienda
-                                let lpnBuscadoEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnSugerido);
-                                let fvSugerida = lpnBuscadoEnCajas ? lpnBuscadoEnCajas.vencimiento : item.fv;
+                                // Verificar si los LPNs procesados tienen la misma Fecha de Vencimiento
+                                let lpnsBuscadosEnCajas = inventarioData1.filter(i => i.lpn && lpnsSugeridosArr.includes(i.lpn.toString().trim().toUpperCase()));
+                                let fvSugerida = lpnsBuscadosEnCajas.length > 0 ? lpnsBuscadosEnCajas[0].vencimiento : item.fv;
 
                                 let mismaFvEncontrada = coincidenciasRF.some(m => {
                                     let lpnRf = m.lpn.toString().trim().toUpperCase();
@@ -1067,6 +1067,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
+        // GUARDA Y CONCATENA TODOS LOS LPNs NECESARIOS SEGÚN LA CANTIDAD SOLICITADA
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1091,9 +1092,9 @@
                         copiaLotesFiltrados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
                     } catch(eSort) {}
                     
-                    lpnSugerido = copiaLotesFiltrados[0].lpn || "LPN-MAESTRO";
                     fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
                     historialConsumosLpns = [];
+                    let lpnsConsumidosUnicos = [];
 
                     for (let lote of copiaLotesFiltrados) {
                         if (remanente <= 0) break;
@@ -1109,8 +1110,14 @@
                         }
                         
                         remanente -= descontar;
-                        historialConsumosLpns.push(`${lote.lpn || 'S/LPN'} (-${descontar} Uds)`);
+                        let lpnActual = lote.lpn || 'S/LPN';
+                        if (!lpnsConsumidosUnicos.includes(lpnActual)) {
+                            lpnsConsumidosUnicos.push(lpnActual);
+                        }
+                        historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
                     }
+
+                    lpnSugerido = lpnsConsumidosUnicos.join(", ");
                 }
 
                 let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
@@ -1369,7 +1376,6 @@
                 document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
                 
-                // Actualiza dinámicamente las etiquetas FIFO en la tabla al cargar el Detalle_Reposición
                 renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
             };
             lector.readAsArrayBuffer(file);
