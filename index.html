@@ -155,6 +155,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <!-- PUNTO 1: BOTÓN ACTUALIZAR AGREGADO -->
+                        <button onclick="forzarActualizacionTablaAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow flex items-center gap-1">
+                            🔄 Actualizar
+                        </button>
                         <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
                             Descargar Excel Repotenciación
                         </button>
@@ -184,10 +188,11 @@
                 </div>
             </div>
 
+            <!-- PUNTO 2d: RENOMBRADO A Cumplimiento 24 -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
-                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 Monitor de Cruce Macropurga</h3>
+                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 Cumplimiento 24</h3>
                         <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.</p>
                     </div>
                     <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow">
@@ -202,7 +207,7 @@
                                 <th class="px-4 py-2 border">SKU</th>
                                 <th class="px-4 py-2 border">Pantalla RF</th>
                                 <th class="px-4 py-2 border text-center">Cant. Original</th>
-                                <th class="px-4 py-2 border text-center : font-bold">Cant. Ajustada</th>
+                                <th class="px-4 py-2 border text-center font-bold">Cant. Ajustada</th>
                                 <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">🔮 LPNS Consumidos por RF</th>
                                 <th class="px-4 py-2 border">Usuario Actividad</th>
                             </tr>
@@ -616,7 +621,11 @@
             });
         }
 
-        // RENDERIZADO POR FILAS SEPARADAS SEGÚN LPN Y CANTIDAD
+        function forzarActualizacionTablaAdmin() {
+            renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
+        }
+
+        // RENDERIZADO CON CRUCE EXACTO SEGÚN PANTALLA, NRO LPN, SKU Y USUARIO
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -641,7 +650,6 @@
                         zonaExtraida = partes[1].replace("]", "").trim();
                     }
 
-                    // Extraer los consumos desglosados (e.g., "TLPN1 (-1 Uds) ➔ TLPN2 (-1 Uds)")
                     let purgaStr = item.purgaCompletaRuta || "";
                     let desglosesLpn = [];
 
@@ -655,7 +663,6 @@
                         });
                     }
 
-                    // Si no tiene desglose detallado, usa el LPN sugerido por defecto
                     if (desglosesLpn.length === 0) {
                         let rawLpn = (item.fifoLpnOptimizado || "N/A").toString().trim();
                         let arrayLpns = rawLpn.split(",").map(x => x.trim()).filter(x => x);
@@ -666,12 +673,10 @@
                         }
                     }
 
-                    // RENDERIZAR UNA FILA SEPARADA POR CADA LPN INVOLUCRADO
                     desglosesLpn.forEach(subItem => {
                         let lpnFila = subItem.lpn;
                         let cantFila = subItem.cant;
 
-                        // Buscar Fecha de Caducidad específica de este LPN en Cajas_Tienda
                         let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnFila.toUpperCase());
                         let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
@@ -683,6 +688,7 @@
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
+                            // PUNTO 2a, 2b, 2c, 2d: Filtra coincidencia de SKU en las pantallas válidas de RF
                             let coincidenciasRF = matrixDetalleReposicion.filter(m => 
                                 m.sku && m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuLogLimpio
                             );
@@ -690,11 +696,13 @@
                             if (coincidenciasRF.length > 0) {
                                 let lpnsRF = coincidenciasRF.map(m => m.lpn.toString().trim().toUpperCase());
                                 
+                                // ¿Se bajó el Nro LPN exacto sugerido?
                                 let realizoExacto = lpnsRF.includes(lpnSugeridoLimpio);
                                 
                                 if (realizoExacto) {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                                 } else {
+                                    // ¿Bajó otro Nro LPN pero con la misma Fecha de Vencimiento?
                                     let mismaFvEncontrada = coincidenciasRF.some(m => {
                                         let lpnRf = m.lpn.toString().trim().toUpperCase();
                                         let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
@@ -1116,7 +1124,15 @@
 
                 if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                     try {
-                        copiaLotesFiltrados.sort((a, b) => parsearFechaEspanol(a.vencimiento) - parsearFechaEspanol(b.vencimiento));
+                        // REGLA DE ORO: 1º ORDENAR POR FECHA DE CADUCIDAD, 2º ORDENAR POR MENOR SALDO DE UNIDADES
+                        copiaLotesFiltrados.sort((a, b) => {
+                            let fA = parsearFechaEspanol(a.vencimiento);
+                            let fB = parsearFechaEspanol(b.vencimiento);
+                            if (fA.getTime() !== fB.getTime()) {
+                                return fA - fB;
+                            }
+                            return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                        });
                     } catch(eSort) {}
                     
                     fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
@@ -1408,6 +1424,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // PROCESAMIENTO MEJORADO DEL Detalle_Reposicion RECONOCIENDO MÁS ENCABEZADOS EN ESPAÑOL
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1418,23 +1435,33 @@
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
                 
-                matrixDetalleReposicion = filas.map(f => ({
-                    lpn: f["LPN"] || f["Contenedor Origen"] || "",
-                    sku: f["Articulo"] || f["SKU"] || "",
-                    pantalla: f["Estado"] || f["Ubicación Destino"] || "",
-                    cantOriginal: f["Cantidad Solicitada"] || f["Cant"] || 0,
-                    cantAjustada: f["Cantidad Confirmada"] || f["Cant"] || 0,
-                    usuario: f["Usuario Actividad"] || f["Operador"] || "SISTEMA"
-                })).filter(x => {
+                matrixDetalleReposicion = filas.map(f => {
+                    // Mapeo flexible de celdas
+                    let pLpn = f["Nro LPN"] || f["LPN"] || f["Contenedor Origen"] || f["Nro. LPN"] || "";
+                    let pSku = f["SKU"] || f["Articulo"] || f["Artículo"] || "";
+                    let pPantalla = f["Pantalla"] || f["Estado"] || f["Ubicación Destino"] || f["Ubicacion Destino"] || "";
+                    let pUsuario = f["Usuario"] || f["Usuario Actividad"] || f["Operador"] || "SISTEMA";
+                    let pCantOrig = f["Cantidad Original"] || f["Cantidad Solicitada"] || f["Cant"] || 0;
+                    let pCantAjust = f["Cantidad Ajustada"] || f["Cantidad Confirmada"] || f["Cant"] || 0;
+
+                    return {
+                        lpn: pLpn.toString().trim(),
+                        sku: pSku.toString().trim(),
+                        pantalla: pPantalla.toString().trim(),
+                        cantOriginal: pCantOrig,
+                        cantAjustada: pCantAjust,
+                        usuario: pUsuario.toString().trim()
+                    };
+                }).filter(x => {
                     if (!x.sku || !x.pantalla) return false;
-                    let uDestino = x.pantalla.toString().trim().toUpperCase();
-                    return uDestino === "RF_REPONER_RESERVA" || uDestino === "RF_DIVIDIR LPN" || uDestino === "RF_REPONER_PUERTA";
+                    let uDestino = x.pantalla.toUpperCase();
+                    return uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA") || uDestino.includes("RF_DIVIDIR LPN");
                 });
 
                 document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
                 document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
                 
-                renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
+                forzarActualizacionTablaAdmin();
             };
             lector.readAsArrayBuffer(file);
         }
@@ -1457,8 +1484,8 @@
                 );
 
                 if (coincidenciaLog) {
-                    if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase() === puesta.lpn.toString().trim().toUpperCase()) {
-                        rutaSugerida = `✔ LPN CORRECTO: ${coincidenciaLog.fifoLpnOptimizado} (Cumple FIFO - Caducidad Asegurada)`;
+                    if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase().includes(puesta.lpn.toString().trim().toUpperCase())) {
+                        rutaSugerida = `✔ LPN CORRECTO: ${puesta.lpn} (Cumple FIFO - Caducidad Asegurada)`;
                         txtColorRuta = "text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded";
                     } else {
                         rutaSugerida = `❌ ALERTA FIFO: Se pidió ${coincidenciaLog.fifoLpnOptimizado} pero RF escaneó ${puesta.lpn}`;
