@@ -556,20 +556,12 @@
             }
         }
 
-        // CONFIRMACIÓN DE SINCRONIZACIÓN EN TIEMPO REAL
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data && Object.keys(data).length > 0) {
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
-                    document.getElementById('statusData1').className = "text-xs text-green-600 mt-2 font-semibold";
-                    document.getElementById('statusData1').innerText = `✅ Base Cloud sincronizada e inyectada con éxito (${inventarioData1.length} registros). ¡El asistente ya puede continuar con el flujo!`;
-                    
-                    const elemAdv = document.getElementById('txtMensajeAdvertenciaStock');
-                    if (elemAdv && elemAdv.innerText.includes("Pidele al encargado")) {
-                        document.getElementById('avisoAdvertenciaStock').className = "hidden";
-                    }
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
@@ -1137,7 +1129,7 @@
             }
         }
 
-        // PROCESAMIENTO DE EXCEL CON ESTADOS EN VIVO VISIBLES
+        // PROCESAMIENTO CON TEMPORIZADOR DE 5 SEGUNDOS PARA EL ADMINISTRADOR
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1149,37 +1141,45 @@
             setTimeout(() => {
                 const lector = new FileReader();
                 lector.onload = function(e) {
-                    statusElem.innerText = "🚀 Sincronizando e inyectando a la nube...";
+                    const data = new Uint8Array(e.target.result);
+                    const libro = XLSX.read(data, { type: 'array' });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
                     
-                    setTimeout(() => {
-                        const data = new Uint8Array(e.target.result);
-                        const libro = XLSX.read(data, { type: 'array' });
-                        const hoja = libro.Sheets[libro.SheetNames[0]];
-                        const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
+                    let datosFormateados = filas.map(f => {
+                        let lpnVal = (f["Nro LPN"] || f["LPN"] || "").toString().trim();
+                        let skuVal = (f["SKU"] || "").toString().trim();
+                        let descVal = (f["Descripción"] || "").toString().trim();
+                        let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
+                        let fvVal = (f["Fecha de Caducidad"] || "SIN FECHA").toString().trim();
+                        let ubiVal = (f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "").toString().trim();
                         
-                        let datosFormateados = filas.map(f => {
-                            let lpnVal = (f["Nro LPN"] || f["LPN"] || "").toString().trim();
-                            let skuVal = (f["SKU"] || "").toString().trim();
-                            let descVal = (f["Descripción"] || "").toString().trim();
-                            let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
-                            let fvVal = (f["Fecha de Caducidad"] || "SIN FECHA").toString().trim();
-                            let ubiVal = (f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "").toString().trim();
-                            
-                            return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                        }).filter(x => x && x.sku);
+                        return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
+                    }).filter(x => x && x.sku);
 
-                        // Envia los datos a Firebase y espera la confirmacion
-                        dbRef.set(datosFormateados).then(() => {
-                            statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold";
-                            statusElem.innerText = `✅ Base Cloud sincronizada e inyectada con éxito (${datosFormateados.length} registros). ¡El asistente ya puede continuar con el flujo!`;
-                        }).catch(err => {
-                            statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
-                            statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
-                        });
-                    }, 50);
+                    // Sincronización con Firebase + Temporizador regresivo de 5 segundos
+                    dbRef.set(datosFormateados).then(() => {
+                        let segundos = 5;
+                        statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
+                        statusElem.innerText = `⏳ Sincronizando con los asistentes... (${segundos}s)`;
+                        
+                        let timer = setInterval(() => {
+                            segundos--;
+                            if (segundos > 0) {
+                                statusElem.innerText = `⏳ Sincronizando con los asistentes... (${segundos}s)`;
+                            } else {
+                                clearInterval(timer);
+                                statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold";
+                                statusElem.innerText = `✅ Base Cloud sincronizada e inyectada con éxito (${datosFormateados.length} registros). ¡El asistente ya puede continuar con el flujo!`;
+                            }
+                        }, 1000);
+                    }).catch(err => {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                    });
                 };
                 lector.readAsArrayBuffer(file);
-            }, 50);
+            }, 100);
         }
 
         function procesarJ_Satelite() {
