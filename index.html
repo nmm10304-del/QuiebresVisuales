@@ -174,7 +174,7 @@
                                 <th class="px-4 py-2 border font-bold">DESCRIPCIÓN</th>
                                 <th class="px-4 py-2 border text-center font-bold">CANT</th>
                                 <th class="px-4 py-2 border text-center font-bold">F. CADUCIDAD</th>
-                                <th class="px-4 py-2 border text-purple-700 bg-purple-50 font-bold">🔮 LPNS CONSUMIDOS POR RF</th>
+                                <th class="px-4 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
                             </tr>
                         </thead>
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
@@ -575,7 +575,43 @@
             });
         }
 
-        // RENDERIZADO DE TABLA REPOTENCIAR CON ASISTENTE, REPONER EN: Y AUDITORÍA FIFO EN VIVO
+        // FUNCIÓN AUXILIAR PARA FORMATEAR A DD/MM/YYYY GARANTIZADO
+        function formatearAFechaDDMMYYYY(valFecha) {
+            if (!valFecha || valFecha === "SIN FECHA") return "SIN FECHA";
+            
+            // Si es un número serie de Excel (e.g. 46568)
+            let num = Number(valFecha);
+            if (!isNaN(num) && num > 10000) {
+                let d = new Date((num - (25567 + 2)) * 86400 * 1000);
+                let dia = d.getDate().toString().padStart(2, '0');
+                let mes = (d.getMonth() + 1).toString().padStart(2, '0');
+                let anio = d.getFullYear();
+                return `${dia}/${mes}/${anio}`;
+            }
+
+            let str = valFecha.toString().trim();
+            if (str.includes('/')) {
+                let partes = str.split('/');
+                if (partes.length === 3) {
+                    let d = partes[0].padStart(2, '0');
+                    let m = partes[1].padStart(2, '0');
+                    let a = partes[2].length === 2 ? '20' + partes[2] : partes[2];
+                    return `${d}/${m}/${a}`;
+                }
+            } else if (str.includes('-')) {
+                let partes = str.split('-');
+                if (partes.length === 3) {
+                    if (partes[0].length === 4) { // YYYY-MM-DD
+                        return `${partes[2].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[0]}`;
+                    } else { // DD-MM-YYYY
+                        return `${partes[0].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[2]}`;
+                    }
+                }
+            }
+            return str;
+        }
+
+        // RENDERIZADO DE TABLA REPOTENCIAR CON ESTADO EN BLANCO HASTA PEGAR LA DATA
         function escucharLogsRepotenciacionTiempoReal() {
             logRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -608,10 +644,13 @@
                         zonaExtraida = partes[1].replace("]", "").trim();
                     }
 
-                    // Evaluación de Auditoría FIFO con Detalle_Reposición
-                    let badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                    // Formatear Fecha de Caducidad estricta (DD/MM/YYYY)
+                    let fvFormateada = formatearAFechaDDMMYYYY(item.fv);
+
+                    // PUNTO 2: SI NO HAY DATA EN Detalle_Reposicion -> SE MUESTRA EN BLANCO (TEXTO VACÍO)
+                    let badgeFifoHtml = ""; 
                     
-                    if (matrixDetalleReposicion.length > 0 && item.sku) {
+                    if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                         let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                         let lpnSugerido = (item.fifoLpnOptimizado || "").toString().trim().toUpperCase();
 
@@ -637,8 +676,12 @@
 
                                 if (mismaFvEncontrada) {
                                     badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV</span>`;
+                                } else {
+                                    badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                 }
                             }
+                        } else {
+                            badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                         }
                     }
 
@@ -650,7 +693,7 @@
                             <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${item.fifoLpnOptimizado || "N/A"}</td>
                             <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
                             <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${item.cant}</td>
-                            <td class="px-4 py-2 border text-center font-bold">${item.fv === "SIN FECHA" ? "" : item.fv}</td>
+                            <td class="px-4 py-2 border text-center font-bold">${fvFormateada === "SIN FECHA" ? "" : fvFormateada}</td>
                             <td class="px-4 py-2 border font-sans text-center">${badgeFifoHtml}</td>
                         </tr>`;
                 });
@@ -1124,7 +1167,7 @@
                     "LPN": item.fifoLpnOptimizado || "N/A",
                     "Descripción": descLimpia,
                     "Cant": item.cant || 0,
-                    "F. Caducidad": item.fv || "SIN FECHA"
+                    "F. Caducidad": formatearAFechaDDMMYYYY(item.fv)
                 };
             });
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
