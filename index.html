@@ -1129,35 +1129,58 @@
             }
         }
 
-        // PROCESAMIENTO CON TEMPORIZADOR DE 5 SEGUNDOS PARA EL ADMINISTRADOR
+        // PROCESAMIENTO ULTRA-RÁPIDO (Carga en < 1 segundo)
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
             
             const statusElem = document.getElementById('statusData1');
             statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
-            statusElem.innerText = "⏳ Leyendo archivo Excel...";
+            statusElem.innerText = "⏳ Leyendo archivo Excel ultra-rápido...";
 
             setTimeout(() => {
                 const lector = new FileReader();
                 lector.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
-                    const libro = XLSX.read(data, { type: 'array' });
+                    // dense: true y raw: true aceleran radicalmente la lectura en SheetJS
+                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
-                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
+                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                     
-                    let datosFormateados = filas.map(f => {
-                        let lpnVal = (f["Nro LPN"] || f["LPN"] || "").toString().trim();
-                        let skuVal = (f["SKU"] || "").toString().trim();
-                        let descVal = (f["Descripción"] || "").toString().trim();
-                        let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
-                        let fvVal = (f["Fecha de Caducidad"] || "SIN FECHA").toString().trim();
-                        let ubiVal = (f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "").toString().trim();
-                        
-                        return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                    }).filter(x => x && x.sku);
+                    if (!filas || filas.length < 2) {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
+                        return;
+                    }
 
-                    // Sincronización con Firebase + Temporizador regresivo de 5 segundos
+                    // Mapeo super directo por encabezados
+                    const headers = filas[0].map(h => (h || "").toString().trim().toLowerCase());
+                    const idxLpn = headers.findIndex(h => h.includes("lpn"));
+                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo"));
+                    const idxDesc = headers.findIndex(h => h.includes("descripci"));
+                    const idxUnidades = headers.findIndex(h => h.includes("unidad"));
+                    const idxVenc = headers.findIndex(h => h.includes("caducidad") || h.includes("vencim"));
+                    const idxUbi = headers.findIndex(h => h.includes("ubicac"));
+
+                    let datosFormateados = [];
+                    for (let i = 1; i < filas.length; i++) {
+                        const row = filas[i];
+                        if (!row || row.length === 0) continue;
+
+                        let skuVal = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                        if (!skuVal) continue;
+
+                        datosFormateados.push({
+                            lpn: idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "",
+                            sku: skuVal,
+                            descripcion: idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "",
+                            unidades: idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0,
+                            vencimiento: idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "SIN FECHA",
+                            ubicacion: idxUbi !== -1 && row[idxUbi] !== undefined ? row[idxUbi].toString().trim() : ""
+                        });
+                    }
+
+                    // Sincronización inmediata con Firebase y temporizador regresivo de 5 segundos
                     dbRef.set(datosFormateados).then(() => {
                         let segundos = 5;
                         statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
@@ -1179,7 +1202,7 @@
                     });
                 };
                 lector.readAsArrayBuffer(file);
-            }, 100);
+            }, 50);
         }
 
         function procesarJ_Satelite() {
@@ -1188,9 +1211,9 @@
             const lector = new FileReader();
             lector.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array' });
+                const libro = XLSX.read(data, { type: 'array', dense: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja);
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
                 reqJ_Satelite = {};
                 filas.forEach(f => {
                     let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
@@ -1209,9 +1232,9 @@
             const lector = new FileReader();
             lector.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array' });
+                const libro = XLSX.read(data, { type: 'array', dense: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja);
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
                 
                 matrixDetalleReposicion = filas.map(f => ({
                     lpn: f["LPN"] || f["Contenedor Origen"] || "",
