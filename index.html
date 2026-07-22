@@ -239,7 +239,6 @@
                         <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
                     </div>
 
-                    <!-- PUNTO 3: Indicador de stock total disponible en reserva -->
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                         <div class="flex justify-between items-center">
                             <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
@@ -309,7 +308,7 @@
         </div>
     </div>
 
-    <!-- PUNTO 1: MODAL DE SELECCIÓN DE UBICACIÓN DESTINO (TIPO OPCIONES CON "HOME" PRIMERO) -->
+    <!-- MODAL DE SELECCIÓN DE UBICACIÓN DESTINO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
             <h3 class="font-bold text-base border-b pb-2 text-orange-600 uppercase flex items-center gap-2">
@@ -318,7 +317,6 @@
             <p class="text-xs text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
             
             <div class="space-y-2 py-1 max-h-64 overflow-y-auto font-sans text-sm">
-                <!-- Opción HOME PRIMERO como fue solicitado -->
                 <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-3 p-2.5 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
                     <input type="radio" name="optUbicacion" value="Home" class="w-4 h-4 text-orange-600 accent-orange-600">
                     <span>Home</span>
@@ -371,7 +369,7 @@
         </div>
     </div>
 
-    <!-- PUNTO 2: MODAL REPORTE CON VALIDACIÓN ESTRICTA (NUMÉRICO / ALFANUMÉRICO) -->
+    <!-- MODAL REPORTE CON VALIDACIÓN ESTRICTA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -384,14 +382,12 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
-                    <!-- PUNTO 2 CORREGIDO: Permite ÚNICAMENTE números -->
                     <input type="text" id="incidenciacodigoInput" 
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                            placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <!-- PUNTO 2 CORREGIDO: Permite ÚNICAMENTE números y letras -->
                     <textarea id="incidenciaMotivoInput" rows="3" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                               placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
@@ -914,11 +910,14 @@
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item || !item.sku) return false;
                     
-                    if (item.ubicacion) {
-                        let u = item.ubicacion.toString().toUpperCase().trim();
-                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
-                            return false;
-                        }
+                    // REGLA CRÍTICA AGREGADA: Si NO TIENE ubicación asignada (vacía), se descarta de la reserva
+                    if (!item.ubicacion || item.ubicacion.toString().trim() === "") {
+                        return false;
+                    }
+
+                    let u = item.ubicacion.toString().toUpperCase().trim();
+                    if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
+                        return false;
                     }
 
                     let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -927,7 +926,6 @@
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
                 });
 
-                // PUNTO 3: Cálculo del total de stock disponible en reserva
                 let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
                 document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
 
@@ -959,14 +957,12 @@
             }
         }
 
-        // PUNTO 1: Despliega la ventana flotante de ubicaciones con "Home" primero
         function solicitarUbicacionOEnviar() {
             const cantVal = document.getElementById('cantidadInput').value;
             if(!cantVal || parseInt(cantVal, 10) <= 0) { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
-            // Desmarca radio buttons previos
             const radios = document.getElementsByName('optUbicacion');
             radios.forEach(r => r.checked = false);
             
@@ -1034,7 +1030,6 @@
                     copiaDescripcion += ` [Zona: ${zonaDestino}]`;
                 }
 
-                // Inyección inmediata a la base del Administrador
                 logRef.push({
                     operador: nombreOperador,
                     sku: copiaSkuTemporal,
