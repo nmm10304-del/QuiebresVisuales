@@ -239,15 +239,19 @@
                         <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
                     </div>
 
+                    <!-- PUNTO 3: Indicador de stock total disponible en reserva -->
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
-                        <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
+                            <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-xs font-bold px-2 py-0.5 rounded shadow-xs">Reserva: 0 Uds</span>
+                        </div>
                         <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
                         <div class="pt-2 border-t border-orange-200/60 flex items-center justify-between">
                             <span class="text-xs text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900"></b></span>
                         </div>
                     </div>
 
-                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); guardarRegistro();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
+                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); solicitarUbicacionOEnviar();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
                         <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
@@ -305,6 +309,57 @@
         </div>
     </div>
 
+    <!-- PUNTO 1: MODAL DE SELECCIÓN DE UBICACIÓN DESTINO (TIPO OPCIONES CON "HOME" PRIMERO) -->
+    <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[90]">
+        <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
+            <h3 class="font-bold text-base border-b pb-2 text-orange-600 uppercase flex items-center gap-2">
+                📍 Selección de Ubicación
+            </h3>
+            <p class="text-xs text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
+            
+            <div class="space-y-2 py-1 max-h-64 overflow-y-auto font-sans text-sm">
+                <!-- Opción HOME PRIMERO como fue solicitado -->
+                <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-3 p-2.5 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
+                    <input type="radio" name="optUbicacion" value="Home" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Home</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Gancheras" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Gancheras</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Pre-altillo</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Cajas" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Cajas</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Tendencias" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Tendencias</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Showroom" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Showroom</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Bines" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Bines</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                    <input type="radio" name="optUbicacion" value="Rumas" class="w-4 h-4 text-orange-600 accent-orange-600">
+                    <span>Rumas</span>
+                </label>
+            </div>
+            
+            <button onclick="cerrarModalUbicacion()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL DINÁMICO DE NOTIFICACIONES EN PRIMER PLANO (z-[100]) -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -316,6 +371,7 @@
         </div>
     </div>
 
+    <!-- PUNTO 2: MODAL REPORTE CON VALIDACIÓN ESTRICTA (NUMÉRICO / ALFANUMÉRICO) -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -328,11 +384,17 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
-                    <input type="text" id="incidenciacodigoInput" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
+                    <!-- PUNTO 2 CORREGIDO: Permite ÚNICAMENTE números -->
+                    <input type="text" id="incidenciacodigoInput" 
+                           oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
+                           placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <textarea id="incidenciaMotivoInput" rows="3" oninput="evaluarBloqueoDuplicadosEnVivo()" placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                    <!-- PUNTO 2 CORREGIDO: Permite ÚNICAMENTE números y letras -->
+                    <textarea id="incidenciaMotivoInput" rows="3" 
+                              oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
+                              placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
@@ -792,7 +854,6 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
-        // PARSER DE FECHAS SEGURO: Soporta textos, fechas formateadas de Excel y números de serie
         function parsearFechaEspanol(strFecha) {
             if (!strFecha || strFecha === "SIN FECHA") return new Date(2999, 11, 31);
             if (typeof strFecha === 'number') {
@@ -866,6 +927,10 @@
                     return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
                 });
 
+                // PUNTO 3: Cálculo del total de stock disponible en reserva
+                let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
+
                 if (lotesFiltradosTurno.length > 0) {
                     descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('avisoAdvertenciaStock').className = "hidden";
@@ -890,17 +955,39 @@
         function handleCantidadKey(event) {
             if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
                 event.preventDefault();
-                guardarRegistro(); 
+                solicitarUbicacionOEnviar(); 
             }
         }
 
-        function guardarRegistro() {
+        // PUNTO 1: Despliega la ventana flotante de ubicaciones con "Home" primero
+        function solicitarUbicacionOEnviar() {
+            const cantVal = document.getElementById('cantidadInput').value;
+            if(!cantVal || parseInt(cantVal, 10) <= 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                return; 
+            }
+            // Desmarca radio buttons previos
+            const radios = document.getElementsByName('optUbicacion');
+            radios.forEach(r => r.checked = false);
+            
+            document.getElementById('modalSeleccionUbicacion').classList.remove('hidden');
+        }
+
+        function cerrarModalUbicacion() {
+            document.getElementById('modalSeleccionUbicacion').classList.add('hidden');
+        }
+
+        function confirmarUbicacionYGuardar(ubicacionElegida) {
+            cerrarModalUbicacion();
+            guardarRegistro(ubicacionElegida);
+        }
+
+        function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
                 const cantidadString = inputCantElem ? inputCantElem.value : "";
                 
                 if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
-                    lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                     return; 
                 }
 
@@ -943,8 +1030,11 @@
 
                 let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
                 let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+                if (zonaDestino) {
+                    copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+                }
 
-                // Publica la repotenciación en tiempo real a Firebase
+                // Inyección inmediata a la base del Administrador
                 logRef.push({
                     operador: nombreOperador,
                     sku: copiaSkuTemporal,
@@ -1056,7 +1146,6 @@
             }
         }
 
-        // LECTURA DE CAJAS TIENDA CON raw: false PARA RETENER TEXTO EXACTO DE EXCEL
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1066,8 +1155,6 @@
                 const data = new Uint8Array(e.target.result);
                 const libro = XLSX.read(data, { type: 'array' });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                
-                // Configuración raw: false extrae las fechas formateadas exactamente como se ven en Excel
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
                 
                 let datosFormateados = filas.map(f => {
