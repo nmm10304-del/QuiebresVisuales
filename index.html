@@ -472,7 +472,6 @@
             verificarSesionGuardada();
         });
 
-        // CARGA PERSISTENTE ANTI-F5 DE EXCELES SECUNDARIOS
         function cargarCachePersistenteLocal() {
             try {
                 const sateliteGuardado = localStorage.getItem("cache_jsatelite_db");
@@ -643,7 +642,6 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON AUDITORÍA ESPECÍFICA (RESERVA O PUERTA)
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -701,14 +699,12 @@
                         let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
-                        // ESTADO EN BLANCO HASTA QUE SE CARGUE DETALLE_REPOSICIÓN
                         let badgeFifoHtml = ""; 
                         
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
-                            // FILTRADO DE COINCIDENCIAS EN RF POR SKU
                             let coincidenciasRF = matrixDetalleReposicion.filter(m => {
                                 if (!m.sku || !m.pantalla) return false;
                                 let skuRfLimpio = m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -716,14 +712,12 @@
                             });
 
                             if (coincidenciasRF.length > 0) {
-                                // Buscar si existe coincidencia exacta de LPN
                                 let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                 
                                 if (matchExacto) {
                                     let tipoPantalla = matchExacto.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO (${tipoPantalla})</span>`;
                                 } else {
-                                    // Verificar si bajó otro LPN con la misma Fecha de Vencimiento
                                     let matchMismaFv = coincidenciasRF.find(m => {
                                         let lpnRf = m.lpn.toString().trim().toUpperCase();
                                         let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
@@ -1348,6 +1342,7 @@
             }
         }
 
+        // PROCESAMIENTO CON NORMALIZACIÓN ESTÁNDAR DE FECHAS EN CAJAS_TIENDA
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1370,16 +1365,29 @@
                         return;
                     }
 
-                    const headers = filas[0].map(h => (h || "").toString().trim().toLowerCase());
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(10, filas.length); i++) {
+                        if (filas[i] && Array.isArray(filas[i])) {
+                            let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo")) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (headerRowIdx === -1) headerRowIdx = 0;
+
+                    const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     const idxLpn = headers.findIndex(h => h.includes("lpn"));
-                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo"));
+                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                     const idxDesc = headers.findIndex(h => h.includes("descripci"));
-                    const idxUnidades = headers.findIndex(h => h.includes("unidad"));
-                    const idxVenc = headers.findIndex(h => h.includes("caducidad") || h.includes("vencim"));
+                    const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
+                    const idxVenc = headers.findIndex(h => h.includes("caducidad") || h.includes("vencim") || h.includes("fecha"));
                     const idxUbi = headers.findIndex(h => h.includes("ubicac"));
 
                     let datosFormateados = [];
-                    for (let i = 1; i < filas.length; i++) {
+                    for (let i = headerRowIdx + 1; i < filas.length; i++) {
                         const row = filas[i];
                         if (!row || row.length === 0) continue;
 
@@ -1394,12 +1402,15 @@
                             continue;
                         }
 
+                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc] : "SIN FECHA";
+                        let fechaNormalizada = formatearAFechaDDMMYYYY(rawFecha);
+
                         datosFormateados.push({
                             lpn: idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "",
                             sku: skuVal,
                             descripcion: idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "",
                             unidades: uVal,
-                            vencimiento: idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "SIN FECHA",
+                            vencimiento: fechaNormalizada,
                             ubicacion: ubiVal
                         });
                     }
@@ -1454,7 +1465,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // LECTOR DE EXCEL DINÁMICO Y ROBUSTO PARA DETALLE_REPOSICION
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1471,7 +1481,6 @@
                     return;
                 }
 
-                // Detección dinámica de la fila de encabezados
                 let headerRowIdx = -1;
                 for (let i = 0; i < Math.min(10, filas.length); i++) {
                     if (filas[i] && Array.isArray(filas[i])) {
@@ -1507,7 +1516,6 @@
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
                     let uDestino = pPantalla.toUpperCase();
-                    // Filtro estricto: Sólo RF_REPONER_RESERVA y RF_REPONER_PUERTA
                     if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
                         matrixDetalleReposicion.push({
                             lpn: pLpn,
