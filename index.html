@@ -910,7 +910,6 @@
                 lotesFiltradosTurno = inventarioData1.filter(item => {
                     if (!item || !item.sku) return false;
                     
-                    // REGLA CRÍTICA AGREGADA: Si NO TIENE ubicación asignada (vacía), se descarta de la reserva
                     if (!item.ubicacion || item.ubicacion.toString().trim() === "") {
                         return false;
                     }
@@ -1141,29 +1140,48 @@
             }
         }
 
+        // OPTIMIZACIÓN EXCLUSIVA DEL ADMINISTRADOR: Inyección Ultra Rápida con Feedback de Estado (Punto 2)
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
-            document.getElementById('statusData1').innerText = "⏳ Inyectando y Sincronizando Base Cloud...";
+            
+            const statusElem = document.getElementById('statusData1');
+            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
+            statusElem.innerText = "⏳ Leyendo y optimizando archivo Excel...";
+
             const lector = new FileReader();
             lector.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array' });
-                const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
-                
-                let datosFormateados = filas.map(f => {
-                    let lpnVal = f["Nro LPN"] || f["LPN"] || "";
-                    let skuVal = f["SKU"] || "";
-                    let descVal = f["Descripción"] || "";
-                    let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
-                    let fvVal = f["Fecha de Caducidad"] || "SIN FECHA";
-                    let ubiVal = f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "";
+                setTimeout(() => {
+                    const data = new Uint8Array(e.target.result);
+                    const libro = XLSX.read(data, { type: 'array' });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: false });
                     
-                    return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
-                }).filter(x => x && x.sku);
+                    statusElem.innerText = "🚀 Inyectando a la nube en tiempo real (0%)...";
 
-                dbRef.set(datosFormateados);
+                    // Limpieza y filtrado ultra liviano para subir únicamente lo indispensable a Firebase
+                    let datosFormateados = filas.map(f => {
+                        let lpnVal = (f["Nro LPN"] || f["LPN"] || "").toString().trim();
+                        let skuVal = (f["SKU"] || "").toString().trim();
+                        let descVal = (f["Descripción"] || "").toString().trim();
+                        let uVal = parseInt(f["Unidades actuales"] || f["Unidades Actuales"] || 0, 10);
+                        let fvVal = (f["Fecha de Caducidad"] || "SIN FECHA").toString().trim();
+                        let ubiVal = (f["Ubicación Actual"] || f["Ubicación Actu"] || f["Ubicacion Actual"] || "").toString().trim();
+                        
+                        return { lpn: lpnVal, sku: skuVal, descripcion: descVal, unidades: uVal, vencimiento: fvVal, ubicacion: ubiVal };
+                    }).filter(x => x && x.sku);
+
+                    statusElem.innerText = "🚀 Transmitiendo paquete optimizado...";
+
+                    // Envío ultra rápido a la base cloud de Firebase
+                    dbRef.set(datosFormateados).then(() => {
+                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold";
+                        statusElem.innerText = `✅ Base Cloud sincronizada en vivo (${datosFormateados.length} registros).`;
+                    }).catch(err => {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                    });
+                }, 50);
             };
             lector.readAsArrayBuffer(file);
         }
