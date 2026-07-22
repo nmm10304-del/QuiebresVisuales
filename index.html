@@ -643,7 +643,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON CREDENCIAL HP, FILAS DESGLOSADAS Y EVALUACIÓN RF EN VIVO
+        // RENDERIZADO CON AUDITORÍA ESPECÍFICA (RESERVA O PUERTA)
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -668,7 +668,6 @@
                         zonaExtraida = partes[1].replace("]", "").trim();
                     }
 
-                    // CREDENCIAL EXACTA (HP...)
                     let idUsuarioCredencial = item.idAsistente || item.operador || "HP00000000";
 
                     let purgaStr = item.purgaCompletaRuta || "";
@@ -709,31 +708,31 @@
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
-                            // FILTRADO ESTRICTO DE RF (RF_REPONER_PUERTA Y RF_REPONER_RESERVA)
+                            // FILTRADO DE COINCIDENCIAS EN RF POR SKU
                             let coincidenciasRF = matrixDetalleReposicion.filter(m => {
                                 if (!m.sku || !m.pantalla) return false;
                                 let skuRfLimpio = m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                                let pantUpper = m.pantalla.toString().toUpperCase();
-                                let esPantallaValida = pantUpper.includes("RF_REPONER_PUERTA") || pantUpper.includes("RF_REPONER_RESERVA");
-                                return skuRfLimpio === skuLogLimpio && esPantallaValida;
+                                return skuRfLimpio === skuLogLimpio;
                             });
 
                             if (coincidenciasRF.length > 0) {
-                                let lpnsRF = coincidenciasRF.map(m => m.lpn.toString().trim().toUpperCase());
+                                // Buscar si existe coincidencia exacta de LPN
+                                let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                 
-                                let realizoExacto = lpnsRF.includes(lpnSugeridoLimpio);
-                                
-                                if (realizoExacto) {
-                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                                if (matchExacto) {
+                                    let tipoPantalla = matchExacto.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO (${tipoPantalla})</span>`;
                                 } else {
-                                    let mismaFvEncontrada = coincidenciasRF.some(m => {
+                                    // Verificar si bajó otro LPN con la misma Fecha de Vencimiento
+                                    let matchMismaFv = coincidenciasRF.find(m => {
                                         let lpnRf = m.lpn.toString().trim().toUpperCase();
                                         let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
                                         return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
                                     });
 
-                                    if (mismaFvEncontrada) {
-                                        badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV</span>`;
+                                    if (matchMismaFv) {
+                                        let tipoPantalla = matchMismaFv.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
+                                        badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV (${tipoPantalla})</span>`;
                                     } else {
                                         badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                     }
@@ -1455,38 +1454,71 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // MAPEO EXACTO DE Detalle_Reposicion + PERSISTENCIA ANTI-F5
+        // LECTOR DE EXCEL DINÁMICO Y ROBUSTO PARA DETALLE_REPOSICION
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
             const lector = new FileReader();
             lector.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array', dense: true });
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                 
-                matrixDetalleReposicion = filas.map(f => {
-                    let pLpn = f["Nro LPN"] || f["LPN"] || f["Contenedor Origen"] || f["Nro. LPN"] || "";
-                    let pSku = f["SKU"] || f["Articulo"] || f["Artículo"] || "";
-                    let pPantalla = f["Pantalla"] || f["Estado"] || f["Ubicación Destino"] || f["Ubicacion Destino"] || "";
-                    let pUsuario = f["Usuario"] || f["Usuario Actividad"] || f["Operador"] || "SISTEMA";
-                    let pCantOrig = f["Cantidad Original"] || f["Cantidad Solicitada"] || f["Cant"] || 0;
-                    let pCantAjust = f["Cantidad Ajustada"] || f["Cantidad Confirmada"] || f["Cant"] || 0;
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold";
+                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
 
-                    return {
-                        lpn: pLpn.toString().trim(),
-                        sku: pSku.toString().trim(),
-                        pantalla: pPantalla.toString().trim(),
-                        cantOriginal: pCantOrig,
-                        cantAjustada: pCantAjust,
-                        usuario: pUsuario.toString().trim()
-                    };
-                }).filter(x => {
-                    if (!x.sku || !x.pantalla) return false;
-                    let uDestino = x.pantalla.toUpperCase();
-                    return uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA") || uDestino.includes("RF_DIVIDIR LPN");
-                });
+                // Detección dinámica de la fila de encabezados
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pantalla") || strLine.includes("lpn") || strLine.includes("sku")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
+                const idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
+                const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
+                const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
+                const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
+
+                matrixDetalleReposicion = [];
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
+                    let pLpn = idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
+                    let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
+                    let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
+
+                    let uDestino = pPantalla.toUpperCase();
+                    // Filtro estricto: Sólo RF_REPONER_RESERVA y RF_REPONER_PUERTA
+                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
+                        matrixDetalleReposicion.push({
+                            lpn: pLpn,
+                            sku: pSku,
+                            pantalla: pPantalla,
+                            cantOriginal: pCantOrig,
+                            cantAjustada: pCantAjust,
+                            usuario: pUsuario
+                        });
+                    }
+                }
 
                 try {
                     localStorage.setItem("cache_detalle_reposicion_db", JSON.stringify(matrixDetalleReposicion));
