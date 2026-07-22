@@ -616,7 +616,7 @@
             });
         }
 
-        // RENDERIZADO CON AUDITORÍA DINÁMICA DE LPNs MULTIPLES
+        // RENDERIZADO POR FILAS SEPARADAS SEGÚN LPN Y CANTIDAD
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -641,61 +641,89 @@
                         zonaExtraida = partes[1].replace("]", "").trim();
                     }
 
-                    let fvFormateada = formatearAFechaDDMMYYYY(item.fv);
+                    // Extraer los consumos desglosados (e.g., "TLPN1 (-1 Uds) ➔ TLPN2 (-1 Uds)")
+                    let purgaStr = item.purgaCompletaRuta || "";
+                    let desglosesLpn = [];
 
-                    // ESTADO EN BLANCO MIENTRAS NO HAYA DETALLE_REPOSICIÓN
-                    let badgeFifoHtml = ""; 
-                    
-                    if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
-                        let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                        let lpnSugeridoRaw = (item.fifoLpnOptimizado || "").toString().trim().toUpperCase();
-                        let lpnsSugeridosArr = lpnSugeridoRaw.split(",").map(x => x.trim()).filter(x => x);
-
-                        let coincidenciasRF = matrixDetalleReposicion.filter(m => 
-                            m.sku && m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuLogLimpio
-                        );
-
-                        if (coincidenciasRF.length > 0) {
-                            let lpnsRF = coincidenciasRF.map(m => m.lpn.toString().trim().toUpperCase());
-                            
-                            // Evalúa si todos los LPNs sugeridos fueron procesados en RF
-                            let realizoExacto = lpnsSugeridosArr.length > 0 && lpnsSugeridosArr.every(lpnSug => lpnsRF.includes(lpnSug));
-                            
-                            if (realizoExacto) {
-                                badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
-                            } else {
-                                // Verificar si los LPNs procesados tienen la misma Fecha de Vencimiento
-                                let lpnsBuscadosEnCajas = inventarioData1.filter(i => i.lpn && lpnsSugeridosArr.includes(i.lpn.toString().trim().toUpperCase()));
-                                let fvSugerida = lpnsBuscadosEnCajas.length > 0 ? lpnsBuscadosEnCajas[0].vencimiento : item.fv;
-
-                                let mismaFvEncontrada = coincidenciasRF.some(m => {
-                                    let lpnRf = m.lpn.toString().trim().toUpperCase();
-                                    let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
-                                    return itemRfEnCajas && itemRfEnCajas.vencimiento === fvSugerida;
-                                });
-
-                                if (mismaFvEncontrada) {
-                                    badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV</span>`;
-                                } else {
-                                    badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                                }
+                    if (purgaStr && purgaStr.includes("(-")) {
+                        let partes = purgaStr.split("➔");
+                        partes.forEach(p => {
+                            let matchLpn = p.match(/([^\s]+)\s*\(-(\d+)\s*Uds\)/i);
+                            if (matchLpn) {
+                                desglosesLpn.push({ lpn: matchLpn[1].trim(), cant: parseInt(matchLpn[2], 10) });
                             }
+                        });
+                    }
+
+                    // Si no tiene desglose detallado, usa el LPN sugerido por defecto
+                    if (desglosesLpn.length === 0) {
+                        let rawLpn = (item.fifoLpnOptimizado || "N/A").toString().trim();
+                        let arrayLpns = rawLpn.split(",").map(x => x.trim()).filter(x => x);
+                        if (arrayLpns.length > 0) {
+                            arrayLpns.forEach(l => desglosesLpn.push({ lpn: l, cant: Math.max(1, Math.floor(item.cant / arrayLpns.length)) }));
                         } else {
-                            badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                            desglosesLpn.push({ lpn: rawLpn, cant: item.cant });
                         }
                     }
 
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-gray-50 font-mono text-xs">
-                            <td class="px-4 py-2 border font-sans text-gray-700 font-bold">${item.operador || "Anónimo"}</td>
-                            <td class="px-4 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50">${zonaExtraida}</td>
-                            <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
-                            <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${item.fifoLpnOptimizado || "N/A"}</td>
-                            <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
-                            <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${item.cant}</td>
-                            <td class="px-4 py-2 border text-center font-bold">${fvFormateada === "SIN FECHA" ? "" : fvFormateada}</td>
-                            <td class="px-4 py-2 border font-sans text-center">${badgeFifoHtml}</td>
-                        </tr>`;
+                    // RENDERIZAR UNA FILA SEPARADA POR CADA LPN INVOLUCRADO
+                    desglosesLpn.forEach(subItem => {
+                        let lpnFila = subItem.lpn;
+                        let cantFila = subItem.cant;
+
+                        // Buscar Fecha de Caducidad específica de este LPN en Cajas_Tienda
+                        let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnFila.toUpperCase());
+                        let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
+                        let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
+
+                        // ESTADO EN BLANCO MIENTRAS NO HAYA DETALLE_REPOSICIÓN
+                        let badgeFifoHtml = ""; 
+                        
+                        if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
+                            let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            let lpnSugeridoLimpio = lpnFila.toUpperCase();
+
+                            let coincidenciasRF = matrixDetalleReposicion.filter(m => 
+                                m.sku && m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuLogLimpio
+                            );
+
+                            if (coincidenciasRF.length > 0) {
+                                let lpnsRF = coincidenciasRF.map(m => m.lpn.toString().trim().toUpperCase());
+                                
+                                let realizoExacto = lpnsRF.includes(lpnSugeridoLimpio);
+                                
+                                if (realizoExacto) {
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                                } else {
+                                    let mismaFvEncontrada = coincidenciasRF.some(m => {
+                                        let lpnRf = m.lpn.toString().trim().toUpperCase();
+                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
+                                        return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
+                                    });
+
+                                    if (mismaFvEncontrada) {
+                                        badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV</span>`;
+                                    } else {
+                                        badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                    }
+                                }
+                            } else {
+                                badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                            }
+                        }
+
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 font-mono text-xs">
+                                <td class="px-4 py-2 border font-sans text-gray-700 font-bold">${item.operador || "Anónimo"}</td>
+                                <td class="px-4 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50">${zonaExtraida}</td>
+                                <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                                <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
+                                <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
+                                <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
+                                <td class="px-4 py-2 border text-center font-bold">${fvFormateada === "SIN FECHA" ? "" : fvFormateada}</td>
+                                <td class="px-4 py-2 border font-sans text-center">${badgeFifoHtml}</td>
+                            </tr>`;
+                    });
                 });
                 document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
                 document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
@@ -1067,7 +1095,6 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // GUARDA Y CONCATENA TODOS LOS LPNs NECESARIOS SEGÚN LA CANTIDAD SOLICITADA
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1157,7 +1184,9 @@
 
         function descargarExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) return;
-            const dataProcesada = registrosHistoricosRepotenciar.map(item => {
+            let dataProcesada = [];
+
+            registrosHistoricosRepotenciar.forEach(item => {
                 let rawDesc = item.desc || "";
                 let zonaExtraida = "General";
                 let descLimpia = rawDesc;
@@ -1167,16 +1196,45 @@
                     zonaExtraida = partes[1].replace("]", "").trim();
                 }
 
-                return {
-                    "Asistente": item.operador || "Anónimo",
-                    "Reponer en:": zonaExtraida,
-                    "SKU": item.sku || "",
-                    "LPN": item.fifoLpnOptimizado || "N/A",
-                    "Descripción": descLimpia,
-                    "Cant": item.cant || 0,
-                    "F. Caducidad": formatearAFechaDDMMYYYY(item.fv)
-                };
+                let purgaStr = item.purgaCompletaRuta || "";
+                let desglosesLpn = [];
+
+                if (purgaStr && purgaStr.includes("(-")) {
+                    let partes = purgaStr.split("➔");
+                    partes.forEach(p => {
+                        let matchLpn = p.match(/([^\s]+)\s*\(-(\d+)\s*Uds\)/i);
+                        if (matchLpn) {
+                            desglosesLpn.push({ lpn: matchLpn[1].trim(), cant: parseInt(matchLpn[2], 10) });
+                        }
+                    });
+                }
+
+                if (desglosesLpn.length === 0) {
+                    let rawLpn = (item.fifoLpnOptimizado || "N/A").toString().trim();
+                    let arrayLpns = rawLpn.split(",").map(x => x.trim()).filter(x => x);
+                    if (arrayLpns.length > 0) {
+                        arrayLpns.forEach(l => desglosesLpn.push({ lpn: l, cant: Math.max(1, Math.floor(item.cant / arrayLpns.length)) }));
+                    } else {
+                        desglosesLpn.push({ lpn: rawLpn, cant: item.cant });
+                    }
+                }
+
+                desglosesLpn.forEach(subItem => {
+                    let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === subItem.lpn.toUpperCase());
+                    let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
+
+                    dataProcesada.push({
+                        "Asistente": item.operador || "Anónimo",
+                        "Reponer en:": zonaExtraida,
+                        "SKU": item.sku || "",
+                        "LPN": subItem.lpn,
+                        "Descripción": descLimpia,
+                        "Cant": subItem.cant,
+                        "F. Caducidad": formatearAFechaDDMMYYYY(fvLpnFila)
+                    });
+                });
             });
+
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
             const libro = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(libro, hoja, "Repotenciacion");
