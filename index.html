@@ -168,22 +168,25 @@
                         </button>
                     </div>
                 </div>
-                <div class="overflow-x-auto max-h-[440px] overflow-y-auto">
-                    <table class="min-w-full text-sm text-left border border-gray-200">
-                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0">
+                
+                <!-- PUNTO 1: VISUALIZACIÓN COMPLETA CON SCROLL HORIZONTAL (overflow-x-auto) -->
+                <div class="overflow-x-auto max-h-[440px] overflow-y-auto w-full border rounded-lg shadow-inner">
+                    <table class="min-w-[1100px] w-full text-sm text-left border-collapse">
+                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
-                                <th class="px-4 py-2 border font-bold">ASISTENTE</th>
-                                <th class="px-4 py-2 border font-bold text-orange-900 bg-orange-100/60">REPONER EN:</th>
-                                <th class="px-4 py-2 border font-bold">SKU</th>
-                                <th class="px-4 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
-                                <th class="px-4 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
-                                <th class="px-4 py-2 border font-bold">DESCRIPCIÓN</th>
-                                <th class="px-4 py-2 border text-center font-bold">CANT</th>
-                                <th class="px-4 py-2 border text-center font-bold">F. CADUCIDAD</th>
-                                <th class="px-4 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
+                                <th class="px-3 py-2 border font-bold">ASISTENTE</th>
+                                <!-- PUNTO 3: TAMAÑO DE LETRA MÁS PEQUEÑO EN REPONER EN -->
+                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER EN:</th>
+                                <th class="px-3 py-2 border font-bold">SKU</th>
+                                <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
+                                <th class="px-3 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
+                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
+                                <th class="px-3 py-2 border text-center font-bold">CANT</th>
+                                <th class="px-3 py-2 border text-center font-bold">F. CADUCIDAD</th>
+                                <th class="px-3 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
+                        <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
                             <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
                         </tbody>
                     </table>
@@ -200,9 +203,9 @@
                         Procesar y Cruzar Archivos
                     </button>
                 </div>
-                <div class="overflow-x-auto max-h-60 overflow-y-auto">
-                    <table class="min-w-full text-sm text-left border border-gray-200">
-                        <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0">
+                <div class="overflow-x-auto max-h-60 overflow-y-auto border rounded-lg">
+                    <table class="min-w-[900px] w-full text-sm text-left border-collapse">
+                        <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-4 py-2 border">Nro LPN Mapeado</th>
                                 <th class="px-4 py-2 border">SKU</th>
@@ -213,7 +216,7 @@
                                 <th class="px-4 py-2 border">Usuario Actividad</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
+                        <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
                             <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
                         </tbody>
                     </table>
@@ -613,16 +616,34 @@
             });
         }
 
+        // PUNTO 2: CONVERSIÓN EXACTA DE NÚMEROS SERIALES EXCEL A FECHA LATINA (DD/MM/YYYY)
         function formatearAFechaDDMMYYYY(valFecha) {
             if (valFecha === null || valFecha === undefined) return "";
             let str = valFecha.toString().trim();
-            if (str === "SIN FECHA" || str === "2999-12-31") return "";
+            if (str === "" || str === "SIN FECHA" || str === "2999-12-31") return "";
+            
+            // Si viene como número decimal de Excel (ej. 46221.84612268519)
+            let num = Number(str);
+            if (!isNaN(num) && num > 10000) {
+                let fechaJS = new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
+                let dia = fechaJS.getDate().toString().padStart(2, '0');
+                let mes = (fechaJS.getMonth() + 1).toString().padStart(2, '0');
+                let anio = fechaJS.getFullYear();
+                return `${dia}/${mes}/${anio}`;
+            }
+
             return str;
         }
 
         function parsearFechaEspanol(strFecha) {
             if (!strFecha || strFecha === "SIN FECHA" || strFecha.toString().trim() === "") return new Date(2999, 11, 31);
             let str = strFecha.toString().trim();
+            
+            let num = Number(str);
+            if (!isNaN(num) && num > 10000) {
+                return new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
+            }
+
             if (str.includes('/')) {
                 let partes = str.split('/');
                 if (partes.length === 3) {
@@ -656,7 +677,6 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON AUDITORÍA EXACTA Y CÁLCULO DE AVANCE DE LOS 3 BOTONES
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -720,7 +740,6 @@
                         let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
-                        // SI NO SE HA SUBIDO EL EXCEL O EL REPONEDOR NO HA REPUESTO EN RF, QUEDA EN BLANCO
                         let badgeFifoHtml = ""; 
                         
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
@@ -752,7 +771,6 @@
                                         let tipoPantalla = matchMismaFv.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
                                         badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV (${tipoPantalla})</span>`;
                                     } else {
-                                        // SI REPUSO EN RF PERO BAJÓ UN LPN CON OTRA FECHA (NO REALIZÓ FIFO)
                                         contadorLpnsProcesadosRF++;
                                         badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                     }
@@ -762,15 +780,16 @@
 
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
-                                <td class="px-4 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
-                                <td class="px-4 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50">${zonaExtraida}</td>
-                                <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
-                                <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
-                                <td class="px-4 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisicaLpn}</td>
-                                <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
-                                <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
-                                <td class="px-4 py-2 border text-center font-bold">${fvFormateada}</td>
-                                <td class="px-4 py-2 border font-sans text-center">${badgeFifoHtml}</td>
+                                <td class="px-3 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
+                                <!-- PUNTO 3: TAMAÑO DE TEXTO REDUCIDO Y COMPACTO EN REPONER EN -->
+                                <td class="px-2 py-2 border font-sans font-bold text-[10px] text-orange-700 bg-orange-50/50 uppercase tracking-tight">${zonaExtraida}</td>
+                                <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                                <td class="px-3 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
+                                <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisicaLpn}</td>
+                                <td class="px-3 py-2 border font-sans text-xs">${descLimpia}</td>
+                                <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
+                                <td class="px-3 py-2 border text-center font-bold">${fvFormateada}</td>
+                                <td class="px-3 py-2 border font-sans text-center">${badgeFifoHtml}</td>
                             </tr>`;
                     });
                 });
@@ -778,7 +797,6 @@
                 document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
                 document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
 
-                // CÁLCULO DEL PORCENTAJE DE AVANCE
                 let porcAvance = contadorTotalFilasLpn > 0 ? Math.round((contadorLpnsProcesadosRF / contadorTotalFilasLpn) * 100) : 0;
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
 
