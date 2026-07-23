@@ -414,6 +414,9 @@
         const dbRef = db.ref("inventarioMaestro");
         const logRef = db.ref("logsRepotenciacion");
         const msgRef = db.ref("alertasIncidencias");
+        // PERSISTENCIA TOTAL EN LA NUBE PARA LOS OTROS DOS EXCEL
+        const sateliteRef = db.ref("sateliteData");
+        const detalleRepoRef = db.ref("detalleReposicionData");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -464,7 +467,7 @@
             setupDragAndDrop("dropZoneJ_Satelite", "fileJSatelite", "btnClickJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("dropZoneData2", "fileData2", "btnClickData2", procesarData2, "drop-zone-purple--over");
             
-            cargarCachePersistenteLocal();
+            escucharPersistenciaArchivosCloud();
             descargarCatalogoAutomaticoRemoto();
             escucharInventarioEnTiempoReal();
             escucharLogsRepotenciacionTiempoReal();
@@ -472,22 +475,34 @@
             verificarSesionGuardada();
         });
 
-        function cargarCachePersistenteLocal() {
-            try {
-                const sateliteGuardado = localStorage.getItem("cache_jsatelite_db");
-                if (sateliteGuardado) {
-                    reqJ_Satelite = JSON.parse(sateliteGuardado);
+        // ESCUCHADORES EN TIEMPO REAL PARA MANTENER LA DATA DE LOS 3 EXCEL SIEMPRE GUARDADA (ANTI-F5)
+        function escucharPersistenciaArchivosCloud() {
+            sateliteRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    reqJ_Satelite = data;
                     document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold";
                     document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
+                } else {
+                    reqJ_Satelite = {};
+                    document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                    document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
+            });
 
-                const reposicionGuardado = localStorage.getItem("cache_detalle_reposicion_db");
-                if (reposicionGuardado) {
-                    matrixDetalleReposicion = JSON.parse(reposicionGuardado);
+            detalleRepoRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    matrixDetalleReposicion = data;
                     document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
                     document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
+                } else {
+                    matrixDetalleReposicion = [];
+                    document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                    document.getElementById('statusData2').innerText = "Waiting...";
                 }
-            } catch(e) {}
+                forzarActualizacionTablaAdmin();
+            });
         }
 
         function verificarSesionGuardada() {
@@ -597,12 +612,13 @@
             });
         }
 
+        // CONVERSIÓN Y FORMATEO ESTRICTO DE FECHA (SIN INVENTAR FECHAS NI ALTERAR MES/DÍA)
         function formatearAFechaDDMMYYYY(valFecha) {
-            if (!valFecha || valFecha === "SIN FECHA") return "SIN FECHA";
+            if (!valFecha || valFecha === "SIN FECHA" || valFecha.toString().trim() === "") return "";
             
             let num = Number(valFecha);
             if (!isNaN(num) && num > 10000) {
-                let d = new Date((num - (25567 + 2)) * 86400 * 1000);
+                let d = new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
                 let dia = d.getDate().toString().padStart(2, '0');
                 let mes = (d.getMonth() + 1).toString().padStart(2, '0');
                 let anio = d.getFullYear();
@@ -621,14 +637,43 @@
             } else if (str.includes('-')) {
                 let partes = str.split('-');
                 if (partes.length === 3) {
-                    if (partes[0].length === 4) {
+                    if (partes[0].length === 4) { // YYYY-MM-DD
                         return `${partes[2].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[0]}`;
-                    } else {
+                    } else { // DD-MM-YYYY
                         return `${partes[0].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[2]}`;
                     }
                 }
             }
             return str;
+        }
+
+        // PARSER DE NAVEGADOR PARA ORDENAR POR FIFO ESTRICTO
+        function parsearFechaEspanol(strFecha) {
+            if (!strFecha || strFecha === "SIN FECHA" || strFecha.toString().trim() === "") return new Date(2999, 11, 31);
+            if (typeof strFecha === 'number') {
+                return new Date(Math.round((strFecha - (25567 + 2)) * 86400 * 1000));
+            }
+            let str = strFecha.toString().trim();
+            if (str.includes('/')) {
+                let partes = str.split('/');
+                if (partes.length === 3) {
+                    let d = parseInt(partes[0], 10);
+                    let m = parseInt(partes[1], 10) - 1;
+                    let a = parseInt(partes[2], 10);
+                    if (a < 100) a += 2000;
+                    return new Date(a, m, d);
+                }
+            } else if (str.includes('-')) {
+                let partes = str.split('-');
+                if (partes.length === 3) {
+                    if (partes[0].length === 4) {
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                    } else {
+                        return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                    }
+                }
+            }
+            return new Date(2999, 11, 31);
         }
 
         function escucharLogsRepotenciacionTiempoReal() {
@@ -744,7 +789,7 @@
                                 <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
                                 <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
                                 <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
-                                <td class="px-4 py-2 border text-center font-bold">${fvFormateada === "SIN FECHA" ? "" : fvFormateada}</td>
+                                <td class="px-4 py-2 border text-center font-bold">${fvFormateada}</td>
                                 <td class="px-4 py-2 border font-sans text-center">${badgeFifoHtml}</td>
                             </tr>`;
                     });
@@ -992,24 +1037,6 @@
             if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
-        function parsearFechaEspanol(strFecha) {
-            if (!strFecha || strFecha === "SIN FECHA") return new Date(2999, 11, 31);
-            if (typeof strFecha === 'number') {
-                return new Date((strFecha - (25567 + 2)) * 86400 * 1000);
-            }
-            let str = strFecha.toString().trim();
-            if (!str.includes('/')) {
-                let num = Number(str);
-                if (!isNaN(num) && num > 10000) {
-                    return new Date((num - (25567 + 2)) * 86400 * 1000);
-                }
-                return new Date(2999, 11, 31);
-            }
-            const partes = str.split('/');
-            if (partes.length < 3) return new Date(2999, 11, 31);
-            return new Date(partes[2], partes[1] - 1, partes[0]);
-        }
-
         function alCambiarTextoBarcode() {
             document.getElementById('containerInputLpn').className = "hidden";
             document.getElementById('containerResetBtn').className = "hidden";
@@ -1119,6 +1146,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
+        // REGISTRO CON DESCUENTO EN VIVO Y ORDENAMIENTO FIFO REAL SEGÚN PARSER LATINO
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1132,13 +1160,14 @@
                 let remanente = cantidadNumerica;
                 
                 let lpnSugerido = "LPN-MANUAL";
-                let fvSugerida = "SIN FECHA";
+                let fvSugerida = "";
                 let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
                 let copiaLotesFiltrados = [...lotesFiltradosTurno];
 
                 if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                     try {
+                        // REGLA DE ORO: FIFO REAL (1º FECHA MAS ANTIGUA ➔ 2º MENOR SALDO)
                         copiaLotesFiltrados.sort((a, b) => {
                             let fA = parsearFechaEspanol(a.vencimiento);
                             let fB = parsearFechaEspanol(b.vencimiento);
@@ -1149,7 +1178,7 @@
                         });
                     } catch(eSort) {}
                     
-                    fvSugerida = copiaLotesFiltrados[0].vencimiento || "SIN FECHA";
+                    fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
                     historialConsumosLpns = [];
                     let lpnsConsumidosUnicos = [];
 
@@ -1158,7 +1187,7 @@
                         let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
                         
                         let loteOriginalInventario = inventarioData1.find(i => 
-                            i && i.sku &&
+                            i && i.sku && i.lpn === lote.lpn &&
                             i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
                         );
                         
@@ -1194,7 +1223,19 @@
                     purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
                 });
 
-                dbRef.set(inventarioData1);
+                // ACTUALIZAR BASE CLOUD Y RECALCULAR DE INMEDIATO EL BADGE DE RESERVA EN PANTALLA
+                dbRef.set(inventarioData1).then(() => {
+                    let nuevoStockDisponible = inventarioData1.filter(item => {
+                        if (!item || !item.sku || !item.ubicacion) return false;
+                        let u = item.ubicacion.toString().toUpperCase().trim();
+                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
+                        let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                        return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
+                    }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+
+                    document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds`;
+                });
+
             } catch (errGeneral) {
                 console.error("Error capturado en guardarRegistro:", errGeneral);
             } finally {
@@ -1279,16 +1320,9 @@
             if (tipo === 'cajas') {
                 dbRef.set(null);
             } else if (tipo === 'satelite') {
-                reqJ_Satelite = {};
-                localStorage.removeItem("cache_jsatelite_db");
-                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
-                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+                sateliteRef.set(null);
             } else if (tipo === 'reposicion') {
-                matrixDetalleReposicion = [];
-                localStorage.removeItem("cache_detalle_reposicion_db");
-                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
-                document.getElementById('statusData2').innerText = "Waiting...";
-                forzarActualizacionTablaAdmin();
+                detalleRepoRef.set(null);
             } else if (tipo === 'repotenciacion') {
                 logRef.set(null);
             }
@@ -1342,7 +1376,7 @@
             }
         }
 
-        // PROCESAMIENTO CON NORMALIZACIÓN ESTÁNDAR DE FECHAS EN CAJAS_TIENDA
+        // PROCESAMIENTO DE CAJAS_TIENDA SIN INVENTAR FECHAS NI ALTERAR FORMATOS DE CADUCIDAD
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1402,15 +1436,14 @@
                             continue;
                         }
 
-                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc] : "SIN FECHA";
-                        let fechaNormalizada = formatearAFechaDDMMYYYY(rawFecha);
+                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc] : "";
 
                         datosFormateados.push({
                             lpn: idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "",
                             sku: skuVal,
                             descripcion: idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "",
                             unidades: uVal,
-                            vencimiento: fechaNormalizada,
+                            vencimiento: rawFecha,
                             ubicacion: ubiVal
                         });
                     }
@@ -1439,6 +1472,7 @@
             }, 30);
         }
 
+        // CARGA Y PERSISTENCIA DIRECTA EN FIREBASE PARA JSATÉLITE
         function procesarJ_Satelite() {
             const file = document.getElementById("fileJSatelite").files[0];
             if (!file) return;
@@ -1448,23 +1482,19 @@
                 const libro = XLSX.read(data, { type: 'array', dense: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
-                reqJ_Satelite = {};
+                let tempJSatelite = {};
                 filas.forEach(f => {
                     let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
                     let lpn = f["LPN"] || f["Nro LPN"];
-                    if(sku && lpn) reqJ_Satelite[sku.toString().trim()] = lpn.toString().trim();
+                    if(sku && lpn) tempJSatelite[sku.toString().trim()] = lpn.toString().trim();
                 });
                 
-                try {
-                    localStorage.setItem("cache_jsatelite_db", JSON.stringify(reqJ_Satelite));
-                } catch(e) {}
-
-                document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold";
-                document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
+                sateliteRef.set(tempJSatelite);
             };
             lector.readAsArrayBuffer(file);
         }
 
+        // CARGA Y PERSISTENCIA DIRECTA EN FIREBASE PARA DETALLE_REPOSICIÓN
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1502,7 +1532,7 @@
                 const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
                 const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
 
-                matrixDetalleReposicion = [];
+                let tempDetalleRepo = [];
 
                 for (let i = headerRowIdx + 1; i < filas.length; i++) {
                     const row = filas[i];
@@ -1517,7 +1547,7 @@
 
                     let uDestino = pPantalla.toUpperCase();
                     if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
-                        matrixDetalleReposicion.push({
+                        tempDetalleRepo.push({
                             lpn: pLpn,
                             sku: pSku,
                             pantalla: pPantalla,
@@ -1528,14 +1558,7 @@
                     }
                 }
 
-                try {
-                    localStorage.setItem("cache_detalle_reposicion_db", JSON.stringify(matrixDetalleReposicion));
-                } catch(e) {}
-
-                document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
-                document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
-                
-                forzarActualizacionTablaAdmin();
+                detalleRepoRef.set(tempDetalleRepo);
             };
             lector.readAsArrayBuffer(file);
         }
