@@ -169,13 +169,11 @@
                     </div>
                 </div>
                 
-                <!-- PUNTO 1: VISUALIZACIÓN COMPLETA CON SCROLL HORIZONTAL (overflow-x-auto) -->
                 <div class="overflow-x-auto max-h-[440px] overflow-y-auto w-full border rounded-lg shadow-inner">
                     <table class="min-w-[1100px] w-full text-sm text-left border-collapse">
                         <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <!-- PUNTO 3: TAMAÑO DE LETRA MÁS PEQUEÑO EN REPONER EN -->
                                 <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER EN:</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
                                 <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
@@ -616,13 +614,12 @@
             });
         }
 
-        // PUNTO 2: CONVERSIÓN EXACTA DE NÚMEROS SERIALES EXCEL A FECHA LATINA (DD/MM/YYYY)
+        // FORMATEO FIEL DE FECHA EXCEL
         function formatearAFechaDDMMYYYY(valFecha) {
             if (valFecha === null || valFecha === undefined) return "";
             let str = valFecha.toString().trim();
             if (str === "" || str === "SIN FECHA" || str === "2999-12-31") return "";
             
-            // Si viene como número decimal de Excel (ej. 46221.84612268519)
             let num = Number(str);
             if (!isNaN(num) && num > 10000) {
                 let fechaJS = new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
@@ -781,7 +778,6 @@
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
                                 <td class="px-3 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
-                                <!-- PUNTO 3: TAMAÑO DE TEXTO REDUCIDO Y COMPACTO EN REPONER EN -->
                                 <td class="px-2 py-2 border font-sans font-bold text-[10px] text-orange-700 bg-orange-50/50 uppercase tracking-tight">${zonaExtraida}</td>
                                 <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
                                 <td class="px-3 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
@@ -1380,6 +1376,7 @@
             }
         }
 
+        // PROCESAMIENTO CON LECTURA ULTRA STRICTA DE COLUMNA P (POSICIÓN 16) PARA CADUCIDAD
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1416,12 +1413,23 @@
                     if (headerRowIdx === -1) headerRowIdx = 0;
 
                     const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    
                     const idxLpn = headers.findIndex(h => h.includes("lpn"));
                     const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                     const idxDesc = headers.findIndex(h => h.includes("descripci"));
                     const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
-                    const idxVenc = headers.findIndex(h => h.includes("caducidad") || h.includes("vencim") || h.includes("fecha"));
                     const idxUbi = headers.findIndex(h => h.includes("ubicac"));
+
+                    // BÚSQUEDA EXCLUSIVA Y ESTRICTA EN COLUMNA P (16 / INDICE 15) O TEXTO "CADUCIDAD"
+                    let idxVenc = headers.findIndex(h => h.includes("caducidad"));
+                    if (idxVenc === -1) {
+                        // Si por algún motivo cambió el nombre del header pero sigue en la columna P (Letra 16 -> Índice 15)
+                        if (filas[headerRowIdx].length >= 16) {
+                            idxVenc = 15;
+                        } else {
+                            idxVenc = headers.findIndex(h => h.includes("vencim") && !h.includes("mod"));
+                        }
+                    }
 
                     let datosFormateados = [];
                     for (let i = headerRowIdx + 1; i < filas.length; i++) {
