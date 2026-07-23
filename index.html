@@ -154,10 +154,12 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="forzarActualizacionTablaAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow flex items-center gap-1 cursor-pointer">
-                            🔄 Actualizar
-                        </button>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
+                            <span class="text-xs font-bold text-purple-900 uppercase">% Avance:</span>
+                            <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
+                        </div>
+
                         <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
                             Descargar Excel Repotenciación
                         </button>
@@ -174,6 +176,7 @@
                                 <th class="px-4 py-2 border font-bold text-orange-900 bg-orange-100/60">REPONER EN:</th>
                                 <th class="px-4 py-2 border font-bold">SKU</th>
                                 <th class="px-4 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
+                                <th class="px-4 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
                                 <th class="px-4 py-2 border font-bold">DESCRIPCIÓN</th>
                                 <th class="px-4 py-2 border text-center font-bold">CANT</th>
                                 <th class="px-4 py-2 border text-center font-bold">F. CADUCIDAD</th>
@@ -181,7 +184,7 @@
                             </tr>
                         </thead>
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs">
-                            <tr><td colspan="8" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
+                            <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -414,7 +417,6 @@
         const dbRef = db.ref("inventarioMaestro");
         const logRef = db.ref("logsRepotenciacion");
         const msgRef = db.ref("alertasIncidencias");
-        // PERSISTENCIA TOTAL EN LA NUBE PARA LOS OTROS DOS EXCEL
         const sateliteRef = db.ref("sateliteData");
         const detalleRepoRef = db.ref("detalleReposicionData");
 
@@ -475,7 +477,6 @@
             verificarSesionGuardada();
         });
 
-        // ESCUCHADORES EN TIEMPO REAL PARA MANTENER LA DATA DE LOS 3 EXCEL SIEMPRE GUARDADA (ANTI-F5)
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -612,47 +613,15 @@
             });
         }
 
-        // CONVERSIÓN Y FORMATEO ESTRICTO DE FECHA (SIN INVENTAR FECHAS NI ALTERAR MES/DÍA)
         function formatearAFechaDDMMYYYY(valFecha) {
-            if (!valFecha || valFecha === "SIN FECHA" || valFecha.toString().trim() === "") return "";
-            
-            let num = Number(valFecha);
-            if (!isNaN(num) && num > 10000) {
-                let d = new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
-                let dia = d.getDate().toString().padStart(2, '0');
-                let mes = (d.getMonth() + 1).toString().padStart(2, '0');
-                let anio = d.getFullYear();
-                return `${dia}/${mes}/${anio}`;
-            }
-
+            if (valFecha === null || valFecha === undefined) return "";
             let str = valFecha.toString().trim();
-            if (str.includes('/')) {
-                let partes = str.split('/');
-                if (partes.length === 3) {
-                    let d = partes[0].padStart(2, '0');
-                    let m = partes[1].padStart(2, '0');
-                    let a = partes[2].length === 2 ? '20' + partes[2] : partes[2];
-                    return `${d}/${m}/${a}`;
-                }
-            } else if (str.includes('-')) {
-                let partes = str.split('-');
-                if (partes.length === 3) {
-                    if (partes[0].length === 4) { // YYYY-MM-DD
-                        return `${partes[2].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[0]}`;
-                    } else { // DD-MM-YYYY
-                        return `${partes[0].padStart(2,'0')}/${partes[1].padStart(2,'0')}/${partes[2]}`;
-                    }
-                }
-            }
+            if (str === "SIN FECHA" || str === "2999-12-31") return "";
             return str;
         }
 
-        // PARSER DE NAVEGADOR PARA ORDENAR POR FIFO ESTRICTO
         function parsearFechaEspanol(strFecha) {
             if (!strFecha || strFecha === "SIN FECHA" || strFecha.toString().trim() === "") return new Date(2999, 11, 31);
-            if (typeof strFecha === 'number') {
-                return new Date(Math.round((strFecha - (25567 + 2)) * 86400 * 1000));
-            }
             let str = strFecha.toString().trim();
             if (str.includes('/')) {
                 let partes = str.split('/');
@@ -687,6 +656,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
+        // RENDERIZADO CON AUDITORÍA EXACTA Y CÁLCULO DE AVANCE DE LOS 3 BOTONES
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -697,6 +667,9 @@
                 tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
                 const skusUnicosSet = new Set();
                 
+                let contadorTotalFilasLpn = 0;
+                let contadorLpnsProcesadosRF = 0;
+
                 registrosHistoricosRepotenciar.forEach(item => {
                     totalUnidadesRepotenciar += parseInt(item.cant || 0);
                     if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
@@ -737,13 +710,17 @@
                     }
 
                     desglosesLpn.forEach(subItem => {
+                        contadorTotalFilasLpn++;
                         let lpnFila = subItem.lpn;
                         let cantFila = subItem.cant;
 
                         let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnFila.toUpperCase());
+                        
+                        let ubicacionFisicaLpn = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
                         let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
+                        // SI NO SE HA SUBIDO EL EXCEL O EL REPONEDOR NO HA REPUESTO EN RF, QUEDA EN BLANCO
                         let badgeFifoHtml = ""; 
                         
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
@@ -760,6 +737,7 @@
                                 let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                 
                                 if (matchExacto) {
+                                    contadorLpnsProcesadosRF++;
                                     let tipoPantalla = matchExacto.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO (${tipoPantalla})</span>`;
                                 } else {
@@ -770,14 +748,15 @@
                                     });
 
                                     if (matchMismaFv) {
+                                        contadorLpnsProcesadosRF++;
                                         let tipoPantalla = matchMismaFv.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
                                         badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV (${tipoPantalla})</span>`;
                                     } else {
+                                        // SI REPUSO EN RF PERO BAJÓ UN LPN CON OTRA FECHA (NO REALIZÓ FIFO)
+                                        contadorLpnsProcesadosRF++;
                                         badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                     }
                                 }
-                            } else {
-                                badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                             }
                         }
 
@@ -787,6 +766,7 @@
                                 <td class="px-4 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50">${zonaExtraida}</td>
                                 <td class="px-4 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
                                 <td class="px-4 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
+                                <td class="px-4 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisicaLpn}</td>
                                 <td class="px-4 py-2 border font-sans text-sm">${descLimpia}</td>
                                 <td class="px-4 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
                                 <td class="px-4 py-2 border text-center font-bold">${fvFormateada}</td>
@@ -794,12 +774,19 @@
                             </tr>`;
                     });
                 });
+
                 document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
                 document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
+
+                // CÁLCULO DEL PORCENTAJE DE AVANCE
+                let porcAvance = contadorTotalFilasLpn > 0 ? Math.round((contadorLpnsProcesadosRF / contadorTotalFilasLpn) * 100) : 0;
+                document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
+
             } else {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
                 document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
                 document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
+                document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%";
             }
         }
 
@@ -1146,7 +1133,6 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // REGISTRO CON DESCUENTO EN VIVO Y ORDENAMIENTO FIFO REAL SEGÚN PARSER LATINO
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1167,7 +1153,6 @@
 
                 if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                     try {
-                        // REGLA DE ORO: FIFO REAL (1º FECHA MAS ANTIGUA ➔ 2º MENOR SALDO)
                         copiaLotesFiltrados.sort((a, b) => {
                             let fA = parsearFechaEspanol(a.vencimiento);
                             let fB = parsearFechaEspanol(b.vencimiento);
@@ -1223,7 +1208,6 @@
                     purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
                 });
 
-                // ACTUALIZAR BASE CLOUD Y RECALCULAR DE INMEDIATO EL BADGE DE RESERVA EN PANTALLA
                 dbRef.set(inventarioData1).then(() => {
                     let nuevoStockDisponible = inventarioData1.filter(item => {
                         if (!item || !item.sku || !item.ubicacion) return false;
@@ -1295,6 +1279,7 @@
 
                 desglosesLpn.forEach(subItem => {
                     let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === subItem.lpn.toUpperCase());
+                    let ubiFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
                     let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
 
                     dataProcesada.push({
@@ -1302,6 +1287,7 @@
                         "Reponer en:": zonaExtraida,
                         "SKU": item.sku || "",
                         "LPN": subItem.lpn,
+                        "Ubicación": ubiFisica,
                         "Descripción": descLimpia,
                         "Cant": subItem.cant,
                         "F. Caducidad": formatearAFechaDDMMYYYY(fvLpnFila)
@@ -1376,7 +1362,6 @@
             }
         }
 
-        // PROCESAMIENTO DE CAJAS_TIENDA SIN INVENTAR FECHAS NI ALTERAR FORMATOS DE CADUCIDAD
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1389,9 +1374,9 @@
                 const lector = new FileReader();
                 lector.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
-                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
+                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
-                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1 });
                     
                     if (!filas || filas.length < 2) {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
@@ -1436,7 +1421,7 @@
                             continue;
                         }
 
-                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc] : "";
+                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "";
 
                         datosFormateados.push({
                             lpn: idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "",
@@ -1472,7 +1457,6 @@
             }, 30);
         }
 
-        // CARGA Y PERSISTENCIA DIRECTA EN FIREBASE PARA JSATÉLITE
         function procesarJ_Satelite() {
             const file = document.getElementById("fileJSatelite").files[0];
             if (!file) return;
@@ -1494,7 +1478,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CARGA Y PERSISTENCIA DIRECTA EN FIREBASE PARA DETALLE_REPOSICIÓN
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
