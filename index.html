@@ -39,9 +39,10 @@
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-center">
+    <!-- ALINEACIÓN STRICTA AL TOPE SUPERIOR (justify-start) PARA MANTENER LA ALTURA FIJA -->
+    <div class="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full flex flex-col justify-start">
 
-        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5">
+        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5 my-auto">
             <div class="flex justify-center pb-2 rounded-lg p-4 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
             </div>
@@ -69,7 +70,7 @@
             </div>
         </div>
         
-        <div id="panelAdmin" class="hidden space-y-6">
+        <div id="panelAdmin" class="hidden space-y-6 w-full">
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
             </div>
@@ -84,7 +85,7 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -143,7 +144,7 @@
                 </div>
             </div>
 
-            <!-- RESETEAR CONTRASEÑA -->
+            <!-- RESETEAR CONTRASEÑA DE ASISTENTE -->
             <div id="wrapperModuloResetClaveAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-purple-200 space-y-4 max-w-md">
                 <h3 class="text-sm font-bold text-purple-800 uppercase flex items-center gap-2 border-b pb-2">
                     🔑 Resetear Contraseña de Asistente
@@ -270,7 +271,7 @@
         </div>
 
         <!-- ================= PANEL DEL ASISTENTE ================= -->
-        <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6">
+        <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6 my-auto">
             
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
@@ -672,7 +673,6 @@
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
         }
 
-        // CONTROL DE VISIBILIDAD DE CONTENEDORES Y MÓDULOS DE ADMINISTRADOR
         function alternarModuloAdminView() {
             const val = document.getElementById("selectVistaModuloAdmin").value;
             
@@ -686,7 +686,6 @@
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
 
-            // Ocultar todo por defecto
             gridTarjetas.classList.add("hidden");
             cardCajas.classList.add("hidden");
             cardSatelite.classList.add("hidden");
@@ -698,14 +697,12 @@
             moduloResetClave.classList.add("hidden");
 
             if (val === "repotenciar") {
-                // OPCIÓN 1: ⚡ Repotenciar Tienda -> Muestra Cajas_Tienda + Detalle_Reposicion + Tabla Repotenciar
                 gridTarjetas.classList.remove("hidden");
                 cardCajas.classList.remove("hidden");
                 cardRepo.classList.remove("hidden");
                 cuadroRepo.classList.remove("hidden");
 
             } else if (val === "quiebres") {
-                // OPCIÓN 2: 🎯 Quiebres Visuales -> Muestra los 3 Excel + Ambos Cuadros
                 gridTarjetas.classList.remove("hidden");
                 cardCajas.classList.remove("hidden");
                 cardSatelite.classList.remove("hidden");
@@ -715,11 +712,9 @@
                 cuadroCruce.classList.remove("hidden");
 
             } else if (val === "buzon") {
-                // OPCIÓN 3: 📥 Buzón de incidencias -> Sin tarjetas Excel de arriba, pantalla limpia que se estanca arriba
                 moduloBuzon.classList.remove("hidden");
 
             } else if (val === "resetclave") {
-                // OPCIÓN 4: 🔑 Resetear contraseña -> Sin tarjetas Excel de arriba, solo formulario
                 moduloResetClave.classList.remove("hidden");
             }
         }
