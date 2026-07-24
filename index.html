@@ -170,22 +170,23 @@
                 </div>
                 
                 <div class="overflow-x-auto max-h-[440px] overflow-y-auto w-full border rounded-lg shadow-inner">
-                    <table class="min-w-[1100px] w-full text-sm text-left border-collapse">
-                        <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
+                    <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
+                        <thead class="bg-orange-100 text-orange-950 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60">REPONER</th>
+                                <th class="px-3 py-2 border font-bold">REPONER</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
-                                <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
-                                <th class="px-3 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
+                                <th class="px-3 py-2 border font-bold">LPN</th>
+                                <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
                                 <th class="px-3 py-2 border text-center font-bold">FV</th>
-                                <th class="px-3 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
+                                <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
+                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
                             </tr>
                         </thead>
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-                            <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
+                            <tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -210,7 +211,7 @@
                                 <th class="px-4 py-2 border">Pantalla RF</th>
                                 <th class="px-4 py-2 border text-center">Cant. Original</th>
                                 <th class="px-4 py-2 border text-center font-bold">Cant. Ajustada</th>
-                                <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">🔮 LPNS Consumidos por RF</th>
+                                <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">LPNS Consumidos por RF</th>
                                 <th class="px-4 py-2 border">Usuario Actividad</th>
                             </tr>
                         </thead>
@@ -705,7 +706,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON AUDITORÍA DE ETIQUETAS EXACTAS Y LIMPIAS
+        // RENDERIZADO CON AUDITORÍA EXACTA RESTAURANDO EMOTICONES
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -771,7 +772,8 @@
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
                         let badgeFifoHtml = ""; 
-                        
+                        let lpnConsumidoAnomalia = "";
+
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
@@ -785,11 +787,11 @@
                             if (coincidenciasRF.length > 0) {
                                 contadorLpnsProcesadosRF++;
 
-                                // REGLA 1: PRODUCTOS SIN FV -> MUESTRA "Repuesto"
+                                // REGLA 1: SIN FV -> 🟢 Repuesto
                                 if (!fvFormateada || fvFormateada === "") {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                 } else {
-                                    // REGLA 2: PRODUCTOS CON FV -> MUESTRA LAS TRES OPCIONES DE AUDITORÍA
+                                    // REGLA 2: CON FV -> TRES BOTONES CON EMOTICONES REALES
                                     let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                     
                                     if (matchExacto) {
@@ -804,7 +806,9 @@
                                         if (matchMismaFv) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                         } else {
+                                            let lpnRealScanner = coincidenciasRF[0].lpn.toString().trim();
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                            lpnConsumidoAnomalia = lpnRealScanner; 
                                         }
                                     }
                                 }
@@ -822,6 +826,7 @@
                                 <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
                                 <td class="px-3 py-2 border text-center font-bold">${fvFormateada}</td>
                                 <td class="px-3 py-2 border font-sans text-center">${badgeFifoHtml}</td>
+                                <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${lpnConsumidoAnomalia}</td>
                             </tr>`;
                     });
                 });
@@ -833,7 +838,7 @@
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
 
             } else {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
                 document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
                 document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%";
@@ -1247,27 +1252,53 @@
                     copiaDescripcion += ` [Zona: ${zonaDestino}]`;
                 }
 
-                logRef.push({
-                    idAsistente: idUsuarioLogueado,
-                    operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
-                    sku: copiaSkuTemporal,
-                    fifoLpnOptimizado: lpnSugerido, 
-                    desc: copiaDescripcion,
-                    cant: cantidadNumerica,
-                    fv: fvSugerida,
-                    purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
-                });
+                logRef.once("value", (snapshot) => {
+                    let logsActuales = snapshot.val() || {};
+                    let keyExistente = null;
+                    let regExistente = null;
 
-                dbRef.set(inventarioData1).then(() => {
-                    let nuevoStockDisponible = inventarioData1.filter(item => {
-                        if (!item || !item.sku || !item.ubicacion) return false;
-                        let u = item.ubicacion.toString().toUpperCase().trim();
-                        if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
-                        let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                        return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
-                    }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                    Object.keys(logsActuales).forEach(k => {
+                        let r = logsActuales[k];
+                        if (
+                            r.idAsistente === idUsuarioLogueado &&
+                            r.sku === copiaSkuTemporal &&
+                            r.fifoLpnOptimizado === lpnSugerido &&
+                            r.desc === copiaDescripcion
+                        ) {
+                            keyExistente = k;
+                            regExistente = r;
+                        }
+                    });
 
-                    document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds`;
+                    if (keyExistente && regExistente) {
+                        let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
+                        logRef.child(keyExistente).update({
+                            cant: nuevaCantTotal
+                        });
+                    } else {
+                        logRef.push({
+                            idAsistente: idUsuarioLogueado,
+                            operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                            sku: copiaSkuTemporal,
+                            fifoLpnOptimizado: lpnSugerido, 
+                            desc: copiaDescripcion,
+                            cant: cantidadNumerica,
+                            fv: fvSugerida,
+                            purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+                        });
+                    }
+
+                    dbRef.set(inventarioData1).then(() => {
+                        let nuevoStockDisponible = inventarioData1.filter(item => {
+                            if (!item || !item.sku || !item.ubicacion) return false;
+                            let u = item.ubicacion.toString().toUpperCase().trim();
+                            if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
+                            let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
+                        }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+
+                        document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds`;
+                    });
                 });
 
             } catch (errGeneral) {
