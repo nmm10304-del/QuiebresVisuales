@@ -84,49 +84,49 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA CON DRAG AND DROP OPTIMIZADO -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 <!-- CARD 1: CAJAS TIENDA -->
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Cajas_Tienda</h3>
-                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Cajas_Tienda</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
                     
                     <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData1()"/>
                     
-                    <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar e Inyectar Stock
                     </button>
-                    <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold">⚠️ Conectando base de datos...</p>
+                    <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold pointer-events-none">⚠️ Conectando base de datos...</p>
                 </div>
 
                 <!-- CARD 2: JSATÉLITE -->
                 <div id="cardJSatelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">JSatélite</h3>
-                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para la ruta solicitada.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">JSatélite</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para la ruta solicitada.</p>
                     
                     <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarJ_Satelite()"/>
                     
-                    <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar Archivo
                     </button>
-                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
+                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo Jsatélite...</p>
                 </div>
 
                 <!-- CARD 3: DETALLE REPOSICIÓN -->
                 <div id="cardDetalleReposicion" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Detalle_Reposición</h3>
-                    <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic para informe final.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Detalle_Reposición</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para informe final.</p>
                     
                     <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData2()"/>
                     
-                    <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2">
+                    <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar Archivo
                     </button>
-                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold">Waiting...</p>
+                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Waiting...</p>
                 </div>
             </div>
 
@@ -466,6 +466,10 @@
     </div>
 
     <script>
+        // PREVENCIÓN GLOBAL DE COMPORTAMIENTO POR DEFECTO DEL NAVEGADOR
+        window.addEventListener("dragover", function(e) { e.preventDefault(); }, false);
+        window.addEventListener("drop", function(e) { e.preventDefault(); }, false);
+
         const firebaseConfig = {
             projectId: "quiebresvisuales",
             databaseURL: "https://quiebresvisuales-default-rtdb.firebaseio.com"
@@ -524,10 +528,9 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // DRAG AND DROP CORREGIDO Y ROBUSTO
-            setupDragAndDrop("cardCajasTienda", "fileData1", "btnClickData1", procesarData1, "drop-zone--over");
-            setupDragAndDrop("cardJSatelite", "fileJSatelite", "btnClickJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
-            setupDragAndDrop("cardDetalleReposicion", "fileData2", "btnClickData2", procesarData2, "drop-zone-purple--over");
+            setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
+            setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
+            setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
             
             escucharPersistenciaArchivosCloud();
             descargarCatalogoAutomaticoRemoto();
@@ -540,21 +543,16 @@
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
 
-        // SISTEMA DE DRAG AND DROP DIRECTO Y CORREGIDO
-        function setupDragAndDrop(zoneId, inputId, btnId, callback, overClass) {
+        // SISTEMA DE DRAG & DROP ROBUSTO E IMPREVISTOS DE CLIC RESUELTOS
+        function setupDragAndDrop(zoneId, inputId, callback, overClass) {
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
-            const btn = document.getElementById(btnId);
-            if (!dropZone || !input || !btn) return;
+            if (!dropZone || !input) return;
             
             dropZone.addEventListener("click", (e) => {
-                if (e.target.tagName === 'BUTTON' && e.target !== btn) return;
+                if (e.target.tagName === 'BUTTON' && !e.target.classList.contains('pointer-events-none')) return;
+                input.value = ""; // Limpiar siempre memoria del input
                 input.click();
-            });
-
-            btn.addEventListener("click", (e) => { 
-                e.stopPropagation(); 
-                input.click(); 
             });
 
             dropZone.addEventListener("dragenter", (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add(overClass); });
@@ -564,7 +562,7 @@
                 e.preventDefault(); 
                 e.stopPropagation();
                 dropZone.classList.remove(overClass);
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) { 
                     input.files = e.dataTransfer.files; 
                     callback(); 
                 }
@@ -591,11 +589,11 @@
                 const data = snapshot.val();
                 if (data) {
                     reqJ_Satelite = data;
-                    document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold";
+                    document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
                 } else {
                     reqJ_Satelite = {};
-                    document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                    document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
             });
@@ -604,11 +602,11 @@
                 const data = snapshot.val();
                 if (data && Array.isArray(data)) {
                     matrixDetalleReposicion = data;
-                    document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold";
+                    document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
                 } else {
                     matrixDetalleReposicion = [];
-                    document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold";
+                    document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusData2').innerText = "Waiting...";
                 }
                 forzarActualizacionTablaAdmin();
@@ -771,14 +769,14 @@
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
                     if(document.getElementById('statusData1') && !document.getElementById('statusData1').innerText.includes("⏳")) {
-                        document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold";
+                        document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
                         document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).`;
                     }
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     if(document.getElementById('statusData1')) {
-                        document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
                     }
                     
@@ -1608,14 +1606,14 @@
             }
         }
 
-        // PROCESADORES DE ARCHIVOS EXCEL EXPLICITAMENTE CONECTADOS
+        // PROCESADORES CON CONEXIÓN GARANTIZADA DE LECTURA DE FILE
         function procesarData1() {
             const input = document.getElementById("fileData1");
             const file = input.files ? input.files[0] : null;
             if (!file) return;
             
             const statusElem = document.getElementById('statusData1');
-            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
+            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
             statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
 
             setTimeout(() => {
@@ -1628,7 +1626,7 @@
                     const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1, defval: "" });
                     
                     if (!filasMatriz || filasMatriz.length < 2) {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
                         return;
                     }
@@ -1696,10 +1694,10 @@
                     fechaCargaRef.set(fechaHoyStr);
 
                     dbRef.set(datosFormateados).then(() => {
-                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold";
+                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
                     }).catch(err => {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
                     });
                 };
@@ -1741,7 +1739,7 @@
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                 
                 if (!filas || filas.length < 2) {
-                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold";
+                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
                     return;
                 }
