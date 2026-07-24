@@ -74,16 +74,20 @@
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
             </div>
             
+            <!-- LISTA DESPLEGABLE CON LAS 4 OPCIONES EXACTAS -->
             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">SELECCIONAR MÓDULO DE VISUALIZACIÓN:</label>
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
-                    <option value="todos">📋 Mostrar Monitores de Control Operativo</option>
+                    <option value="repotenciar">⚡ Repotenciar Tienda</option>
+                    <option value="quiebres">🎯 Quiebres Visuales</option>
                     <option value="buzon">📥 Buzón de incidencias</option>
+                    <option value="resetclave">🔑 Resetear contraseña</option>
                 </select>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div id="dropZoneData1" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
+            <!-- BLOQUE DE TARJETAS EXCEL CON CONTROL INDIVIDUAL DE VISIBILIDAD -->
+            <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Cajas_Tienda</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
@@ -94,7 +98,7 @@
                     <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold">⚠️ Conectando base de datos...</p>
                 </div>
 
-                <div id="dropZoneJ_Satelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
+                <div id="cardJSatelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">JSatélite</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic aquí para la ruta solicitada.</p>
@@ -105,7 +109,7 @@
                     <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold">Esperando archivo Jsatélite...</p>
                 </div>
 
-                <div id="dropZoneData2" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
+                <div id="cardDetalleReposicion" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6">Detalle_Reposición</h3>
                     <p class="text-[11px] text-gray-500 mb-3">Arrastra o haz clic para informe final.</p>
@@ -117,6 +121,7 @@
                 </div>
             </div>
 
+            <!-- MÓDULO 3: BUZÓN DE INCIDENCIAS -->
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
                     <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
@@ -139,6 +144,36 @@
                 </div>
             </div>
 
+            <!-- MÓDULO 4: RESETEAR CONTRASEÑA -->
+            <div id="wrapperModuloResetClaveAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-purple-200 space-y-4 max-w-md">
+                <h3 class="text-sm font-bold text-purple-800 uppercase flex items-center gap-2 border-b pb-2">
+                    🔑 Resetear Contraseña de Asistente
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Seleccionar Colaborador</label>
+                        <select id="selectUsuarioResetAdmin" class="w-full p-2.5 border rounded text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
+                            <option value="HP72545443">Andy (HP72545443)</option>
+                            <option value="HP74139234">Ale (HP74139234)</option>
+                            <option value="HP70729960">Farro (HP70729960)</option>
+                            <option value="HP75235329">Jairo (HP75235329)</option>
+                            <option value="HP47431216">Moses (HP47431216)</option>
+                            <option value="HP74315583">Job (HP74315583)</option>
+                            <option value="HP46411164">Jhon (HP46411164)</option>
+                            <option value="HP48848362">Rommel (HP48848362)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nueva Contraseña</label>
+                        <input type="password" id="txtNuevaClavePorAdmin" placeholder="Escribe la nueva clave..." class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <button onclick="procesarResetClavePorAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded text-xs transition uppercase tracking-wide shadow-sm cursor-pointer">
+                        Actualizar Contraseña
+                    </button>
+                </div>
+            </div>
+
+            <!-- MÓDULO 1: REPOTENCIAR TIENDA -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -203,6 +238,7 @@
                 </div>
             </div>
 
+            <!-- MÓDULO 2: CUMPLIMIENTO 24 -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
@@ -274,7 +310,6 @@
                         <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
-                                <!-- CONFIGURACIÓN DE TECLADO NUMÉRICO TÁCTIL (PUNTO 1) -->
                                 <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
@@ -378,7 +413,7 @@
         </div>
     </div>
 
-    <!-- MODAL DINÁMICO DE NOTIFICACIONES EN PRIMER PLANO (z-[100]) -->
+    <!-- MODAL DINÁMICO DE NOTIFICACIONES EN PRIMER PLANO -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -403,14 +438,12 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
-                    <!-- CONFIGURACIÓN DE TECLADO NUMÉRICO EN REPORTE DE INCIDENCIA (PUNTO 2) -->
                     <input type="text" id="incidenciacodigoInput" inputmode="numeric" pattern="[0-9]*"
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                            placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
-                    <!-- TEXTAREA NORMAL CON TECLADO COMPLETO PARA DETALLES DE TEXTO -->
                     <textarea id="incidenciaMotivoInput" rows="3" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                               placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
@@ -613,6 +646,25 @@
             }
         }
 
+        function procesarResetClavePorAdmin() {
+            const userTarget = document.getElementById('selectUsuarioResetAdmin').value;
+            const nuevaClave = document.getElementById('txtNuevaClavePorAdmin').value.trim();
+            if (!nuevaClave) {
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
+                return;
+            }
+            if (usuariosDB[userTarget]) {
+                usuariosDB[userTarget].clave = nuevaClave;
+                document.getElementById('txtNuevaClavePorAdmin').value = "";
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
+                document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.`;
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            }
+        }
+
         function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
             document.getElementById('iconoNotificacionDinamico').innerText = "⚠️";
             document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
@@ -621,16 +673,51 @@
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
         }
 
+        // CONTROL EXACTO DE MÓDULOS DE VISUALIZACIÓN DESDE EL ÚNICO DESPLEGABLE
         function alternarModuloAdminView() {
             const val = document.getElementById("selectVistaModuloAdmin").value;
-            if (val === "todos") {
-                document.getElementById("wrapperModuloBuzonAdmin").classList.add("hidden");
-                document.getElementById("containerCuadroRepotenciar").classList.remove("hidden");
-                document.getElementById("containerCuadroCruceMacropurga").classList.remove("hidden");
-            } else {
-                document.getElementById("containerCuadroRepotenciar").classList.add("hidden");
-                document.getElementById("containerCuadroCruceMacropurga").classList.add("hidden");
-                document.getElementById("wrapperModuloBuzonAdmin").classList.toggle("hidden", val !== "buzon");
+            
+            const cardCajas = document.getElementById("cardCajasTienda");
+            const cardSatelite = document.getElementById("cardJSatelite");
+            const cardRepo = document.getElementById("cardDetalleReposicion");
+            
+            const cuadroRepo = document.getElementById("containerCuadroRepotenciar");
+            const cuadroCruce = document.getElementById("containerCuadroCruceMacropurga");
+            const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
+            const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
+
+            // OCULTAR TODO DE ENTRADA PARA MANTENER LIMPIEZA
+            cardCajas.classList.add("hidden");
+            cardSatelite.classList.add("hidden");
+            cardRepo.classList.add("hidden");
+            
+            cuadroRepo.classList.add("hidden");
+            cuadroCruce.classList.add("hidden");
+            moduloBuzon.classList.add("hidden");
+            moduloResetClave.classList.add("hidden");
+
+            if (val === "repotenciar") {
+                // OPCIÓN 1: ⚡ Repotenciar Tienda -> Muestra Cajas_Tienda + Detalle_Reposicion + Tabla Repotenciar
+                cardCajas.classList.remove("hidden");
+                cardRepo.classList.remove("hidden");
+                cuadroRepo.classList.remove("hidden");
+
+            } else if (val === "quiebres") {
+                // OPCIÓN 2: 🎯 Quiebres Visuales -> Muestra los 3 Excel + Ambos Cuadros
+                cardCajas.classList.remove("hidden");
+                cardSatelite.classList.remove("hidden");
+                cardRepo.classList.remove("hidden");
+                
+                cuadroRepo.classList.remove("hidden");
+                cuadroCruce.classList.remove("hidden");
+
+            } else if (val === "buzon") {
+                // OPCIÓN 3: 📥 Buzón de incidencias -> Sin tarjetas Excel, solo tabla Buzón
+                moduloBuzon.classList.remove("hidden");
+
+            } else if (val === "resetclave") {
+                // OPCIÓN 4: 🔑 Resetear contraseña -> Sin tarjetas Excel, solo panel de cambio de clave
+                moduloResetClave.classList.remove("hidden");
             }
         }
 
@@ -700,7 +787,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1105,6 +1192,9 @@
                 if (rolUsuarioActivo === "asistente") {
                     document.getElementById("selectVistaAsistente").value = "escaneo";
                     alternarModuloVistaAsistente();
+                } else {
+                    document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                    alternarModuloAdminView();
                 }
             } else { 
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
@@ -1119,7 +1209,12 @@
         function switchRole() {
             document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
             document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
-            if (rolUsuarioActivo === 'asistente') setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+            if (rolUsuarioActivo === 'asistente') {
+                setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+            } else if (rolUsuarioActivo === 'admin') {
+                document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                alternarModuloAdminView();
+            }
         }
 
         function alCambiarTextoBarcode() {
