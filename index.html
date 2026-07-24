@@ -174,13 +174,15 @@
                         <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER EN:</th>
+                                <!-- PUNTO 1: CAMBIO DE NOMBRE DE REPONER EN A REPONER -->
+                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
                                 <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
                                 <th class="px-3 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
-                                <th class="px-3 py-2 border text-center font-bold">F. CADUCIDAD</th>
+                                <!-- PUNTO 3: CAMBIO DE NOMBRE DE F. CADUCIDAD A FV -->
+                                <th class="px-3 py-2 border text-center font-bold">FV</th>
                                 <th class="px-3 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
                             </tr>
                         </thead>
@@ -730,12 +732,10 @@
                         let lpnFila = subItem.lpn;
                         let cantFila = subItem.cant;
 
-                        // MATCH STRICTO DE LPN LIMPIANDO ESPACIOS
                         let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === lpnFila.toString().replace(/\s+/g, "").toUpperCase());
                         
                         let ubicacionFisicaLpn = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
                         
-                        // EXTRACTOR EXCLUSIVO DE LA FECHA DE CADUCIDAD
                         let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
@@ -1300,13 +1300,13 @@
 
                     dataProcesada.push({
                         "Asistente": idUsuarioCredencial,
-                        "Reponer en:": zonaExtraida,
+                        "Reponer": zonaExtraida,
                         "SKU": item.sku || "",
                         "LPN": subItem.lpn,
                         "Ubicación": ubiFisica,
                         "Descripción": descLimpia,
                         "Cant": subItem.cant,
-                        "F. Caducidad": formatearAFechaDDMMYYYY(fvLpnFila)
+                        "FV": formatearAFechaDDMMYYYY(fvLpnFila)
                     });
                 });
             });
@@ -1378,7 +1378,7 @@
             }
         }
 
-        // LECTURA DIRECTA POR MAPEO DE CLAVES JSON NATIVAS (INCLUSIÓN STRICTA DE LA COLUMNA P)
+        // PROCESAMIENTO DE CAJAS_TIENDA CON FIJACIÓN RÍGIDA DE COLUMNA 5 (E) Y COLUMNA 16 (P)
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1394,7 +1394,6 @@
                     const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
                     
-                    // Extraer los objetos directamente respetando encabezados de Excel
                     const filasObjetos = XLSX.utils.sheet_to_json(hoja, { raw: false, defval: "" });
                     
                     if (!filasObjetos || filasObjetos.length === 0) {
@@ -1408,7 +1407,6 @@
                     filasObjetos.forEach(row => {
                         let skuVal = "", lpnVal = "", descVal = "", ubiVal = "", caducidadVal = "", cantVal = 0;
 
-                        // Mapeo dinámico e insensible a mayúsculas/espacios
                         Object.keys(row).forEach(key => {
                             let kClean = key.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
                             let valStr = row[key] !== null && row[key] !== undefined ? row[key].toString().trim() : "";
@@ -1416,9 +1414,9 @@
                             if (kClean === "nrolpn" || kClean === "lpn") lpnVal = valStr;
                             else if (kClean === "sku" || kClean === "articulo") skuVal = valStr;
                             else if (kClean.includes("descripci")) descVal = valStr;
-                            else if (kClean.includes("ubicacionactual") || kClean.includes("ubicac")) ubiVal = valStr;
+                            // PUNTO 2: EXTRAER UBICACIÓN EXACTA (COLUMNA 5 / E)
+                            else if (kClean.includes("ubicacionactual") || kClean.includes("ubicac") || kClean === "ubicacion") ubiVal = valStr;
                             else if (kClean.includes("unidades") || kClean.includes("cant")) cantVal = parseInt(valStr || 0, 10);
-                            // CAPTURA DIRECTA Y EXCLUSIVA DE LA COLUMNA FECHA DE CADUCIDAD (COLUMNA P / 16)
                             else if (kClean.includes("fechadecaducidad") || kClean === "caducidad") caducidadVal = valStr;
                         });
 
@@ -1434,7 +1432,7 @@
                             sku: skuVal,
                             descripcion: descVal,
                             unidades: cantVal,
-                            vencimiento: caducidadVal, // Se guarda el texto exacto extraído de la Columna P
+                            vencimiento: caducidadVal,
                             ubicacion: ubiVal
                         });
                     });
