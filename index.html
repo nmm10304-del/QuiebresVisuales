@@ -74,6 +74,15 @@
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
             </div>
             
+            <!-- PUNTO 1: BARRA DE MÓDULO UBICADA JUSTO DEBAJO DEL TÍTULO PRINCIPAL -->
+            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
+                <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">SELECCIONAR MÓDULO DE VISUALIZACIÓN:</label>
+                <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
+                    <option value="todos">📋 Mostrar Monitores de Control Operativo</option>
+                    <option value="buzon">📥 Buzón de incidencias</option>
+                </select>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="dropZoneData1" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -109,14 +118,6 @@
                 </div>
             </div>
 
-            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
-                <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">Seleccionar módulo de visualización:</label>
-                <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
-                    <option value="todos">📋 Mostrar Monitores de Control Operativo</option>
-                    <option value="buzon">📥 Buzón de incidencias</option>
-                </select>
-            </div>
-
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
                     <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
@@ -141,9 +142,20 @@
 
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
-                    <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
-                        <div class="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                        
+                        <!-- PUNTO 4: FILTRO DESPLEGABLE EN EL LADO IZQUIERDO -->
+                        <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
+                            <span class="text-[11px] font-bold text-gray-600 uppercase">Filtrar:</span>
+                            <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
+                                <option value="TODOS">📋 TODOS</option>
+                                <option value="REPUESTO">🟢 REPUESTO (Procesados RF)</option>
+                                <option value="PENDIENTE">⏳ PENDIENTE (Sin procesar)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>Unidades Validadas:</span>
                                 <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
@@ -154,6 +166,7 @@
                             </div>
                         </div>
                     </div>
+                    
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
                             <span class="text-xs font-bold text-purple-900 uppercase">% Avance:</span>
@@ -512,6 +525,7 @@
                 }
             });
 
+            // PUNTO 3: BORRAR DETALLE REPOSICIÓN SOLO LIMPIA SU VARIABLE SIN TOCAR LA LISTA DEL ASISTENTE
             detalleRepoRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data && Array.isArray(data)) {
@@ -686,7 +700,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -706,20 +720,27 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
+        // RENDERIZADO CON FILTRO DESPLEGABLE Y TRIPLE CANDADO PARA LPN CONSUMIDO
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
 
-            if (data) {
-                registrosHistoricosRepotenciar = Object.values(data);
-                registrosHistoricosRepotenciar.reverse(); 
+            const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
+
+            if (data && Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0) {
+                registrosHistoricosRepotenciar = Array.isArray(data) ? data : Object.values(data);
+                
+                // TRABAJAR SOBRE UNA COPIA INVERTIDA
+                let copiaRegistros = [...registrosHistoricosRepotenciar];
+                copiaRegistros.reverse(); 
+
                 tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
                 const skusUnicosSet = new Set();
                 
                 let contadorTotalFilasLpn = 0;
                 let contadorLpnsProcesadosRF = 0;
 
-                registrosHistoricosRepotenciar.forEach(item => {
+                copiaRegistros.forEach(item => {
                     totalUnidadesRepotenciar += parseInt(item.cant || 0);
                     if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
                     
@@ -761,7 +782,6 @@
                     desglosesLpn.forEach(subItem => {
                         contadorTotalFilasLpn++;
                         let lpnFila = subItem.lpn;
-                        // LEER LA CANTIDAD CONSOLIDADA DE LA FILA O DESGLOSE
                         let cantFila = desglosesLpn.length === 1 ? item.cant : subItem.cant;
 
                         let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === lpnFila.toString().replace(/\s+/g, "").toUpperCase());
@@ -773,30 +793,35 @@
 
                         let badgeFifoHtml = ""; 
                         let lpnConsumidoAnomalia = ""; 
+                        let esRepuesto = false;
 
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
+                            // TRIPLE CANDADO: PANTALLA + SKU + MATCH DE LPN EN RF
                             let coincidenciasRF = matrixDetalleReposicion.filter(m => {
                                 if (!m.sku || !m.pantalla) return false;
                                 let skuRfLimpio = m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                                return skuRfLimpio === skuLogLimpio;
+                                let pUpper = m.pantalla.toUpperCase();
+                                let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
+                                return skuRfLimpio === skuLogLimpio && esPantallaValida;
                             });
 
                             if (coincidenciasRF.length > 0) {
                                 contadorLpnsProcesadosRF++;
+                                esRepuesto = true;
 
                                 if (!fvFormateada || fvFormateada === "") {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                 } else {
-                                    let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
+                                    let matchExacto = coincidenciasRF.find(m => m.lpn && m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                     
                                     if (matchExacto) {
                                         badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                                     } else {
                                         let matchMismaFv = coincidenciasRF.find(m => {
-                                            let lpnRf = m.lpn.toString().trim().toUpperCase();
+                                            let lpnRf = m.lpn ? m.lpn.toString().trim().toUpperCase() : "";
                                             let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
                                             return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
                                         });
@@ -804,9 +829,9 @@
                                         if (matchMismaFv) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                         } else {
-                                            // EXTRAER EL LPN ESCANEADO EN RF DESDE DETALLE REPOSICION
-                                            let rfRegistroAnomalo = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() !== lpnSugeridoLimpio) || coincidenciasRF[0];
-                                            let lpnRealScanner = rfRegistroAnomalo ? rfRegistroAnomalo.lpn.toString().trim() : "";
+                                            // EXTRAER EL LPN EXACTO DE LA COLUMNA 3 DE DETALLE REPOSICIÓN QUE LA RF CONSUMIÓ
+                                            let rfAnomalo = coincidenciasRF.find(m => m.lpn && m.lpn.toString().trim().toUpperCase() !== lpnSugeridoLimpio) || coincidenciasRF[0];
+                                            let lpnRealScanner = rfAnomalo && rfAnomalo.lpn ? rfAnomalo.lpn.toString().trim() : "";
                                             
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                             lpnConsumidoAnomalia = lpnRealScanner; 
@@ -815,6 +840,10 @@
                                 }
                             }
                         }
+
+                        // APLICACIÓN DEL FILTRO DESPLEGABLE VISTA (TODOS / REPUESTO / PENDIENTE)
+                        if (filtroVistaVal === "REPUESTO" && !esRepuesto) return;
+                        if (filtroVistaVal === "PENDIENTE" && esRepuesto) return;
 
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
@@ -1189,7 +1218,6 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // FUNCIÓN CONSOLIDADA Y ACTUALIZACIÓN CORRECTA DE CANTIDAD EN TABLA Y FIREBASE
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1273,7 +1301,6 @@
                     });
 
                     if (keyExistente && regExistente) {
-                        // SI ES EL MISMO ASISTENTE, MISMO SKU, MISMA ZONA Y MISMO LPN -> SUMAR CANTIDAD Y RE-CALCULAR DESGLOSE
                         let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
                         let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
                         
@@ -1282,7 +1309,6 @@
                             purgaCompletaRuta: desgloseActualizado
                         });
                     } else {
-                        // SI ES OTRA ZONA O DIFIERE EL LPN -> REGISTRAR EN FILA NUEVA
                         logRef.push({
                             idAsistente: idUsuarioLogueado,
                             operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
@@ -1389,6 +1415,7 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
+        // PUNTO 3: ELIMINACIÓN AISLADA DE DATA
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1397,9 +1424,15 @@
             } else if (tipo === 'satelite') {
                 sateliteRef.set(null);
             } else if (tipo === 'reposicion') {
+                // ELIMINA SOLO EL ARCHIVO DE CRUCE DE RF EN NUBE Y MEMORIA LOCAL (SIN TOCAR RECOLECTA DE ASISTENTES)
+                matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
+                forzarActualizacionTablaAdmin();
             } else if (tipo === 'repotenciacion') {
+                // ELIMINA SOLO LA RECOLECTA DE ASISTENTES EN NUBE Y MEMORIA LOCAL
+                registrosHistoricosRepotenciar = [];
                 logRef.set(null);
+                forzarActualizacionTablaAdmin();
             }
         }
 
@@ -1581,7 +1614,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // LECTOR DE DETALLE_REPOSICIÓN CON EXTRACCIÓN ROBUSTA DE LPN EN COLUMNA C (3)
+        // PROCESAMIENTO RIGUROSO DE DETALLE REPOSICIÓN EXTRAENDO COLUMNA C (3) NRO LPN
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1619,9 +1652,8 @@
                 const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
                 const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
 
-                // Detección directa o por índice 2 (Columna C / Posición 3)
                 let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
-                if (idxLpn === -1) idxLpn = 2; 
+                if (idxLpn === -1) idxLpn = 2; // Columna C (3)
 
                 let tempDetalleRepo = [];
 
@@ -1637,7 +1669,7 @@
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
                     let uDestino = pPantalla.toUpperCase();
-                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
+                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA") || uDestino.includes("REPONER") || uDestino.includes("RESERVA")) {
                         tempDetalleRepo.push({
                             lpn: pLpn,
                             sku: pSku,
