@@ -144,12 +144,13 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
                         
+                        <!-- PUNTO 1: FILTRAR Y OPCIONES EXACTAS Y LIMPIAS -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
-                            <span class="text-[11px] font-bold text-gray-600 uppercase">Filtrar:</span>
+                            <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
-                                <option value="TODOS">📋 TODOS</option>
-                                <option value="REPUESTO">🟢 REPUESTO (Procesados RF)</option>
-                                <option value="PENDIENTE">⏳ PENDIENTE (Sin procesar)</option>
+                                <option value="TODOS">Todos</option>
+                                <option value="REPUESTO">Repuesto</option>
+                                <option value="PENDIENTE">Pendiente</option>
                             </select>
                         </div>
 
@@ -158,21 +159,24 @@
                                 <span>Unidades Validadas:</span>
                                 <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
                             </div>
+                            <!-- PUNTO 2: TEXTO CAMBIADO A "Cantidad de SKUs:" -->
                             <div class="flex items-center gap-1.5">
-                                <span>Cantidad SKUs (Únicos):</span>
+                                <span>Cantidad de SKUs:</span>
                                 <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
                             </div>
                         </div>
                     </div>
                     
                     <div class="flex items-center gap-3">
+                        <!-- PUNTO 3: TEXTO CAMBIADO A "Avance: X%" -->
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
-                            <span class="text-xs font-bold text-purple-900 uppercase">% Avance:</span>
+                            <span class="text-xs font-bold text-purple-900 uppercase">Avance:</span>
                             <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
                         </div>
 
+                        <!-- PUNTO 4: BOTÓN RENOMBRADO A "Descargar Excel" -->
                         <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-                            Descargar Excel Repotenciación
+                            Descargar Excel
                         </button>
                         <button onclick="eliminarData('repotenciacion', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
                             Eliminar data
@@ -717,7 +721,6 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON BOLSA DE CONSUMOS 1 A 1
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -736,7 +739,6 @@
                 let contadorTotalFilasLpn = 0;
                 let contadorLpnsProcesadosRF = 0;
 
-                // PASO 1: CONSTRUIR LA BOLSA DE CONSUMOS DE RF (ÚNICAMENTE BAJADAS CON CANTIDAD AJUSTADA = -1)
                 let bolsaConsumosRF = [];
                 if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                     matrixDetalleReposicion.forEach(m => {
@@ -744,7 +746,6 @@
                         let pUpper = m.pantalla.toUpperCase();
                         let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
                         
-                        // Solo considerar bajadas reales (Ajustada = -1 o negativa)
                         let cantAjustadaNum = parseInt(m.cantAjustada, 10);
                         let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
 
@@ -817,12 +818,9 @@
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
-                            // PASO 2: BUSCAR SI HAY CONSUMO DISPONIBLE EN LA BOLSA PARA ESTE SKU
-                            // Prioridad A: Match exacto de LPN sugerido
                             let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.toUpperCase() === lpnSugeridoLimpio);
 
                             if (idxMatchExacto !== -1) {
-                                // Match exacto con el LPN sugerido
                                 bolsaConsumosRF[idxMatchExacto].consumido = true;
                                 contadorLpnsProcesadosRF++;
                                 esRepuesto = true;
@@ -833,7 +831,6 @@
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                                 }
                             } else {
-                                // Prioridad B: Buscar si consumió otro LPN del mismo SKU
                                 let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio);
 
                                 if (idxOtroLpn !== -1) {
@@ -856,7 +853,6 @@
                                         }
                                     }
                                 }
-                                // Si no hay consumos disponibles en la bolsa, queda en BLANCO (PENDIENTE)
                             }
                         }
 
@@ -1433,7 +1429,6 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // ELIMINACIÓN AISLADA E INDEPENDIENTE DE DATOS
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1543,8 +1538,8 @@
                     const idxDesc = headers.findIndex(h => h.includes("descripci"));
                     const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
                     
-                    const idxUbiStrict = 4; // Columna E (5)
-                    let idxVencStrict = 15;  // Columna P (16)
+                    const idxUbiStrict = 4; 
+                    let idxVencStrict = 15;  
                     
                     if (headers[idxVencStrict] && !headers[idxVencStrict].includes("caducidad")) {
                         let altVenc = headers.findIndex(h => h.includes("caducidad"));
@@ -1630,7 +1625,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // PROCESAR DETALLE_REPOSICIÓN EXTRAENDO LA COLUMNA 3 (NRO LPN) Y CANTIDAD AJUSTADA
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1669,7 +1663,7 @@
                 const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
 
                 let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
-                if (idxLpn === -1) idxLpn = 2; // Columna C (3)
+                if (idxLpn === -1) idxLpn = 2;
 
                 let tempDetalleRepo = [];
 
