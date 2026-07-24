@@ -174,14 +174,12 @@
                         <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <!-- PUNTO 1: CAMBIO DE NOMBRE DE REPONER EN A REPONER -->
                                 <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
                                 <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
                                 <th class="px-3 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
-                                <!-- PUNTO 3: CAMBIO DE NOMBRE DE F. CADUCIDAD A FV -->
                                 <th class="px-3 py-2 border text-center font-bold">FV</th>
                                 <th class="px-3 py-2 border text-purple-700 bg-purple-50 font-bold text-center">🔮 LPNs Consumidos</th>
                             </tr>
@@ -244,9 +242,10 @@
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
+                    <!-- BANNER DE BLOQUEO POR FALTA DE CAJAS_TIENDA EN TIEMPO REAL -->
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div id="txtMensajeAdvertenciaStock">Lo sentimos, el producto que buscas no hay en la reserva</div>
+                        <div id="txtMensajeAdvertenciaStock">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
                     </div>
 
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
@@ -422,6 +421,7 @@
         const msgRef = db.ref("alertasIncidencias");
         const sateliteRef = db.ref("sateliteData");
         const detalleRepoRef = db.ref("detalleReposicionData");
+        const fechaCargaRef = db.ref("fechaCargaData");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -478,7 +478,28 @@
             escucharLogsRepotenciacionTiempoReal();
             escucharAlertasIncidenciasGlobales();
             verificarSesionGuardada();
+
+            // PUNTO 2: CRONOMETRO AUTOMÁTICO DE VALIDACIÓN MEDIANOCHE (00:00:00)
+            validarPurgaMedianocheAutomática();
+            setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
+
+        // PUNTO 2: FUNCIÓN QUE BORRA AUTOMÁTICAMENTE LA DATA A LAS 00:00 O CAMBIO DE DÍA
+        function validarPurgaMedianocheAutomática() {
+            let fechaHoy = new Date().toLocaleDateString('es-PE');
+            fechaCargaRef.get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    let fechaCargada = snapshot.val();
+                    if (fechaCargada && fechaCargada !== fechaHoy) {
+                        // Si la data pertenece a un día previo, purgar absolutamente todo
+                        dbRef.set(null);
+                        sateliteRef.set(null);
+                        detalleRepoRef.set(null);
+                        fechaCargaRef.set(null);
+                    }
+                }
+            }).catch(() => {});
+        }
 
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
@@ -602,16 +623,31 @@
             }
         }
 
+        // PUNTO 1: ESCUCHADOR EN TIEMPO REAL QUE BLOQUEA O HABILITA LA PANTALLA DEL ASISTENTE AL INSTANTE
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data && Object.keys(data).length > 0) {
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
+                    if(document.getElementById('statusData1')) {
+                        document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold";
+                        document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).`;
+                    }
+                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                 } else {
                     inventarioData1 = []; data1Cargada = false;
-                    document.getElementById('statusData1').className = "text-xs text-red-500 mt-2 font-semibold";
-                    document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+                    if(document.getElementById('statusData1')) {
+                        document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold";
+                        document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+                    }
+                    
+                    // MOSTRAR BANNER DE BLOQUEO OBLIGATORIO AL ASISTENTE AL INSTANTE
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "hidden";
                 }
             });
         }
@@ -1055,7 +1091,7 @@
                 if (!entradaOriginal) return;
 
                 if (!inventarioData1 || inventarioData1.length === 0) {
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pidele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
@@ -1317,10 +1353,12 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
+        // ELIMINAR BASE MANUALMENTE CON LA "X" ROJA
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
                 dbRef.set(null);
+                fechaCargaRef.set(null);
             } else if (tipo === 'satelite') {
                 sateliteRef.set(null);
             } else if (tipo === 'reposicion') {
@@ -1378,7 +1416,7 @@
             }
         }
 
-        // PROCESAMIENTO DE CAJAS_TIENDA CON FIJACIÓN RÍGIDA DE COLUMNA 5 (E) Y COLUMNA 16 (P)
+        // PUNTO 3: PROCESAMIENTO CON LECTURA ESTRICTA DE LA COLUMNA 5 (E - UBICACIÓN ACTUAL) Y COLUMNA 16 (P - CADUCIDAD)
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1394,48 +1432,80 @@
                     const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
                     
-                    const filasObjetos = XLSX.utils.sheet_to_json(hoja, { raw: false, defval: "" });
+                    // LECTURA NATIVA POR MATRIZ DE FILAS Y COLUMNAS
+                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1, defval: "" });
                     
-                    if (!filasObjetos || filasObjetos.length === 0) {
+                    if (!filasMatriz || filasMatriz.length < 2) {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
                         statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
                         return;
                     }
 
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
+                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
+                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo")) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (headerRowIdx === -1) headerRowIdx = 0;
+
+                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    
+                    const idxLpn = headers.findIndex(h => h.includes("lpn"));
+                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                    const idxDesc = headers.findIndex(h => h.includes("descripci"));
+                    const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
+                    
+                    // PUNTO 3: COLUMNA 5 RIGIDA (LETRA E / INDICE 4) PARA UBICACIÓN ACTUAL
+                    const idxUbiStrict = 4; // Columna E (5)
+                    
+                    // COLUMNA 16 RIGIDA (LETRA P / INDICE 15) PARA FECHA DE CADUCIDAD
+                    let idxVencStrict = 15; // Columna P (16)
+                    if (headers[idxVencStrict] && !headers[idxVencStrict].includes("caducidad")) {
+                        let altVenc = headers.findIndex(h => h.includes("caducidad"));
+                        if (altVenc !== -1) idxVencStrict = altVenc;
+                    }
+
                     let datosFormateados = [];
 
-                    filasObjetos.forEach(row => {
-                        let skuVal = "", lpnVal = "", descVal = "", ubiVal = "", caducidadVal = "", cantVal = 0;
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        const row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
 
-                        Object.keys(row).forEach(key => {
-                            let kClean = key.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
-                            let valStr = row[key] !== null && row[key] !== undefined ? row[key].toString().trim() : "";
+                        let skuVal = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                        let lpnVal = idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                        let descVal = idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                        let uVal = idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
+                        
+                        // EXTRAER ÚNICA Y EXCLUSIVAMENTE DE LA COLUMNA 5 Y 16
+                        let ubiVal = row[idxUbiStrict] !== undefined ? row[idxUbiStrict].toString().trim() : "";
+                        let caducidadVal = row[idxVencStrict] !== undefined ? row[idxVencStrict].toString().trim() : "";
 
-                            if (kClean === "nrolpn" || kClean === "lpn") lpnVal = valStr;
-                            else if (kClean === "sku" || kClean === "articulo") skuVal = valStr;
-                            else if (kClean.includes("descripci")) descVal = valStr;
-                            // PUNTO 2: EXTRAER UBICACIÓN EXACTA (COLUMNA 5 / E)
-                            else if (kClean.includes("ubicacionactual") || kClean.includes("ubicac") || kClean === "ubicacion") ubiVal = valStr;
-                            else if (kClean.includes("unidades") || kClean.includes("cant")) cantVal = parseInt(valStr || 0, 10);
-                            else if (kClean.includes("fechadecaducidad") || kClean === "caducidad") caducidadVal = valStr;
-                        });
-
-                        if (!skuVal || cantVal <= 0 || !ubiVal) return;
+                        if (!skuVal || uVal <= 0 || !ubiVal) continue;
 
                         let uUpper = ubiVal.toUpperCase();
                         if (uUpper.includes("DE-PROVEEDOR") || uUpper.includes("DSCTO-") || uUpper.includes("DAD-RECP") || uUpper.includes("CMM-ALM") || uUpper.includes("CD-FALTANTE") || uUpper.includes("MM-") || uUpper.includes("NAV-TDA") || uUpper.includes("VCTO-") || uUpper.includes("JAU-BAT") || uUpper.includes("DEV-PRV") || uUpper.includes("ST-ALM") || uUpper.includes("CD-SOBRANTE")) {
-                            return;
+                            continue;
                         }
 
                         datosFormateados.push({
                             lpn: lpnVal,
                             sku: skuVal,
                             descripcion: descVal,
-                            unidades: cantVal,
+                            unidades: uVal,
                             vencimiento: caducidadVal,
                             ubicacion: ubiVal
                         });
-                    });
+                    }
+
+                    // REGISTRAR FECHA HOY PARA PURGA AUTOMÁTICA A LAS 00:00
+                    let fechaHoyStr = new Date().toLocaleDateString('es-PE');
+                    fechaCargaRef.set(fechaHoyStr);
 
                     dbRef.set(datosFormateados).then(() => {
                         let segundos = 5;
