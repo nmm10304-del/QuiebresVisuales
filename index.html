@@ -144,7 +144,6 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
                         
-                        <!-- PUNTO 1: FILTRAR Y OPCIONES EXACTAS Y LIMPIAS -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
@@ -159,7 +158,6 @@
                                 <span>Unidades Validadas:</span>
                                 <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
                             </div>
-                            <!-- PUNTO 2: TEXTO CAMBIADO A "Cantidad de SKUs:" -->
                             <div class="flex items-center gap-1.5">
                                 <span>Cantidad de SKUs:</span>
                                 <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
@@ -168,13 +166,11 @@
                     </div>
                     
                     <div class="flex items-center gap-3">
-                        <!-- PUNTO 3: TEXTO CAMBIADO A "Avance: X%" -->
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
                             <span class="text-xs font-bold text-purple-900 uppercase">Avance:</span>
                             <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
                         </div>
 
-                        <!-- PUNTO 4: BOTÓN RENOMBRADO A "Descargar Excel" -->
                         <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
                             Descargar Excel
                         </button>
@@ -278,14 +274,15 @@
                         <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
-                                <input type="text" id="barcodeInput" placeholder="ESCANEA AQUÍ..." 
+                                <!-- CONFIGURACIÓN DE TECLADO NUMÉRICO TÁCTIL (PUNTO 1) -->
+                                <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
-                                <input type="number" id="cantidadInput" min="1" max="99" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
+                                <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
@@ -406,12 +403,14 @@
             <div class="space-y-3">
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
-                    <input type="text" id="incidenciacodigoInput" 
+                    <!-- CONFIGURACIÓN DE TECLADO NUMÉRICO EN REPORTE DE INCIDENCIA (PUNTO 2) -->
+                    <input type="text" id="incidenciacodigoInput" inputmode="numeric" pattern="[0-9]*"
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                            placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
+                    <!-- TEXTAREA NORMAL CON TECLADO COMPLETO PARA DETALLES DE TEXTO -->
                     <textarea id="incidenciaMotivoInput" rows="3" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                               placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
@@ -701,7 +700,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
