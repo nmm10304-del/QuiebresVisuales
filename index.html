@@ -174,7 +174,8 @@
                         <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60 text-[10px]">REPONER</th>
+                                <!-- PUNTO 1: TAMAÑO DE LETRA NORMALIZADO AL TAMAÑO ESTÁNDAR (text-xs) -->
+                                <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60">REPONER</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
                                 <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
                                 <th class="px-3 py-2 border font-bold bg-blue-50 text-blue-900">UBICACIÓN</th>
@@ -242,7 +243,6 @@
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
                     <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
                     
-                    <!-- BANNER DE BLOQUEO POR FALTA DE CAJAS_TIENDA EN TIEMPO REAL -->
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
                         <div id="txtMensajeAdvertenciaStock">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
@@ -479,19 +479,16 @@
             escucharAlertasIncidenciasGlobales();
             verificarSesionGuardada();
 
-            // PUNTO 2: CRONOMETRO AUTOMÁTICO DE VALIDACIÓN MEDIANOCHE (00:00:00)
             validarPurgaMedianocheAutomática();
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
 
-        // PUNTO 2: FUNCIÓN QUE BORRA AUTOMÁTICAMENTE LA DATA A LAS 00:00 O CAMBIO DE DÍA
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
                     if (fechaCargada && fechaCargada !== fechaHoy) {
-                        // Si la data pertenece a un día previo, purgar absolutamente todo
                         dbRef.set(null);
                         sateliteRef.set(null);
                         detalleRepoRef.set(null);
@@ -623,14 +620,13 @@
             }
         }
 
-        // PUNTO 1: ESCUCHADOR EN TIEMPO REAL QUE BLOQUEA O HABILITA LA PANTALLA DEL ASISTENTE AL INSTANTE
         function escucharInventarioEnTiempoReal() {
             dbRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data && Object.keys(data).length > 0) {
                     inventarioData1 = Object.values(data);
                     data1Cargada = true;
-                    if(document.getElementById('statusData1')) {
+                    if(document.getElementById('statusData1') && !document.getElementById('statusData1').innerText.includes("⏳")) {
                         document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold";
                         document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).`;
                     }
@@ -642,7 +638,6 @@
                         document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
                     }
                     
-                    // MOSTRAR BANNER DE BLOQUEO OBLIGATORIO AL ASISTENTE AL INSTANTE
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
@@ -816,7 +811,8 @@
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
                                 <td class="px-3 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
-                                <td class="px-2 py-2 border font-sans font-bold text-[10px] text-orange-700 bg-orange-50/50 uppercase tracking-tight">${zonaExtraida}</td>
+                                <!-- PUNTO 1: LETRA NORMALIZADA IGUAL A LAS DEMÁS COLUMNAS -->
+                                <td class="px-3 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50 uppercase">${zonaExtraida}</td>
                                 <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
                                 <td class="px-3 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
                                 <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisicaLpn}</td>
@@ -1353,7 +1349,6 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // ELIMINAR BASE MANUALMENTE CON LA "X" ROJA
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1416,14 +1411,14 @@
             }
         }
 
-        // PUNTO 3: PROCESAMIENTO CON LECTURA ESTRICTA DE LA COLUMNA 5 (E - UBICACIÓN ACTUAL) Y COLUMNA 16 (P - CADUCIDAD)
+        // PUNTO 2: CÓDIGO CON MARGEN DE 5 SEGUNDOS DE SINCRONIZACIÓN ASEGURADA
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
             
             const statusElem = document.getElementById('statusData1');
             statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
-            statusElem.innerText = "⏳ Procesando y purgando Excel en milisegundos...";
+            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
 
             setTimeout(() => {
                 const lector = new FileReader();
@@ -1432,7 +1427,6 @@
                     const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
                     
-                    // LECTURA NATIVA POR MATRIZ DE FILAS Y COLUMNAS
                     const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1, defval: "" });
                     
                     if (!filasMatriz || filasMatriz.length < 2) {
@@ -1461,11 +1455,9 @@
                     const idxDesc = headers.findIndex(h => h.includes("descripci"));
                     const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
                     
-                    // PUNTO 3: COLUMNA 5 RIGIDA (LETRA E / INDICE 4) PARA UBICACIÓN ACTUAL
                     const idxUbiStrict = 4; // Columna E (5)
+                    let idxVencStrict = 15;  // Columna P (16)
                     
-                    // COLUMNA 16 RIGIDA (LETRA P / INDICE 15) PARA FECHA DE CADUCIDAD
-                    let idxVencStrict = 15; // Columna P (16)
                     if (headers[idxVencStrict] && !headers[idxVencStrict].includes("caducidad")) {
                         let altVenc = headers.findIndex(h => h.includes("caducidad"));
                         if (altVenc !== -1) idxVencStrict = altVenc;
@@ -1482,7 +1474,6 @@
                         let descVal = idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
                         let uVal = idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
                         
-                        // EXTRAER ÚNICA Y EXCLUSIVAMENTE DE LA COLUMNA 5 Y 16
                         let ubiVal = row[idxUbiStrict] !== undefined ? row[idxUbiStrict].toString().trim() : "";
                         let caducidadVal = row[idxVencStrict] !== undefined ? row[idxVencStrict].toString().trim() : "";
 
@@ -1503,23 +1494,22 @@
                         });
                     }
 
-                    // REGISTRAR FECHA HOY PARA PURGA AUTOMÁTICA A LAS 00:00
                     let fechaHoyStr = new Date().toLocaleDateString('es-PE');
                     fechaCargaRef.set(fechaHoyStr);
 
                     dbRef.set(datosFormateados).then(() => {
                         let segundos = 5;
                         statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse";
-                        statusElem.innerText = `⏳ Sincronizando con los asistentes... (${segundos}s)`;
+                        statusElem.innerText = `⏳ Sincronizando datos con los asistentes... (${segundos}s)`;
                         
                         let timer = setInterval(() => {
                             segundos--;
                             if (segundos > 0) {
-                                statusElem.innerText = `⏳ Sincronizando con los asistentes... (${segundos}s)`;
+                                statusElem.innerText = `⏳ Sincronizando datos con los asistentes... (${segundos}s)`;
                             } else {
                                 clearInterval(timer);
                                 statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold";
-                                statusElem.innerText = `✅ Base Cloud sincronizada e inyectada con éxito (${datosFormateados.length} registros válidos). ¡El asistente ya puede continuar!`;
+                                statusElem.innerText = `✅ ¡Sincronización completa! (${datosFormateados.length} registros). El asistente ya puede pistolear sin demoras.`;
                             }
                         }, 1000);
                     }).catch(err => {
