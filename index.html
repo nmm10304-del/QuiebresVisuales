@@ -706,7 +706,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON AUDITORÍA EXACTA RESTAURANDO EMOTICONES
+        // RENDERIZADO DE TABLA CON MAPEO DE COLUMNA 3 PARA LPN CONSUMIDO EN CASO DE "NO REALIZÓ FIFO"
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -772,7 +772,7 @@
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
                         let badgeFifoHtml = ""; 
-                        let lpnConsumidoAnomalia = "";
+                        let lpnConsumidoAnomalia = ""; 
 
                         if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -787,11 +787,9 @@
                             if (coincidenciasRF.length > 0) {
                                 contadorLpnsProcesadosRF++;
 
-                                // REGLA 1: SIN FV -> 🟢 Repuesto
                                 if (!fvFormateada || fvFormateada === "") {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                 } else {
-                                    // REGLA 2: CON FV -> TRES BOTONES CON EMOTICONES REALES
                                     let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
                                     
                                     if (matchExacto) {
@@ -806,6 +804,7 @@
                                         if (matchMismaFv) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                         } else {
+                                            // EXTRAER LPN DESVIADO DIRECTAMENTE DE LA COLUMNA 3 DE DETALLE REPOSICIÓN
                                             let lpnRealScanner = coincidenciasRF[0].lpn.toString().trim();
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                             lpnConsumidoAnomalia = lpnRealScanner; 
@@ -1574,6 +1573,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // PROCESAR DETALLE_REPOSICIÓN MAPEANDO LA COLUMNA 3 (Nro LPN) STRICTAMENTE
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1604,12 +1604,15 @@
                 if (headerRowIdx === -1) headerRowIdx = 0;
 
                 const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
                 const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
-                const idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
                 const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                 const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
                 const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
                 const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
+
+                // EXTRAER DE FORMA STRICTA LA COLUMNA 3 (LETRA C / INDICE 2) PARA EL NRO LPN
+                const idxLpnStrict = 2; // Columna C (3)
 
                 let tempDetalleRepo = [];
 
@@ -1618,7 +1621,14 @@
                     if (!row || row.length === 0) continue;
 
                     let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
-                    let pLpn = idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    
+                    // EXTRAER DE FORMA LITERARIA DE LA COLUMNA 3
+                    let pLpn = row[idxLpnStrict] !== undefined ? row[idxLpnStrict].toString().trim() : "";
+                    if (!pLpn && idxLpnStrict !== -1) {
+                        let altLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
+                        if (altLpn !== -1 && row[altLpn] !== undefined) pLpn = row[altLpn].toString().trim();
+                    }
+
                     let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
                     let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
                     let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
@@ -1627,7 +1637,7 @@
                     let uDestino = pPantalla.toUpperCase();
                     if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
                         tempDetalleRepo.push({
-                            lpn: pLpn,
+                            lpn: pLpn, // LPN exacto de la Columna 3
                             sku: pSku,
                             pantalla: pPantalla,
                             cantOriginal: pCantOrig,
