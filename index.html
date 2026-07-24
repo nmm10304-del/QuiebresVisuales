@@ -74,7 +74,6 @@
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
             </div>
             
-            <!-- LISTA DESPLEGABLE CON LAS 4 OPCIONES EXACTAS -->
             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">SELECCIONAR MÓDULO DE VISUALIZACIÓN:</label>
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
@@ -85,7 +84,7 @@
                 </select>
             </div>
 
-            <!-- BLOQUE DE TARJETAS EXCEL CON CONTROL INDIVIDUAL DE VISIBILIDAD -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -121,7 +120,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO 3: BUZÓN DE INCIDENCIAS -->
+            <!-- BUZÓN DE INCIDENCIAS -->
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
                     <h3 class="text-sm font-bold text-red-700 uppercase flex items-center gap-2">📥 Buzón de Incidencias Pendientes</h3>
@@ -144,7 +143,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO 4: RESETEAR CONTRASEÑA -->
+            <!-- RESETEAR CONTRASEÑA -->
             <div id="wrapperModuloResetClaveAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-purple-200 space-y-4 max-w-md">
                 <h3 class="text-sm font-bold text-purple-800 uppercase flex items-center gap-2 border-b pb-2">
                     🔑 Resetear Contraseña de Asistente
@@ -173,7 +172,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO 1: REPOTENCIAR TIENDA -->
+            <!-- CUADRO REPOTENCIAR TIENDA -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -238,7 +237,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO 2: CUMPLIMIENTO 24 -->
+            <!-- CUADRO CUMPLIMIENTO 24 -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
@@ -673,10 +672,11 @@
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
         }
 
-        // CONTROL EXACTO DE MÓDULOS DE VISUALIZACIÓN DESDE EL ÚNICO DESPLEGABLE
+        // CONTROL DE VISIBILIDAD DE CONTENEDORES Y MÓDULOS DE ADMINISTRADOR
         function alternarModuloAdminView() {
             const val = document.getElementById("selectVistaModuloAdmin").value;
             
+            const gridTarjetas = document.getElementById("gridTarjetasExcel");
             const cardCajas = document.getElementById("cardCajasTienda");
             const cardSatelite = document.getElementById("cardJSatelite");
             const cardRepo = document.getElementById("cardDetalleReposicion");
@@ -686,7 +686,8 @@
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
 
-            // OCULTAR TODO DE ENTRADA PARA MANTENER LIMPIEZA
+            // Ocultar todo por defecto
+            gridTarjetas.classList.add("hidden");
             cardCajas.classList.add("hidden");
             cardSatelite.classList.add("hidden");
             cardRepo.classList.add("hidden");
@@ -698,12 +699,14 @@
 
             if (val === "repotenciar") {
                 // OPCIÓN 1: ⚡ Repotenciar Tienda -> Muestra Cajas_Tienda + Detalle_Reposicion + Tabla Repotenciar
+                gridTarjetas.classList.remove("hidden");
                 cardCajas.classList.remove("hidden");
                 cardRepo.classList.remove("hidden");
                 cuadroRepo.classList.remove("hidden");
 
             } else if (val === "quiebres") {
                 // OPCIÓN 2: 🎯 Quiebres Visuales -> Muestra los 3 Excel + Ambos Cuadros
+                gridTarjetas.classList.remove("hidden");
                 cardCajas.classList.remove("hidden");
                 cardSatelite.classList.remove("hidden");
                 cardRepo.classList.remove("hidden");
@@ -712,11 +715,11 @@
                 cuadroCruce.classList.remove("hidden");
 
             } else if (val === "buzon") {
-                // OPCIÓN 3: 📥 Buzón de incidencias -> Sin tarjetas Excel, solo tabla Buzón
+                // OPCIÓN 3: 📥 Buzón de incidencias -> Sin tarjetas Excel de arriba, pantalla limpia que se estanca arriba
                 moduloBuzon.classList.remove("hidden");
 
             } else if (val === "resetclave") {
-                // OPCIÓN 4: 🔑 Resetear contraseña -> Sin tarjetas Excel, solo panel de cambio de clave
+                // OPCIÓN 4: 🔑 Resetear contraseña -> Sin tarjetas Excel de arriba, solo formulario
                 moduloResetClave.classList.remove("hidden");
             }
         }
