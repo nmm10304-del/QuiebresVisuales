@@ -466,7 +466,6 @@
     </div>
 
     <script>
-        // PREVENCIÓN GLOBAL DE COMPORTAMIENTO POR DEFECTO DEL NAVEGADOR
         window.addEventListener("dragover", function(e) { e.preventDefault(); }, false);
         window.addEventListener("drop", function(e) { e.preventDefault(); }, false);
 
@@ -482,6 +481,7 @@
         const sateliteRef = db.ref("sateliteData");
         const detalleRepoRef = db.ref("detalleReposicionData");
         const fechaCargaRef = db.ref("fechaCargaData");
+        const passRef = db.ref("credencialesUsuariosData"); // NODOS DE CONTRASEÑAS EN LA NUBE
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -503,6 +503,7 @@
         
         let lotesFiltradosTurno = [];
 
+        // BASE DE DATOS DE USUARIOS CON PERSISTENCIA EN FIREBASE Y LOCALSTORAGE
         let usuariosDB = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
@@ -532,6 +533,7 @@
             setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
             
+            escucharCredencialesNube();
             escucharPersistenciaArchivosCloud();
             descargarCatalogoAutomaticoRemoto();
             escucharInventarioEnTiempoReal();
@@ -543,7 +545,20 @@
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
 
-        // SISTEMA DE DRAG & DROP ROBUSTO E IMPREVISTOS DE CLIC RESUELTOS
+        // SINCRO EN TIEMPO REAL DE CONTRASEÑAS DESDE FIREBASE
+        function escucharCredencialesNube() {
+            passRef.on("value", (snapshot) => {
+                const dataCloud = snapshot.val();
+                if (dataCloud) {
+                    Object.keys(dataCloud).forEach(u => {
+                        if (usuariosDB[u]) {
+                            usuariosDB[u].clave = dataCloud[u];
+                        }
+                    });
+                }
+            });
+        }
+
         function setupDragAndDrop(zoneId, inputId, callback, overClass) {
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
@@ -551,7 +566,7 @@
             
             dropZone.addEventListener("click", (e) => {
                 if (e.target.tagName === 'BUTTON' && !e.target.classList.contains('pointer-events-none')) return;
-                input.value = ""; // Limpiar siempre memoria del input
+                input.value = ""; 
                 input.click();
             });
 
@@ -675,16 +690,20 @@
             }
             if (usuariosDB[idUsuarioLogueado]) {
                 usuariosDB[idUsuarioLogueado].clave = nuevaClave;
-                document.getElementById('txtNuevaClaveAsistente').value = "";
                 
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent";
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+                // GUARDAR PERMANENTEMENTE EN FIREBASE
+                passRef.child(idUsuarioLogueado).set(nuevaClave).then(() => {
+                    document.getElementById('txtNuevaClaveAsistente').value = "";
+                    document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                    document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent";
+                    document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
+                    document.getElementById('modalNotificacionExito').classList.remove('hidden');
+                });
             }
         }
 
+        // PERMITIR AL ADMINISTRADOR CAMBIAR LA CLAVE Y GUARDARLA DE VERDAD
         function procesarResetClavePorAdmin() {
             const userTarget = document.getElementById('selectUsuarioResetAdmin').value;
             const nuevaClave = document.getElementById('txtNuevaClavePorAdmin').value.trim();
@@ -698,14 +717,18 @@
             }
             if (usuariosDB[userTarget]) {
                 usuariosDB[userTarget].clave = nuevaClave;
-                document.getElementById('txtNuevaClavePorAdmin').value = "";
-                document.getElementById('selectUsuarioResetAdmin').value = "";
                 
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
-                document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.`;
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+                // GUARDAR PERMANENTEMENTE EN FIREBASE
+                passRef.child(userTarget).set(nuevaClave).then(() => {
+                    document.getElementById('txtNuevaClavePorAdmin').value = "";
+                    document.getElementById('selectUsuarioResetAdmin').value = "";
+                    
+                    document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                    document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
+                    document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.`;
+                    document.getElementById('modalNotificacionExito').classList.remove('hidden');
+                });
             }
         }
 
@@ -1193,9 +1216,11 @@
             } 
         }
 
+        // AUTENTICACIÓN CON VALIDACIÓN DE CREDENCIALES SINCRO
         function autenticarUsuario() {
             const user = document.getElementById('userInput').value.trim().toUpperCase();
             const pass = document.getElementById('passwordInput').value;
+            
             if (usuariosDB[user] && usuariosDB[user].clave === pass) {
                 rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
                 idUsuarioLogueado = user;
@@ -1343,6 +1368,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
+        // LÓGICA DE ORDENAMIENTO EXACTA (FIFO + PURGA DE MENOR CANTIDAD)
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1363,6 +1389,7 @@
 
                 if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                     try {
+                        // CRITERIO DUAL: 1. FECHA VENCIMIENTO (FIFO) | 2. UNIDADES ASCENDENTES (PURGA MENOR CANTIDAD)
                         copiaLotesFiltrados.sort((a, b) => {
                             let fA = parsearFechaEspanol(a.vencimiento);
                             let fB = parsearFechaEspanol(b.vencimiento);
@@ -1606,7 +1633,6 @@
             }
         }
 
-        // PROCESADORES CON CONEXIÓN GARANTIZADA DE LECTURA DE FILE
         function procesarData1() {
             const input = document.getElementById("fileData1");
             const file = input.files ? input.files[0] : null;
