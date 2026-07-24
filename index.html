@@ -174,7 +174,6 @@
                         <thead class="bg-orange-50 text-orange-800 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <!-- PUNTO 1: TAMAÑO DE LETRA NORMALIZADO AL TAMAÑO ESTÁNDAR (text-xs) -->
                                 <th class="px-3 py-2 border font-bold text-orange-900 bg-orange-100/60">REPONER</th>
                                 <th class="px-3 py-2 border font-bold">SKU</th>
                                 <th class="px-3 py-2 border font-bold bg-orange-100 text-orange-900">LPN</th>
@@ -706,6 +705,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
+        // RENDERIZADO CON AUDITORÍA DE ETIQUETAS EXACTAS Y LIMPIAS
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -783,26 +783,29 @@
                             });
 
                             if (coincidenciasRF.length > 0) {
-                                let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
-                                
-                                if (matchExacto) {
-                                    contadorLpnsProcesadosRF++;
-                                    let tipoPantalla = matchExacto.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
-                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO (${tipoPantalla})</span>`;
-                                } else {
-                                    let matchMismaFv = coincidenciasRF.find(m => {
-                                        let lpnRf = m.lpn.toString().trim().toUpperCase();
-                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
-                                        return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
-                                    });
+                                contadorLpnsProcesadosRF++;
 
-                                    if (matchMismaFv) {
-                                        contadorLpnsProcesadosRF++;
-                                        let tipoPantalla = matchMismaFv.pantalla.toUpperCase().includes("PUERTA") ? "Puerta" : "Reserva";
-                                        badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 Retiró otro LPN con la misma FV (${tipoPantalla})</span>`;
+                                // REGLA 1: PRODUCTOS SIN FV -> MUESTRA "Repuesto"
+                                if (!fvFormateada || fvFormateada === "") {
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                } else {
+                                    // REGLA 2: PRODUCTOS CON FV -> MUESTRA LAS TRES OPCIONES DE AUDITORÍA
+                                    let matchExacto = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
+                                    
+                                    if (matchExacto) {
+                                        badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                                     } else {
-                                        contadorLpnsProcesadosRF++;
-                                        badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                        let matchMismaFv = coincidenciasRF.find(m => {
+                                            let lpnRf = m.lpn.toString().trim().toUpperCase();
+                                            let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
+                                            return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
+                                        });
+
+                                        if (matchMismaFv) {
+                                            badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                                        } else {
+                                            badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                        }
                                     }
                                 }
                             }
@@ -811,7 +814,6 @@
                         tbody.innerHTML += `
                             <tr class="hover:bg-gray-50 font-mono text-xs">
                                 <td class="px-3 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
-                                <!-- PUNTO 1: LETRA NORMALIZADA IGUAL A LAS DEMÁS COLUMNAS -->
                                 <td class="px-3 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50 uppercase">${zonaExtraida}</td>
                                 <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
                                 <td class="px-3 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
@@ -1411,7 +1413,6 @@
             }
         }
 
-        // PUNTO 2: CÓDIGO CON MARGEN DE 5 SEGUNDOS DE SINCRONIZACIÓN ASEGURADA
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
