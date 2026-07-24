@@ -74,7 +74,6 @@
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
             </div>
             
-            <!-- PUNTO 1: BARRA DE MÓDULO UBICADA JUSTO DEBAJO DEL TÍTULO PRINCIPAL -->
             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">SELECCIONAR MÓDULO DE VISUALIZACIÓN:</label>
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
@@ -145,7 +144,6 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
                         
-                        <!-- PUNTO 4: FILTRO DESPLEGABLE EN EL LADO IZQUIERDO -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-[11px] font-bold text-gray-600 uppercase">Filtrar:</span>
                             <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
@@ -525,7 +523,6 @@
                 }
             });
 
-            // PUNTO 3: BORRAR DETALLE REPOSICIÓN SOLO LIMPIA SU VARIABLE SIN TOCAR LA LISTA DEL ASISTENTE
             detalleRepoRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data && Array.isArray(data)) {
@@ -720,7 +717,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO CON FILTRO DESPLEGABLE Y TRIPLE CANDADO PARA LPN CONSUMIDO
+        // RENDERIZADO CON BOLSA DE CONSUMOS 1 A 1
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -730,7 +727,6 @@
             if (data && Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0) {
                 registrosHistoricosRepotenciar = Array.isArray(data) ? data : Object.values(data);
                 
-                // TRABAJAR SOBRE UNA COPIA INVERTIDA
                 let copiaRegistros = [...registrosHistoricosRepotenciar];
                 copiaRegistros.reverse(); 
 
@@ -739,6 +735,28 @@
                 
                 let contadorTotalFilasLpn = 0;
                 let contadorLpnsProcesadosRF = 0;
+
+                // PASO 1: CONSTRUIR LA BOLSA DE CONSUMOS DE RF (ÚNICAMENTE BAJADAS CON CANTIDAD AJUSTADA = -1)
+                let bolsaConsumosRF = [];
+                if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
+                    matrixDetalleReposicion.forEach(m => {
+                        if (!m.sku || !m.pantalla) return;
+                        let pUpper = m.pantalla.toUpperCase();
+                        let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
+                        
+                        // Solo considerar bajadas reales (Ajustada = -1 o negativa)
+                        let cantAjustadaNum = parseInt(m.cantAjustada, 10);
+                        let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
+
+                        if (esPantallaValida && esBajadaReal && m.lpn) {
+                            bolsaConsumosRF.push({
+                                sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                                lpn: m.lpn.toString().trim(),
+                                consumido: false
+                            });
+                        }
+                    });
+                }
 
                 copiaRegistros.forEach(item => {
                     totalUnidadesRepotenciar += parseInt(item.cant || 0);
@@ -795,53 +813,53 @@
                         let lpnConsumidoAnomalia = ""; 
                         let esRepuesto = false;
 
-                        if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0 && item.sku) {
+                        if (item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
-                            // TRIPLE CANDADO: PANTALLA + SKU + MATCH DE LPN EN RF
-                            let coincidenciasRF = matrixDetalleReposicion.filter(m => {
-                                if (!m.sku || !m.pantalla) return false;
-                                let skuRfLimpio = m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                                let pUpper = m.pantalla.toUpperCase();
-                                let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
-                                return skuRfLimpio === skuLogLimpio && esPantallaValida;
-                            });
+                            // PASO 2: BUSCAR SI HAY CONSUMO DISPONIBLE EN LA BOLSA PARA ESTE SKU
+                            // Prioridad A: Match exacto de LPN sugerido
+                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.toUpperCase() === lpnSugeridoLimpio);
 
-                            if (coincidenciasRF.length > 0) {
+                            if (idxMatchExacto !== -1) {
+                                // Match exacto con el LPN sugerido
+                                bolsaConsumosRF[idxMatchExacto].consumido = true;
                                 contadorLpnsProcesadosRF++;
                                 esRepuesto = true;
 
                                 if (!fvFormateada || fvFormateada === "") {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                 } else {
-                                    let matchExacto = coincidenciasRF.find(m => m.lpn && m.lpn.toString().trim().toUpperCase() === lpnSugeridoLimpio);
-                                    
-                                    if (matchExacto) {
-                                        badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
-                                    } else {
-                                        let matchMismaFv = coincidenciasRF.find(m => {
-                                            let lpnRf = m.lpn ? m.lpn.toString().trim().toUpperCase() : "";
-                                            let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRf);
-                                            return itemRfEnCajas && itemRfEnCajas.vencimiento === fvLpnFila;
-                                        });
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                                }
+                            } else {
+                                // Prioridad B: Buscar si consumió otro LPN del mismo SKU
+                                let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio);
 
-                                        if (matchMismaFv) {
+                                if (idxOtroLpn !== -1) {
+                                    let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
+                                    bolsaConsumosRF[idxOtroLpn].consumido = true;
+                                    contadorLpnsProcesadosRF++;
+                                    esRepuesto = true;
+
+                                    if (!fvFormateada || fvFormateada === "") {
+                                        badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                    } else {
+                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === bajadaDispo.lpn.toUpperCase());
+                                        let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+
+                                        if (fvOtroLpn && fvOtroLpn === fvLpnFila) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                         } else {
-                                            // EXTRAER EL LPN EXACTO DE LA COLUMNA 3 DE DETALLE REPOSICIÓN QUE LA RF CONSUMIÓ
-                                            let rfAnomalo = coincidenciasRF.find(m => m.lpn && m.lpn.toString().trim().toUpperCase() !== lpnSugeridoLimpio) || coincidenciasRF[0];
-                                            let lpnRealScanner = rfAnomalo && rfAnomalo.lpn ? rfAnomalo.lpn.toString().trim() : "";
-                                            
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                                            lpnConsumidoAnomalia = lpnRealScanner; 
+                                            lpnConsumidoAnomalia = bajadaDispo.lpn;
                                         }
                                     }
                                 }
+                                // Si no hay consumos disponibles en la bolsa, queda en BLANCO (PENDIENTE)
                             }
                         }
 
-                        // APLICACIÓN DEL FILTRO DESPLEGABLE VISTA (TODOS / REPUESTO / PENDIENTE)
                         if (filtroVistaVal === "REPUESTO" && !esRepuesto) return;
                         if (filtroVistaVal === "PENDIENTE" && esRepuesto) return;
 
@@ -1415,7 +1433,7 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // PUNTO 3: ELIMINACIÓN AISLADA DE DATA
+        // ELIMINACIÓN AISLADA E INDEPENDIENTE DE DATOS
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1424,12 +1442,10 @@
             } else if (tipo === 'satelite') {
                 sateliteRef.set(null);
             } else if (tipo === 'reposicion') {
-                // ELIMINA SOLO EL ARCHIVO DE CRUCE DE RF EN NUBE Y MEMORIA LOCAL (SIN TOCAR RECOLECTA DE ASISTENTES)
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
                 forzarActualizacionTablaAdmin();
             } else if (tipo === 'repotenciacion') {
-                // ELIMINA SOLO LA RECOLECTA DE ASISTENTES EN NUBE Y MEMORIA LOCAL
                 registrosHistoricosRepotenciar = [];
                 logRef.set(null);
                 forzarActualizacionTablaAdmin();
@@ -1614,7 +1630,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // PROCESAMIENTO RIGUROSO DE DETALLE REPOSICIÓN EXTRAENDO COLUMNA C (3) NRO LPN
+        // PROCESAR DETALLE_REPOSICIÓN EXTRAENDO LA COLUMNA 3 (NRO LPN) Y CANTIDAD AJUSTADA
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
