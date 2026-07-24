@@ -614,7 +614,6 @@
             });
         }
 
-        // FORMATEO FIEL DE FECHA EXCEL
         function formatearAFechaDDMMYYYY(valFecha) {
             if (valFecha === null || valFecha === undefined) return "";
             let str = valFecha.toString().trim();
@@ -731,10 +730,13 @@
                         let lpnFila = subItem.lpn;
                         let cantFila = subItem.cant;
 
-                        let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnFila.toUpperCase());
+                        // MATCH STRICTO DE LPN LIMPIANDO ESPACIOS
+                        let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === lpnFila.toString().replace(/\s+/g, "").toUpperCase());
                         
                         let ubicacionFisicaLpn = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
-                        let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
+                        
+                        // EXTRACTOR EXCLUSIVO DE LA FECHA DE CADUCIDAD
+                        let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
 
                         let badgeFifoHtml = ""; 
@@ -1292,9 +1294,9 @@
                 }
 
                 desglosesLpn.forEach(subItem => {
-                    let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === subItem.lpn.toUpperCase());
+                    let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === subItem.lpn.toString().replace(/\s+/g, "").toUpperCase());
                     let ubiFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
-                    let fvLpnFila = lpnMatchCajas ? lpnMatchCajas.vencimiento : item.fv;
+                    let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
 
                     dataProcesada.push({
                         "Asistente": idUsuarioCredencial,
@@ -1376,7 +1378,7 @@
             }
         }
 
-        // PROCESAMIENTO CON LECTURA ULTRA STRICTA DE COLUMNA P (POSICIÓN 16) PARA CADUCIDAD
+        // LECTURA DIRECTA POR MAPEO DE CLAVES JSON NATIVAS (INCLUSIÓN STRICTA DE LA COLUMNA P)
         function procesarData1() {
             const file = document.getElementById("fileData1").files[0];
             if (!file) return;
@@ -1391,73 +1393,51 @@
                     const data = new Uint8Array(e.target.result);
                     const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
-                    const filas = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1 });
                     
-                    if (!filas || filas.length < 2) {
+                    // Extraer los objetos directamente respetando encabezados de Excel
+                    const filasObjetos = XLSX.utils.sheet_to_json(hoja, { raw: false, defval: "" });
+                    
+                    if (!filasObjetos || filasObjetos.length === 0) {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold";
                         statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
                         return;
                     }
 
-                    let headerRowIdx = -1;
-                    for (let i = 0; i < Math.min(10, filas.length); i++) {
-                        if (filas[i] && Array.isArray(filas[i])) {
-                            let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo")) {
-                                headerRowIdx = i;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (headerRowIdx === -1) headerRowIdx = 0;
-
-                    const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                    
-                    const idxLpn = headers.findIndex(h => h.includes("lpn"));
-                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
-                    const idxDesc = headers.findIndex(h => h.includes("descripci"));
-                    const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
-                    const idxUbi = headers.findIndex(h => h.includes("ubicac"));
-
-                    // BÚSQUEDA EXCLUSIVA Y ESTRICTA EN COLUMNA P (16 / INDICE 15) O TEXTO "CADUCIDAD"
-                    let idxVenc = headers.findIndex(h => h.includes("caducidad"));
-                    if (idxVenc === -1) {
-                        // Si por algún motivo cambió el nombre del header pero sigue en la columna P (Letra 16 -> Índice 15)
-                        if (filas[headerRowIdx].length >= 16) {
-                            idxVenc = 15;
-                        } else {
-                            idxVenc = headers.findIndex(h => h.includes("vencim") && !h.includes("mod"));
-                        }
-                    }
-
                     let datosFormateados = [];
-                    for (let i = headerRowIdx + 1; i < filas.length; i++) {
-                        const row = filas[i];
-                        if (!row || row.length === 0) continue;
 
-                        let skuVal = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                        let uVal = idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
-                        let ubiVal = idxUbi !== -1 && row[idxUbi] !== undefined ? row[idxUbi].toString().trim() : "";
+                    filasObjetos.forEach(row => {
+                        let skuVal = "", lpnVal = "", descVal = "", ubiVal = "", caducidadVal = "", cantVal = 0;
 
-                        if (!skuVal || uVal <= 0 || !ubiVal) continue;
+                        // Mapeo dinámico e insensible a mayúsculas/espacios
+                        Object.keys(row).forEach(key => {
+                            let kClean = key.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+                            let valStr = row[key] !== null && row[key] !== undefined ? row[key].toString().trim() : "";
+
+                            if (kClean === "nrolpn" || kClean === "lpn") lpnVal = valStr;
+                            else if (kClean === "sku" || kClean === "articulo") skuVal = valStr;
+                            else if (kClean.includes("descripci")) descVal = valStr;
+                            else if (kClean.includes("ubicacionactual") || kClean.includes("ubicac")) ubiVal = valStr;
+                            else if (kClean.includes("unidades") || kClean.includes("cant")) cantVal = parseInt(valStr || 0, 10);
+                            // CAPTURA DIRECTA Y EXCLUSIVA DE LA COLUMNA FECHA DE CADUCIDAD (COLUMNA P / 16)
+                            else if (kClean.includes("fechadecaducidad") || kClean === "caducidad") caducidadVal = valStr;
+                        });
+
+                        if (!skuVal || cantVal <= 0 || !ubiVal) return;
 
                         let uUpper = ubiVal.toUpperCase();
                         if (uUpper.includes("DE-PROVEEDOR") || uUpper.includes("DSCTO-") || uUpper.includes("DAD-RECP") || uUpper.includes("CMM-ALM") || uUpper.includes("CD-FALTANTE") || uUpper.includes("MM-") || uUpper.includes("NAV-TDA") || uUpper.includes("VCTO-") || uUpper.includes("JAU-BAT") || uUpper.includes("DEV-PRV") || uUpper.includes("ST-ALM") || uUpper.includes("CD-SOBRANTE")) {
-                            continue;
+                            return;
                         }
 
-                        let rawFecha = idxVenc !== -1 && row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "";
-
                         datosFormateados.push({
-                            lpn: idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "",
+                            lpn: lpnVal,
                             sku: skuVal,
-                            descripcion: idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "",
-                            unidades: uVal,
-                            vencimiento: rawFecha,
+                            descripcion: descVal,
+                            unidades: cantVal,
+                            vencimiento: caducidadVal, // Se guarda el texto exacto extraído de la Columna P
                             ubicacion: ubiVal
                         });
-                    }
+                    });
 
                     dbRef.set(datosFormateados).then(() => {
                         let segundos = 5;
