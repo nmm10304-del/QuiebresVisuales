@@ -686,7 +686,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -706,7 +706,6 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZADO DE TABLA CON MAPEO DE COLUMNA 3 PARA LPN CONSUMIDO EN CASO DE "NO REALIZÓ FIFO"
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -762,7 +761,8 @@
                     desglosesLpn.forEach(subItem => {
                         contadorTotalFilasLpn++;
                         let lpnFila = subItem.lpn;
-                        let cantFila = subItem.cant;
+                        // LEER LA CANTIDAD CONSOLIDADA DE LA FILA O DESGLOSE
+                        let cantFila = desglosesLpn.length === 1 ? item.cant : subItem.cant;
 
                         let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === lpnFila.toString().replace(/\s+/g, "").toUpperCase());
                         
@@ -804,8 +804,10 @@
                                         if (matchMismaFv) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                         } else {
-                                            // EXTRAER LPN DESVIADO DIRECTAMENTE DE LA COLUMNA 3 DE DETALLE REPOSICIÓN
-                                            let lpnRealScanner = coincidenciasRF[0].lpn.toString().trim();
+                                            // EXTRAER EL LPN ESCANEADO EN RF DESDE DETALLE REPOSICION
+                                            let rfRegistroAnomalo = coincidenciasRF.find(m => m.lpn.toString().trim().toUpperCase() !== lpnSugeridoLimpio) || coincidenciasRF[0];
+                                            let lpnRealScanner = rfRegistroAnomalo ? rfRegistroAnomalo.lpn.toString().trim() : "";
+                                            
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                             lpnConsumidoAnomalia = lpnRealScanner; 
                                         }
@@ -1187,6 +1189,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
+        // FUNCIÓN CONSOLIDADA Y ACTUALIZACIÓN CORRECTA DE CANTIDAD EN TABLA Y FIREBASE
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1270,11 +1273,16 @@
                     });
 
                     if (keyExistente && regExistente) {
+                        // SI ES EL MISMO ASISTENTE, MISMO SKU, MISMA ZONA Y MISMO LPN -> SUMAR CANTIDAD Y RE-CALCULAR DESGLOSE
                         let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
+                        let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
+                        
                         logRef.child(keyExistente).update({
-                            cant: nuevaCantTotal
+                            cant: nuevaCantTotal,
+                            purgaCompletaRuta: desgloseActualizado
                         });
                     } else {
+                        // SI ES OTRA ZONA O DIFIERE EL LPN -> REGISTRAR EN FILA NUEVA
                         logRef.push({
                             idAsistente: idUsuarioLogueado,
                             operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
@@ -1573,7 +1581,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // PROCESAR DETALLE_REPOSICIÓN MAPEANDO LA COLUMNA 3 (Nro LPN) STRICTAMENTE
+        // LECTOR DE DETALLE_REPOSICIÓN CON EXTRACCIÓN ROBUSTA DE LPN EN COLUMNA C (3)
         function procesarData2() {
             const file = document.getElementById("fileData2").files[0];
             if (!file) return;
@@ -1611,8 +1619,9 @@
                 const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
                 const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
 
-                // EXTRAER DE FORMA STRICTA LA COLUMNA 3 (LETRA C / INDICE 2) PARA EL NRO LPN
-                const idxLpnStrict = 2; // Columna C (3)
+                // Detección directa o por índice 2 (Columna C / Posición 3)
+                let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
+                if (idxLpn === -1) idxLpn = 2; 
 
                 let tempDetalleRepo = [];
 
@@ -1621,14 +1630,7 @@
                     if (!row || row.length === 0) continue;
 
                     let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
-                    
-                    // EXTRAER DE FORMA LITERARIA DE LA COLUMNA 3
-                    let pLpn = row[idxLpnStrict] !== undefined ? row[idxLpnStrict].toString().trim() : "";
-                    if (!pLpn && idxLpnStrict !== -1) {
-                        let altLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
-                        if (altLpn !== -1 && row[altLpn] !== undefined) pLpn = row[altLpn].toString().trim();
-                    }
-
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
                     let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
                     let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
                     let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
@@ -1637,7 +1639,7 @@
                     let uDestino = pPantalla.toUpperCase();
                     if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
                         tempDetalleRepo.push({
-                            lpn: pLpn, // LPN exacto de la Columna 3
+                            lpn: pLpn,
                             sku: pSku,
                             pantalla: pPantalla,
                             cantOriginal: pCantOrig,
