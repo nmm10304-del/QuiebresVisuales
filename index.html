@@ -259,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- CUADRO CUMPLIMIENTO 24 -->
+            <!-- CUADRO CUMPLIMIENTO 24 REESTRUCTURADO -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
@@ -270,21 +270,23 @@
                         Procesar y Cruzar Archivos
                     </button>
                 </div>
-                <div class="overflow-x-auto max-h-60 overflow-y-auto border rounded-lg">
-                    <table class="min-w-[900px] w-full text-sm text-left border-collapse">
+                <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
+                    <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
                         <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
-                                <th class="px-4 py-2 border">Nro LPN Mapeado</th>
-                                <th class="px-4 py-2 border">SKU</th>
-                                <th class="px-4 py-2 border">Pantalla RF</th>
-                                <th class="px-4 py-2 border text-center">Cant. Original</th>
-                                <th class="px-4 py-2 border text-center font-bold">Cant. Ajustada</th>
-                                <th class="px-4 py-2 border text-center bg-purple-100 text-purple-950">LPNS Consumidos por RF</th>
-                                <th class="px-4 py-2 border">Usuario Actividad</th>
+                                <th class="px-3 py-2 border font-bold">SKU</th>
+                                <th class="px-3 py-2 border font-bold">LPN</th>
+                                <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
+                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
+                                <th class="px-3 py-2 border font-bold">ÁREA</th>
+                                <th class="px-3 py-2 border text-center font-bold">CANT</th>
+                                <th class="px-3 py-2 border text-center font-bold">FV</th>
+                                <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
+                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-                            <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
+                            <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -380,6 +382,21 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN PERSONALIZADO PARA ELIMINAR USUARIO -->
+    <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[110]">
+        <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">⚠️</div>
+            <div class="space-y-2">
+                <h4 class="text-lg font-bold text-gray-900">Atención</h4>
+                <p id="txtMensajeConfirmarEliminar" class="text-xs text-gray-600 leading-relaxed font-sans"></p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
+                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition uppercase">Cancelar</button>
             </div>
         </div>
     </div>
@@ -533,6 +550,7 @@
         let idUsuarioLogueado = "";
         let totalUnidadesRepotenciar = 0;
         let skuEscaneadoTemporal = "";
+        let usuarioAEliminarTemporal = "";
         
         let alertasOcultadasAsistente = [];
         try {
@@ -542,7 +560,6 @@
         
         let lotesFiltradosTurno = [];
 
-        // USUARIOS BASE INICIALES
         let usuariosIniciales = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
@@ -588,7 +605,6 @@
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
 
-        // SI ES LA PRIMERA VEZ, SEMBRAR USUARIOS BASE EN LA NUBE CON ESTRUCTURA UNIFICADA
         function inicializarUsuariosNubeSiEstaVacio() {
             usersMasterRef.once("value", (snapshot) => {
                 if (!snapshot.exists()) {
@@ -610,19 +626,15 @@
             });
         }
 
-        // CONTROL DE SESIÓN EN TIEMPO REAL AL ELIMINAR USUARIO
         function escucharUsuariosRegistradosNube() {
             usersMasterRef.on("value", (snapshot) => {
                 const cloudUsers = snapshot.val() || {};
-                
-                // Actualizar DB de usuarios local exclusivamente según lo que existe en Firebase
                 usuariosDB = { "ADMIN": usuariosIniciales["ADMIN"], ...cloudUsers };
 
-                // VERIFICACIÓN EN TIEMPO REAL: Si el usuario activo actual fue eliminado por el Admin, expulsa inmediatamente
                 if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
                     if (!usuariosDB[idUsuarioLogueado]) {
                         localStorage.clear();
-                        window.location.reload(); // Recarga automática e inmediata del celular del asistente
+                        window.location.reload();
                         return;
                     }
                 }
@@ -632,7 +644,6 @@
         }
 
         function actualizarCombosYTablaUsuarios() {
-            // 1. Actualizar Select de Resetear Clave
             const selectReset = document.getElementById("selectUsuarioResetAdmin");
             if (selectReset) {
                 let valPrev = selectReset.value;
@@ -645,7 +656,6 @@
                 if (valPrev) selectReset.value = valPrev;
             }
 
-            // 2. Actualizar Tabla de Gestión de Usuarios
             const tbodyUsers = document.getElementById("tablaUsuariosBody");
             if (tbodyUsers) {
                 tbodyUsers.innerHTML = "";
@@ -657,12 +667,36 @@
                                 <td class="px-4 py-2.5 border font-mono font-semibold text-blue-700">${u}</td>
                                 <td class="px-4 py-2.5 border text-center font-mono text-gray-400">••••••••</td>
                                 <td class="px-4 py-2.5 border text-center">
-                                    <button onclick="eliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2.5 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
+                                    <button onclick="solicitarEliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2.5 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
                                         🗑️ Eliminar
                                     </button>
                                 </td>
                             </tr>`;
                     }
+                });
+            }
+        }
+
+        function solicitarEliminarUsuarioAsistente(uKey) {
+            usuarioAEliminarTemporal = uKey;
+            const nom = usuariosDB[uKey] ? usuariosDB[uKey].nombre : uKey;
+            document.getElementById('txtMensajeConfirmarEliminar').innerText = `¿Estás seguro de dar de baja a ${nom} (${uKey})?`;
+            document.getElementById('modalConfirmarEliminacion').classList.remove('hidden');
+        }
+
+        function cerrarModalConfirmarEliminar() {
+            usuarioAEliminarTemporal = "";
+            document.getElementById('modalConfirmarEliminacion').classList.add('hidden');
+        }
+
+        function ejecutarEliminacionConfirmada() {
+            if (usuarioAEliminarTemporal && usuariosDB[usuarioAEliminarTemporal]) {
+                const uKey = usuarioAEliminarTemporal;
+                delete usuariosDB[uKey];
+                usersMasterRef.child(uKey).remove();
+                passRef.child(uKey).remove().then(() => {
+                    cerrarModalConfirmarEliminar();
+                    actualizarCombosYTablaUsuarios();
                 });
             }
         }
@@ -705,17 +739,6 @@
                 document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).`;
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             });
-        }
-
-        // ELIMINACIÓN DIRECTA QUE EXPULSA AL CELULAR EN SEGUNDOS
-        function eliminarUsuarioAsistente(uKey) {
-            if (confirm(`¿Estás seguro de dar de baja a ${usuariosDB[uKey].nombre} (${uKey})?`)) {
-                delete usuariosDB[uKey];
-                usersMasterRef.child(uKey).remove();
-                passRef.child(uKey).remove().then(() => {
-                    actualizarCombosYTablaUsuarios();
-                });
-            }
         }
 
         function setupDragAndDrop(zoneId, inputId, callback, overClass) {
@@ -1010,7 +1033,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1981,6 +2004,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // CRUCE DE CUMPLIMIENTO 24 ADAPTADO A LA NUEVA ESTRUCTURA DE 9 COLUMNAS
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             if (matrixDetalleReposicion.length === 0) {
@@ -1989,37 +2013,43 @@
             }
             tbody.innerHTML = "";
             matrixDetalleReposicion.forEach(puesta => {
-                let txtColorRuta = "text-red-600 font-bold";
-                let rutaSugerida = "⚠️ REPOSICIÓN MANUAL DESVINCULADA";
-
                 let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                
+                let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === puesta.lpn.toString().replace(/\s+/g, "").toUpperCase());
+                let ubicacionFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
+                let descripcionFisica = lpnMatchCajas && lpnMatchCajas.descripcion ? lpnMatchCajas.descripcion : "PRODUCTO MAPEADO";
+                let fvFisica = lpnMatchCajas ? formatearAFechaDDMMYYYY(lpnMatchCajas.vencimiento) : "";
+                let areaFisica = puesta.pantalla || "RF";
 
                 let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
                     log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio
                 );
 
+                let estadoHtml = "";
+                let lpnConsumidoStr = "";
+
                 if (coincidenciaLog) {
                     if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase().includes(puesta.lpn.toString().trim().toUpperCase())) {
-                        rutaSugerida = `✔ LPN CORRECTO: ${puesta.lpn} (Cumple FIFO - Caducidad Asegurada)`;
-                        txtColorRuta = "text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded";
+                        estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                     } else {
-                        rutaSugerida = `❌ ALERTA FIFO: Se pidió ${coincidenciaLog.fifoLpnOptimizado} pero RF escaneó ${puesta.lpn}`;
-                        txtColorRuta = "text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded";
+                        estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                        lpnConsumidoStr = coincidenciaLog.fifoLpnOptimizado;
                     }
                 } else {
-                    rutaSugerida = ""; 
-                    txtColorRuta = "text-gray-400";
+                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
                 }
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-4 py-2 border font-bold text-gray-900">${puesta.lpn}</td>
-                        <td class="px-4 py-2 border font-sans font-semibold">${puesta.sku}</td>
-                        <td class="px-4 py-2 border font-sans text-xs text-purple-700">${puesta.pantalla}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-gray-500">${puesta.cantOriginal}</td>
-                        <td class="px-4 py-2 border text-center font-bold text-purple-900">${puesta.cantAjustada}</td>
-                        <td class="px-4 py-2 border font-sans ${txtColorRuta} text-xs">${rutaSugerida}</td>
-                        <td class="px-4 py-2 border font-sans text-gray-600 text-xs">${puesta.usuario}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${puesta.sku}</td>
+                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${puesta.lpn}</td>
+                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisica}</td>
+                        <td class="px-3 py-2 border font-sans text-xs">${descripcionFisica}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700">${areaFisica}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${puesta.cantAjustada || puesta.cantOriginal}</td>
+                        <td class="px-3 py-2 border text-center font-bold">${fvFisica}</td>
+                        <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${lpnConsumidoStr}</td>
                     </tr>`;
             });
         }
