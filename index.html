@@ -259,18 +259,19 @@
                 </div>
             </div>
 
-            <!-- CUADRO CUMPLIMIENTO 24 (REESTRUCTURADO Y CON CABECERA COMPLETA) -->
+            <!-- CUADRO CUMPLIMIENTO 24 -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
                         
-                        <!-- FILTRO DE CUMPLIMIENTO 24 -->
+                        <!-- FILTRO CUMPLIMIENTO 24 -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
                                 <option value="TODOS">Todos</option>
                                 <option value="FIFO_OK">Realizó FIFO</option>
+                                <option value="MISMA_FV">Misma FV</option>
                                 <option value="FIFO_NO">No realizó FIFO</option>
                                 <option value="PENDIENTE">Pendiente</option>
                             </select>
@@ -284,13 +285,13 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2">
-                        <!-- INDICADOR DE AVANCE % -->
+                        <!-- CAJA DE AVANCE % -->
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
                             <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:</span>
                             <span id="boxPorcentajeAvanceCumplimiento" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
                         </div>
 
-                        <!-- BOTONES DE ACCIÓN COMPLETA -->
+                        <!-- BOTONES DE ACCIÓN -->
                         <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
                             Procesar y Cruzar Archivos
                         </button>
@@ -1067,7 +1068,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1780,7 +1781,6 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // DESCARGA DE EXCEL DE CUMPLIMIENTO 24
         function descargarExcelCumplimiento24() {
             if (!registrosHistoricosCumplimiento24 || registrosHistoricosCumplimiento24.length === 0) return;
             let dataProcesada = registrosHistoricosCumplimiento24.map(i => ({
@@ -1968,7 +1968,7 @@
             }, 30);
         }
 
-        // PROCESADOR DE JSATÉLITE (MAPEANDO COLUMNA 3 [SKU] Y COLUMNA 13 [QUANTITY])
+        // PROCESADOR JSATÉLITE MAPEANDO COLUMNA 3 (SKU) Y COLUMNA 13 (QUANTITY)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -1996,7 +1996,6 @@
                     let idxSkuCol3 = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                     let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
 
-                    // Índices estrictos por defecto: Columna 3 (índice 2) y Columna 13 (índice 12)
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;
                     if (idxQtyCol13 === -1) idxQtyCol13 = 12;
 
@@ -2093,13 +2092,13 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CRUCE DE CUMPLIMIENTO 24 COMPLETO CON REPORTE Y FILTRADO
+        // LÓGICA COMPLETA DE SIMULACIÓN DE ESCANEO AUTO + AUDITORÍA DE 3 ESTADOS EN CUMPLIMIENTO 24
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
-            if (matrixDetalleReposicion.length === 0 && Object.keys(reqJ_Satelite).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>`;
+            if (Object.keys(reqJ_Satelite).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
                 document.getElementById('boxSkusRepuestosCumplimiento').innerText = "0/0";
                 document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = "0%";
                 return;
@@ -2108,67 +2107,75 @@
             tbody.innerHTML = "";
             let mapaCumplimiento = {};
 
-            // 1. Mapear datos solicitados de JSatélite
+            // 1. Simulación Automática de Escaneo (Match entre JSatélite y Cajas_Tienda usando FIFO + Macropurga)
             Object.keys(reqJ_Satelite).forEach(skuKey => {
                 let satItem = reqJ_Satelite[skuKey];
-                mapaCumplimiento[skuKey] = {
+                let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                
+                // Buscar cajas disponibles en Cajas_Tienda
+                let lotesDisponibles = inventarioData1.filter(item => {
+                    if (!item || !item.sku || !item.ubicacion) return false;
+                    let u = item.ubicacion.toString().toUpperCase().trim();
+                    if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
+                    let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
+                });
+
+                // Ordenar cajas por FIFO (Fecha de vencimiento) y luego Macropurga (menor saldo)
+                lotesDisponibles.sort((a, b) => {
+                    let fA = parsearFechaEspanol(a.vencimiento);
+                    let fB = parsearFechaEspanol(b.vencimiento);
+                    if (fA.getTime() !== fB.getTime()) {
+                        return fA - fB;
+                    }
+                    return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                });
+
+                let lpnSugeridoOptimo = lotesDisponibles.length > 0 ? lotesDisponibles[0].lpn : "SIN STOCK";
+                let ubicacionOptima = lotesDisponibles.length > 0 ? lotesDisponibles[0].ubicacion : "RESERVA";
+                let descOptima = lotesDisponibles.length > 0 ? lotesDisponibles[0].descripcion : (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO SOLICITADO JSATÉLITE");
+                let fvOptima = lotesDisponibles.length > 0 ? formatearAFechaDDMMYYYY(lotesDisponibles[0].vencimiento) : "";
+
+                mapaCumplimiento[skuLimpio] = {
                     sku: satItem.skuOriginal || skuKey,
-                    lpn: "N/A",
-                    ubicacion: "RESERVA",
-                    descripcion: "PRODUCTO SOLICITADO JSATÉLITE",
+                    lpn: lpnSugeridoOptimo,
+                    ubicacion: ubicacionOptima,
+                    descripcion: descOptima,
                     area: "JSATÉLITE",
                     cantidadSolicitada: satItem.cantidadSolicitada || 0,
                     cantidadSalida: 0,
-                    fv: "",
+                    fv: fvOptima,
                     estado: "Pendiente",
                     lpnConsumido: ""
                 };
             });
 
-            // 2. Cruzar con Detalle_Reposición y Cajas_Tienda
+            // 2. Auditoría Final si se cargó Detalle_Reposición
             matrixDetalleReposicion.forEach(puesta => {
                 let skuClean = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                if (!mapaCumplimiento[skuClean]) {
-                    mapaCumplimiento[skuClean] = {
-                        sku: puesta.sku,
-                        lpn: puesta.lpn,
-                        ubicacion: "RESERVA",
-                        descripcion: "PRODUCTO MAPEADO",
-                        area: puesta.pantalla || "RF",
-                        cantidadSolicitada: 0,
-                        cantidadSalida: 0,
-                        fv: "",
-                        estado: "Pendiente",
-                        lpnConsumido: ""
-                    };
-                }
+                if (mapaCumplimiento[skuClean]) {
+                    let reg = mapaCumplimiento[skuClean];
+                    let cantAjust = Math.abs(parseInt(puesta.cantAjustada, 10) || 0);
+                    if (cantAjust > 0) reg.cantidadSalida += cantAjust;
 
-                let reg = mapaCumplimiento[skuClean];
-                reg.lpn = puesta.lpn;
-                reg.area = puesta.pantalla;
+                    let lpnRF = puesta.lpn ? puesta.lpn.toString().trim().toUpperCase() : "";
+                    let lpnSugerido = reg.lpn.toString().trim().toUpperCase();
 
-                let lpnMatch = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === puesta.lpn.toString().replace(/\s+/g, "").toUpperCase());
-                if (lpnMatch) {
-                    reg.ubicacion = lpnMatch.ubicacion || "RESERVA";
-                    reg.descripcion = lpnMatch.descripcion || reg.descripcion;
-                    reg.fv = formatearAFechaDDMMYYYY(lpnMatch.vencimiento);
-                }
-
-                let cantAjust = Math.abs(parseInt(puesta.cantAjustada, 10) || 0);
-                if (cantAjust > 0) {
-                    reg.cantidadSalida += cantAjust;
-                }
-
-                let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean
-                );
-
-                if (coincidenciaLog) {
-                    if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase().includes(puesta.lpn.toString().trim().toUpperCase())) {
+                    if (lpnRF === lpnSugerido) {
                         reg.estado = "Realizó FIFO";
                     } else {
-                        reg.estado = "No realizó FIFO";
-                        reg.lpnConsumido = coincidenciaLog.fifoLpnOptimizado;
+                        // Buscar la FV del LPN escaneado en RF para verificar si es de la misma fecha
+                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRF);
+                        let fvLpnRF = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+                        let itemSugeridoEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnSugerido);
+                        let fvLpnSugerido = itemSugeridoEnCajas ? itemSugeridoEnCajas.vencimiento : "";
+
+                        if (fvLpnRF && fvLpnSugerido && fvLpnRF === fvLpnSugerido) {
+                            reg.estado = "Misma FV";
+                        } else {
+                            reg.estado = "No realizó FIFO";
+                            reg.lpnConsumido = lpnRF;
+                        }
                     }
                 }
             });
@@ -2181,17 +2188,19 @@
 
             llavesSKU.forEach(skuKey => {
                 let item = mapaCumplimiento[skuKey];
-                let qtyTotalSolicitada = item.cantidadSolicitada > 0 ? item.cantidadSolicitada : (item.cantidadSalida > 0 ? item.cantidadSalida : 1);
+                let qtyTotalSolicitada = item.cantidadSolicitada > 0 ? item.cantidadSolicitada : 1;
                 
-                if (item.cantidadSalida > 0) {
+                if (item.cantidadSalida > 0 || item.estado !== "Pendiente") {
                     totalSkusRepuestos++;
                 }
 
                 let esCumpleFifo = item.estado === "Realizó FIFO";
+                let esMismaFV = item.estado === "Misma FV";
                 let esNoFifo = item.estado === "No realizó FIFO";
                 let esPendiente = item.estado === "Pendiente";
 
                 if (filterVal === "FIFO_OK" && !esCumpleFifo) return;
+                if (filterVal === "MISMA_FV" && !esMismaFV) return;
                 if (filterVal === "FIFO_NO" && !esNoFifo) return;
                 if (filterVal === "PENDIENTE" && !esPendiente) return;
 
@@ -2199,8 +2208,11 @@
 
                 let formatoSalidaSolicitada = `${item.cantidadSalida}/${qtyTotalSolicitada}`;
                 let estadoHtml = "";
+                
                 if (esCumpleFifo) {
                     estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                } else if (esMismaFV) {
+                    estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                 } else if (esNoFifo) {
                     estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                 } else {
@@ -2221,7 +2233,7 @@
                     </tr>`;
             });
 
-            // Actualización de contadores de cabecera en Cumplimiento 24
+            // Actualización de indicadores
             document.getElementById('boxSkusRepuestosCumplimiento').innerText = `${totalSkusRepuestos}/${totalSkusTotal}`;
             let porcAvance = totalSkusTotal > 0 ? Math.round((totalSkusRepuestos / totalSkusTotal) * 100) : 0;
             document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
