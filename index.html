@@ -81,48 +81,39 @@
                     <option value="quiebres">🎯 Quiebres Visuales</option>
                     <option value="buzon">📥 Buzón de incidencias</option>
                     <option value="resetclave">🔑 Resetear contraseña</option>
+                    <option value="usuarios">👤 Usuarios</option>
                 </select>
             </div>
 
             <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <!-- CARD 1: CAJAS TIENDA -->
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Cajas_Tienda</h3>
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
-                    
                     <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData1()"/>
-                    
                     <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar e Inyectar Stock
                     </button>
                     <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold pointer-events-none">⚠️ Conectando base de datos...</p>
                 </div>
 
-                <!-- CARD 2: JSATÉLITE -->
                 <div id="cardJSatelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">JSatélite</h3>
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para la ruta solicitada.</p>
-                    
                     <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarJ_Satelite()"/>
-                    
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar Archivo
                     </button>
                     <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo Jsatélite...</p>
                 </div>
 
-                <!-- CARD 3: DETALLE REPOSICIÓN -->
                 <div id="cardDetalleReposicion" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Detalle_Reposición</h3>
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para informe final.</p>
-                    
                     <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData2()"/>
-                    
                     <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
                         Seleccionar Archivo
                     </button>
@@ -163,14 +154,6 @@
                         <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar colaborador</label>
                         <select id="selectUsuarioResetAdmin" class="w-full p-2.5 border rounded text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
                             <option value="" disabled selected>Seleccionar</option>
-                            <option value="HP72545443">Andy (HP72545443)</option>
-                            <option value="HP74139234">Ale (HP74139234)</option>
-                            <option value="HP70729960">Farro (HP70729960)</option>
-                            <option value="HP75235329">Jairo (HP75235329)</option>
-                            <option value="HP47431216">Moses (HP47431216)</option>
-                            <option value="HP74315583">Job (HP74315583)</option>
-                            <option value="HP46411164">Jhon (HP46411164)</option>
-                            <option value="HP48848362">Rommel (HP48848362)</option>
                         </select>
                     </div>
                     <div>
@@ -180,6 +163,34 @@
                     <button onclick="procesarResetClavePorAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded text-xs transition tracking-wide shadow-sm cursor-pointer">
                         Actualizar
                     </button>
+                </div>
+            </div>
+
+            <!-- MÓDULO 5: GESTIÓN DE USUARIOS (NUEVO) -->
+            <div id="wrapperModuloGestionUsuarios" class="hidden bg-white p-5 rounded-lg shadow border border-blue-200 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-sm font-bold text-blue-900 flex items-center gap-2">
+                        👤 Lista de Asistentes Activos
+                    </h3>
+                    <button onclick="abrirModalAgregarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
+                        ➕ Agregar Usuario
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto border rounded-lg max-h-80 overflow-y-auto">
+                    <table class="min-w-full text-xs text-left border-collapse">
+                        <thead class="bg-blue-50 text-blue-950 uppercase font-bold sticky top-0 border-b">
+                            <tr>
+                                <th class="px-4 py-2.5 border">Colaborador</th>
+                                <th class="px-4 py-2.5 border">Credencial / Usuario</th>
+                                <th class="px-4 py-2.5 border text-center">Contraseña</th>
+                                <th class="px-4 py-2.5 border text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuariosBody" class="divide-y divide-gray-200 font-sans text-gray-700">
+                            <!-- Render dinámico de usuarios -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -373,6 +384,33 @@
         </div>
     </div>
 
+    <!-- MODAL EMERGENTE PARA AGREGAR NUEVO USUARIO -->
+    <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[95]">
+        <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
+            <h3 class="font-bold text-base border-b pb-2 text-blue-700 uppercase flex items-center gap-2">
+                👤 Agregar Nuevo Asistente
+            </h3>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nombre Colaborador</label>
+                    <input type="text" id="txtNuevoNombreColaborador" placeholder="Ej: Carlos" class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Credencial / Usuario (HP)</label>
+                    <input type="text" id="txtNuevoUserHP" placeholder="Ej: HP70001122" class="w-full p-2.5 border rounded text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña Inicial</label>
+                    <input type="password" id="txtNuevaClaveCreacion" placeholder="••••••••" class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
+                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
@@ -481,7 +519,8 @@
         const sateliteRef = db.ref("sateliteData");
         const detalleRepoRef = db.ref("detalleReposicionData");
         const fechaCargaRef = db.ref("fechaCargaData");
-        const passRef = db.ref("credencialesUsuariosData"); // NODOS DE CONTRASEÑAS EN LA NUBE
+        const passRef = db.ref("credencialesUsuariosData");
+        const usersMasterRef = db.ref("usuariosRegistradosNube"); // GESTIÓN COMPLETA DE USUARIOS EN NUBE
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -503,7 +542,6 @@
         
         let lotesFiltradosTurno = [];
 
-        // BASE DE DATOS DE USUARIOS CON PERSISTENCIA EN FIREBASE Y LOCALSTORAGE
         let usuariosDB = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
@@ -534,6 +572,7 @@
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
             
             escucharCredencialesNube();
+            escucharUsuariosRegistradosNube();
             escucharPersistenciaArchivosCloud();
             descargarCatalogoAutomaticoRemoto();
             escucharInventarioEnTiempoReal();
@@ -545,7 +584,6 @@
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
 
-        // SINCRO EN TIEMPO REAL DE CONTRASEÑAS DESDE FIREBASE
         function escucharCredencialesNube() {
             passRef.on("value", (snapshot) => {
                 const dataCloud = snapshot.val();
@@ -557,6 +595,105 @@
                     });
                 }
             });
+        }
+
+        function escucharUsuariosRegistradosNube() {
+            usersMasterRef.on("value", (snapshot) => {
+                const cloudUsers = snapshot.val();
+                if (cloudUsers) {
+                    Object.keys(cloudUsers).forEach(uKey => {
+                        usuariosDB[uKey] = cloudUsers[uKey];
+                    });
+                }
+                actualizarCombosYTablaUsuarios();
+            });
+        }
+
+        function actualizarCombosYTablaUsuarios() {
+            // 1. Actualizar Select de Resetear Clave
+            const selectReset = document.getElementById("selectUsuarioResetAdmin");
+            if (selectReset) {
+                let valPrev = selectReset.value;
+                selectReset.innerHTML = `<option value="" disabled ${!valPrev ? 'selected' : ''}>Seleccionar</option>`;
+                Object.keys(usuariosDB).forEach(u => {
+                    if (u !== "ADMIN") {
+                        selectReset.innerHTML += `<option value="${u}">${usuariosDB[u].nombre} (${u})</option>`;
+                    }
+                });
+                if (valPrev) selectReset.value = valPrev;
+            }
+
+            // 2. Actualizar Tabla de Gestión de Usuarios
+            const tbodyUsers = document.getElementById("tablaUsuariosBody");
+            if (tbodyUsers) {
+                tbodyUsers.innerHTML = "";
+                Object.keys(usuariosDB).forEach(u => {
+                    if (u !== "ADMIN") {
+                        tbodyUsers.innerHTML += `
+                            <tr class="hover:bg-blue-50/40">
+                                <td class="px-4 py-2.5 border font-bold text-gray-900">${usuariosDB[u].nombre}</td>
+                                <td class="px-4 py-2.5 border font-mono font-semibold text-blue-700">${u}</td>
+                                <td class="px-4 py-2.5 border text-center font-mono text-gray-400">••••••••</td>
+                                <td class="px-4 py-2.5 border text-center">
+                                    <button onclick="eliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
+                                        🗑️ Eliminar
+                                    </button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            }
+        }
+
+        function abrirModalAgregarUsuario() {
+            document.getElementById('txtNuevoNombreColaborador').value = "";
+            document.getElementById('txtNuevoUserHP').value = "";
+            document.getElementById('txtNuevaClaveCreacion').value = "";
+            document.getElementById('modalAgregarUsuario').classList.remove('hidden');
+        }
+
+        function cerrarModalAgregarUsuario() {
+            document.getElementById('modalAgregarUsuario').classList.add('hidden');
+        }
+
+        function confirmarGuardarNuevoUsuario() {
+            const nom = document.getElementById('txtNuevoNombreColaborador').value.trim();
+            const userHP = document.getElementById('txtNuevoUserHP').value.trim().toUpperCase();
+            const clave = document.getElementById('txtNuevaClaveCreacion').value.trim();
+
+            if (!nom || !userHP || !clave) {
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor complete todos los campos requeridos.");
+                return;
+            }
+
+            if (!userHP.startsWith("HP")) {
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "La credencial debe iniciar con HP (Ej: HP70001122).");
+                return;
+            }
+
+            usuariosDB[userHP] = { nombre: nom, clave: clave };
+            
+            // GUARDAR PERMANENTE EN NUBE
+            usersMasterRef.child(userHP).set({ nombre: nom, clave: clave }).then(() => {
+                passRef.child(userHP).set(clave);
+                cerrarModalAgregarUsuario();
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Usuario Registrado";
+                document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).`;
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            });
+        }
+
+        function eliminarUsuarioAsistente(uKey) {
+            if (confirm(`¿Estás seguro de dar de baja a ${usuariosDB[uKey].nombre} (${uKey})?`)) {
+                delete usuariosDB[uKey];
+                usersMasterRef.child(uKey).remove();
+                passRef.child(uKey).remove().then(() => {
+                    actualizarCombosYTablaUsuarios();
+                });
+            }
         }
 
         function setupDragAndDrop(zoneId, inputId, callback, overClass) {
@@ -690,8 +827,6 @@
             }
             if (usuariosDB[idUsuarioLogueado]) {
                 usuariosDB[idUsuarioLogueado].clave = nuevaClave;
-                
-                // GUARDAR PERMANENTEMENTE EN FIREBASE
                 passRef.child(idUsuarioLogueado).set(nuevaClave).then(() => {
                     document.getElementById('txtNuevaClaveAsistente').value = "";
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
@@ -703,7 +838,6 @@
             }
         }
 
-        // PERMITIR AL ADMINISTRADOR CAMBIAR LA CLAVE Y GUARDARLA DE VERDAD
         function procesarResetClavePorAdmin() {
             const userTarget = document.getElementById('selectUsuarioResetAdmin').value;
             const nuevaClave = document.getElementById('txtNuevaClavePorAdmin').value.trim();
@@ -717,8 +851,6 @@
             }
             if (usuariosDB[userTarget]) {
                 usuariosDB[userTarget].clave = nuevaClave;
-                
-                // GUARDAR PERMANENTEMENTE EN FIREBASE
                 passRef.child(userTarget).set(nuevaClave).then(() => {
                     document.getElementById('txtNuevaClavePorAdmin').value = "";
                     document.getElementById('selectUsuarioResetAdmin').value = "";
@@ -752,6 +884,7 @@
             const cuadroCruce = document.getElementById("containerCuadroCruceMacropurga");
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
+            const moduloGestionUsuarios = document.getElementById("wrapperModuloGestionUsuarios");
 
             gridTarjetas.classList.add("hidden");
             cardCajas.classList.add("hidden");
@@ -762,6 +895,7 @@
             cuadroCruce.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
             moduloResetClave.classList.add("hidden");
+            moduloGestionUsuarios.classList.add("hidden");
 
             if (val === "repotenciar") {
                 gridTarjetas.classList.remove("hidden");
@@ -782,6 +916,9 @@
 
             } else if (val === "resetclave") {
                 moduloResetClave.classList.remove("hidden");
+
+            } else if (val === "usuarios") {
+                moduloGestionUsuarios.classList.remove("hidden");
             }
         }
 
@@ -1216,7 +1353,6 @@
             } 
         }
 
-        // AUTENTICACIÓN CON VALIDACIÓN DE CREDENCIALES SINCRO
         function autenticarUsuario() {
             const user = document.getElementById('userInput').value.trim().toUpperCase();
             const pass = document.getElementById('passwordInput').value;
@@ -1368,7 +1504,6 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // LÓGICA DE ORDENAMIENTO EXACTA (FIFO + PURGA DE MENOR CANTIDAD)
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1389,7 +1524,6 @@
 
                 if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                     try {
-                        // CRITERIO DUAL: 1. FECHA VENCIMIENTO (FIFO) | 2. UNIDADES ASCENDENTES (PURGA MENOR CANTIDAD)
                         copiaLotesFiltrados.sort((a, b) => {
                             let fA = parsearFechaEspanol(a.vencimiento);
                             let fB = parsearFechaEspanol(b.vencimiento);
