@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escaneo de Quiebres - Control Operativo v29.5</title>
+    <title>Escaneo de Quiebres - Control Operativo v29.5[cite: 1]</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -26,15 +26,15 @@
 
     <nav class="bg-promart p-4 text-white flex justify-between items-center shadow-md">
         <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
+            <h1 class="text-xl font-bold font-mono tracking-wide">Escaneo de Quiebres[cite: 1]</h1>
         </div>
         <div id="navUsuario" class="hidden text-sm font-semibold flex items-center gap-4">
             <div class="flex flex-col text-right">
-                <span class="text-xs opacity-90">Colaborador</span>
+                <span class="text-xs opacity-90">Colaborador[cite: 1]</span>
                 <span id="nombreUsuarioActivo" class="font-bold font-mono text-sm bg-black text-white px-2 py-0.5 rounded shadow-sm"></span>
             </div>
             <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-3 rounded text-xs transition shadow-sm border border-gray-800">
-                Salir
+                Salir[cite: 1]
             </button>
         </div>
     </nav>
@@ -45,14 +45,14 @@
             <div class="flex justify-center pb-2 rounded-lg p-4 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-16 w-auto object-contain mx-auto">
             </div>
-            <h2 class="text-lg font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
+            <h2 class="text-lg font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso[cite: 1]</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario[cite: 1]</label>
                     <input type="text" id="userInput" onkeydown="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña[cite: 1]</label>
                     <div class="relative">
                         <input type="password" id="passwordInput" onkeydown="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2.5 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none">
                         <button type="button" onclick="alternarVisibilidadPassword('passwordInput', 'iconoOjoLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-orange-500">
@@ -64,14 +64,14 @@
                     </div>
                 </div>
                 <button onclick="autenticarUsuario()" class="w-full bg-promart hover:opacity-95 text-white font-bold py-2.5 rounded shadow transition uppercase text-sm tracking-wider">
-                    Ingresar al Sistema
+                    Ingresar al Sistema[cite: 1]
                 </button>
             </div>
         </div>
         
         <div id="panelAdmin" class="hidden space-y-6 w-full">
             <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
+                <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador[cite: 1]</h2>
             </div>
             
             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
@@ -89,56 +89,56 @@
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Cajas_Tienda</h3>
-                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Cajas_Tienda[cite: 1]</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para inyectar stock de reserva.[cite: 1]</p>
                     <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData1()"/>
                     <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-                        Seleccionar e Inyectar Stock
+                        Seleccionar e Inyectar Stock[cite: 1]
                     </button>
-                    <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold pointer-events-none">⚠️ Conectando base de datos...</p>
+                    <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold pointer-events-none">⚠️ Conectando base de datos...[cite: 1]</p>
                 </div>
 
                 <div id="cardJSatelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">JSatélite</h3>
-                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para la ruta solicitada.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">JSatélite[cite: 1]</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para la ruta solicitada.[cite: 1]</p>
                     <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarJ_Satelite()"/>
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-                        Seleccionar Archivo
+                        Seleccionar Archivo[cite: 1]
                     </button>
-                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo Jsatélite...</p>
+                    <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo Jsatélite...[cite: 1]</p>
                 </div>
 
                 <div id="cardDetalleReposicion" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
                     <button onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
-                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Detalle_Reposición</h3>
-                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para informe final.</p>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Detalle_Reposición[cite: 1]</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para informe final.[cite: 1]</p>
                     <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData2()"/>
                     <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-                        Seleccionar Archivo
+                        Seleccionar Archivo[cite: 1]
                     </button>
-                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Waiting...</p>
+                    <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Waiting...[cite: 1]</p>
                 </div>
             </div>
 
             <!-- BUZÓN DE INCIDENCIAS -->
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
-                    <h3 class="text-sm font-bold text-red-700 flex items-center gap-2">📥 Buzón de incidencias pendientes</h3>
+                    <h3 class="text-sm font-bold text-red-700 flex items-center gap-2">📥 Buzón de incidencias pendientes[cite: 1]</h3>
                 </div>
                 <div class="overflow-x-auto max-h-96 overflow-y-auto">
                     <table class="min-w-full text-sm text-left border border-gray-200">
                         <thead class="bg-red-100 text-red-900 uppercase text-xs sticky top-0">
                             <tr>
-                                <th class="px-4 py-2 border">Asistente</th>
-                                <th class="px-4 py-2 border">Código Reportado</th>
-                                <th class="px-4 py-2 border">Detalle / Motivo de Alerta</th>
-                                <th class="px-4 py-2 border text-center">Fecha y Hora</th>
-                                <th class="px-4 py-2 border text-center">Acción</th>
+                                <th class="px-4 py-2 border">Asistente[cite: 1]</th>
+                                <th class="px-4 py-2 border">Código Reportado[cite: 1]</th>
+                                <th class="px-4 py-2 border">Detalle / Motivo de Alerta[cite: 1]</th>
+                                <th class="px-4 py-2 border text-center">Fecha y Hora[cite: 1]</th>
+                                <th class="px-4 py-2 border text-center">Acción[cite: 1]</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMensajesBody" class="divide-y divide-gray-200 text-gray-700 text-xs bg-white">
-                            <tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>
+                            <tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...[cite: 1]</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -147,21 +147,21 @@
             <!-- RESETEAR CONTRASEÑA -->
             <div id="wrapperModuloResetClaveAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-purple-200 space-y-4 max-w-md">
                 <h3 class="text-sm font-bold text-purple-800 flex items-center gap-2 border-b pb-2">
-                    🔑 Resetear contraseña
+                    🔑 Resetear contraseña[cite: 1]
                 </h3>
                 <div class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar colaborador</label>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar colaborador[cite: 1]</label>
                         <select id="selectUsuarioResetAdmin" class="w-full p-2.5 border rounded text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
-                            <option value="" disabled selected>Seleccionar</option>
+                            <option value="" disabled selected>Seleccionar[cite: 1]</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1">Nueva contraseña</label>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Nueva contraseña[cite: 1]</label>
                         <input type="password" id="txtNuevaClavePorAdmin" placeholder="Escribe la nueva clave..." class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-purple-500">
                     </div>
                     <button onclick="procesarResetClavePorAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded text-xs transition tracking-wide shadow-sm cursor-pointer">
-                        Actualizar
+                        Actualizar[cite: 1]
                     </button>
                 </div>
             </div>
@@ -170,10 +170,10 @@
             <div id="wrapperModuloGestionUsuarios" class="hidden bg-white p-5 rounded-lg shadow border border-blue-200 space-y-4">
                 <div class="flex justify-between items-center border-b pb-3">
                     <h3 class="text-sm font-bold text-blue-900 flex items-center gap-2">
-                        👤 Lista de Asistentes Activos
+                        👤 Lista de Asistentes Activos[cite: 1]
                     </h3>
                     <button onclick="abrirModalAgregarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
-                        ➕ Agregar Usuario
+                        ➕ Agregar Usuario[cite: 1]
                     </button>
                 </div>
                 
@@ -181,10 +181,10 @@
                     <table class="min-w-full text-xs text-left border-collapse">
                         <thead class="bg-blue-50 text-blue-950 uppercase font-bold sticky top-0 border-b">
                             <tr>
-                                <th class="px-4 py-2.5 border">Colaborador</th>
-                                <th class="px-4 py-2.5 border">Credencial / Usuario</th>
-                                <th class="px-4 py-2.5 border text-center">Contraseña</th>
-                                <th class="px-4 py-2.5 border text-center">Acciones</th>
+                                <th class="px-4 py-2.5 border">Colaborador[cite: 1]</th>
+                                <th class="px-4 py-2.5 border">Credencial / Usuario[cite: 1]</th>
+                                <th class="px-4 py-2.5 border text-center">Contraseña[cite: 1]</th>
+                                <th class="px-4 py-2.5 border text-center">Acciones[cite: 1]</th>
                             </tr>
                         </thead>
                         <tbody id="tablaUsuariosBody" class="divide-y divide-gray-200 font-sans text-gray-700">
@@ -194,44 +194,44 @@
                 </div>
             </div>
 
-            <!-- CUADRO REPOTENCIAR TIENDA -->
+            <!-- CUADRO REPOTENCIAR TIENDA (IGUAL A IMAGEN 2) -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                        <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
+                        <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda[cite: 1]</h3>
                         
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
-                            <span class="text-xs font-bold text-gray-700">Filtrar:</span>
+                            <span class="text-xs font-bold text-gray-700">Filtrar:[cite: 1]</span>
                             <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
-                                <option value="TODOS">Todos</option>
-                                <option value="REPUESTO">Repuesto</option>
-                                <option value="PENDIENTE">Pendiente</option>
+                                <option value="TODOS">Todos[cite: 1]</option>
+                                <option value="REPUESTO">Repuesto[cite: 1]</option>
+                                <option value="PENDIENTE">Pendiente[cite: 1]</option>
                             </select>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
-                                <span>Unidades Validadas:</span>
-                                <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
+                                <span>Unidades Validadas:[cite: 1]</span>
+                                <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds[cite: 1]</span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <span>Cantidad de SKUs:</span>
-                                <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
+                                <span>Cantidad de SKUs:[cite: 1]</span>
+                                <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs[cite: 1]</span>
                             </div>
                         </div>
                     </div>
                     
                     <div class="flex items-center gap-3">
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
-                            <span class="text-xs font-bold text-purple-900 uppercase">Avance:</span>
-                            <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
+                            <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:[cite: 1]</span>
+                            <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%[cite: 1]</span>
                         </div>
 
                         <button onclick="descargarExcelRepotenciar()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-                            Descargar Excel
+                            Descargar Excel[cite: 1]
                         </button>
                         <button onclick="eliminarData('repotenciacion', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-                            Eliminar data
+                            Eliminar data[cite: 1]
                         </button>
                     </div>
                 </div>
@@ -240,53 +240,53 @@
                     <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
                         <thead class="bg-orange-100 text-orange-950 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
-                                <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-                                <th class="px-3 py-2 border font-bold">REPONER</th>
-                                <th class="px-3 py-2 border font-bold">SKU</th>
-                                <th class="px-3 py-2 border font-bold">LPN</th>
-                                <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
-                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
-                                <th class="px-3 py-2 border text-center font-bold">CANT</th>
-                                <th class="px-3 py-2 border text-center font-bold">FV</th>
-                                <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
-                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
+                                <th class="px-3 py-2 border font-bold">ASISTENTE[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">REPONER[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">SKU[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">LPN[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">UBICACIÓN[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">CANT[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">FV[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">ESTADO[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO[cite: 1]</th>
                             </tr>
                         </thead>
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-                            <tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
+                            <tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...[cite: 1]</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- CUADRO CUMPLIMIENTO 24 REESTRUCTURADO -->
+            <!-- CUADRO CUMPLIMIENTO 24 (IGUAL A IMAGEN 1) -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div>
-                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 Cumplimiento 24</h3>
-                        <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.</p>
+                        <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24[cite: 1]</h3>
+                        <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.[cite: 1]</p>
                     </div>
                     <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-                        Procesar y Cruzar Archivos
+                        Procesar y Cruzar Archivos[cite: 1]
                     </button>
                 </div>
                 <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
                     <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
                         <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0 z-10 shadow-xs">
                             <tr>
-                                <th class="px-3 py-2 border font-bold">SKU</th>
-                                <th class="px-3 py-2 border font-bold">LPN</th>
-                                <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
-                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
-                                <th class="px-3 py-2 border font-bold">ÁREA</th>
-                                <th class="px-3 py-2 border text-center font-bold">CANT</th>
-                                <th class="px-3 py-2 border text-center font-bold">FV</th>
-                                <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
-                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
+                                <th class="px-3 py-2 border font-bold">SKU[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">LPN[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">UBICACIÓN[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN[cite: 1]</th>
+                                <th class="px-3 py-2 border font-bold">ÁREA[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">CANT[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">FV[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">ESTADO[cite: 1]</th>
+                                <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO[cite: 1]</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-                            <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
+                            <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...[cite: 1]</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -301,26 +301,26 @@
 
             <div class="px-6 mt-4 space-y-4">
                 <div class="bg-gray-50 p-2 border rounded flex items-center gap-3 shadow-inner">
-                    <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wide">Módulo:</label>
+                    <label class="text-[11px] font-bold text-gray-600 uppercase tracking-wide">Módulo:[cite: 1]</label>
                     <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-2 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-sm cursor-pointer flex-1">
-                        <option value="escaneo">🔍 Escaneo de reposición</option>
-                        <option value="buzonalerta">📥 Buzón de alertas recientes</option>
-                        <option value="cambiarclave">🔑 Cambiar contraseña</option>
+                        <option value="escaneo">🔍 Escaneo de reposición[cite: 1]</option>
+                        <option value="buzonalerta">📥 Buzón de alertas recientes[cite: 1]</option>
+                        <option value="cambiarclave">🔑 Cambiar contraseña[cite: 1]</option>
                     </select>
                 </div>
 
                 <div id="submoduloAsistenteEscaneo" class="space-y-4">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición</h2>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-promart pl-2">🔍 Escaneo de reposición[cite: 1]</h2>
                     
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm">
                         <span class="text-2xl">⚠️</span>
-                        <div id="txtMensajeAdvertenciaStock">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
+                        <div id="txtMensajeAdvertenciaStock">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo[cite: 1]</div>
                     </div>
 
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
                         <div class="flex justify-between items-center">
-                            <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
-                            <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-xs font-bold px-2 py-0.5 rounded shadow-xs">Reserva: 0 Uds</span>
+                            <div class="text-xs uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado[cite: 1]</div>
+                            <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-xs font-bold px-2 py-0.5 rounded shadow-xs">Reserva: 0 Uds[cite: 1]</span>
                         </div>
                         <div id="asistenteInfoDescripcion" class="text-base font-bold text-gray-900 leading-tight"></div>
                         <div class="pt-2 border-t border-orange-200/60 flex items-center justify-between">
@@ -331,21 +331,21 @@
                     <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); solicitarUbicacionOEnviar();" class="p-4 border border-gray-300 rounded bg-gray-50/50">
                         <div class="grid grid-cols-3 gap-4 items-end">
                             <div class="col-span-2 space-y-1">
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN[cite: 1]</label>
                                 <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-3 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-lg uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
                             <div id="containerInputLpn" class="hidden">
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad</label>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Cantidad[cite: 1]</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
                                        class="w-full p-3 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-lg font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                             <div id="containerResetBtn" class="hidden">
                                 <button type="button" onclick="cancelarRegistro()" class="w-full p-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-sm transition shadow-sm cursor-pointer flex justify-center items-center gap-1">
-                                    🔄 Reset
+                                    🔄 Reset[cite: 1]
                                 </button>
                             </div>
                         </div>
@@ -356,29 +356,29 @@
 
                     <div class="pt-4 border-t flex flex-col gap-2">
                         <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-4 rounded border border-red-300 text-xs transition tracking-wide uppercase shadow-sm cursor-pointer block">
-                            🚨 SKU/EAN no escanea
+                            🚨 SKU/EAN no escanea[cite: 1]
                         </button>
                     </div>
                 </div>
 
                 <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-4">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
-                    <p class="text-xs text-gray-500 italic">Aquí verás el estado en tiempo real de tus incidencias enviadas al administrador.</p>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes[cite: 1]</h2>
+                    <p class="text-xs text-gray-500 italic">Aquí verás el estado en tiempo real de tus incidencias enviadas al administrador.[cite: 1]</p>
                     <div id="contenedorNotificacionesAsistente" class="space-y-3 max-h-96 overflow-y-auto pt-1">
-                        <p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>
+                        <p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...[cite: 1]</p>
                     </div>
                 </div>
 
                 <div id="submoduloAsistenteCambiarClave" class="hidden space-y-4">
-                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña</h2>
-                    <p class="text-xs text-gray-500 italic">Modifica tu clave de acceso al sistema de forma inmediata.</p>
+                    <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña[cite: 1]</h2>
+                    <p class="text-xs text-gray-500 italic">Modifica tu clave de acceso al sistema de forma inmediata.[cite: 1]</p>
                     <div class="p-4 border border-gray-200 rounded-lg bg-gray-50/50 space-y-3 max-w-sm">
                         <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nueva Contraseña</label>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">Nueva Contraseña[cite: 1]</label>
                             <input type="password" id="txtNuevaClaveAsistente" placeholder="Escribe tu nueva contraseña" class="w-full p-2.5 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-sans text-sm">
                         </div>
                         <button onclick="procesarCambioClaveAsistente()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded text-xs transition tracking-wide uppercase shadow-sm cursor-pointer">
-                            Actualizar Contraseña
+                            Actualizar Contraseña[cite: 1]
                         </button>
                     </div>
                 </div>
@@ -386,44 +386,44 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN PERSONALIZADO PARA ELIMINAR USUARIO -->
+    <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR USUARIO -->
     <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[110]">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">⚠️</div>
             <div class="space-y-2">
-                <h4 class="text-lg font-bold text-gray-900">Atención</h4>
+                <h4 class="text-lg font-bold text-gray-900">Atención[cite: 1]</h4>
                 <p id="txtMensajeConfirmarEliminar" class="text-xs text-gray-600 leading-relaxed font-sans"></p>
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
-                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar[cite: 1]</button>
+                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition uppercase">Cancelar[cite: 1]</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL EMERGENTE PARA AGREGAR NUEVO USUARIO -->
+    <!-- MODAL AGREGAR USUARIO -->
     <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[95]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
             <h3 class="font-bold text-base border-b pb-2 text-blue-700 uppercase flex items-center gap-2">
-                👤 Agregar Nuevo Asistente
+                👤 Agregar Nuevo Asistente[cite: 1]
             </h3>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Nombre Colaborador</label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Nombre Colaborador[cite: 1]</label>
                     <input type="text" id="txtNuevoNombreColaborador" placeholder="" class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Credencial</label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Credencial[cite: 1]</label>
                     <input type="text" id="txtNuevoUserHP" placeholder="" class="w-full p-2.5 border rounded text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña Inicial</label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña Inicial[cite: 1]</label>
                     <input type="password" id="txtNuevaClaveCreacion" placeholder="••••••••" class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
-                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar[cite: 1]</button>
+                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">Cancelar[cite: 1]</button>
             </div>
         </div>
     </div>
@@ -432,47 +432,47 @@
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
             <h3 class="font-bold text-base border-b pb-2 text-orange-600 uppercase flex items-center gap-2">
-                📍 Selección de Ubicación
+                📍 Selección de Ubicación[cite: 1]
             </h3>
-            <p class="text-xs text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
+            <p class="text-xs text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:[cite: 1]</p>
             
             <div class="space-y-2 py-1 max-h-64 overflow-y-auto font-sans text-sm">
                 <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-3 p-2.5 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
                     <input type="radio" name="optUbicacion" value="Home" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Home</span>
+                    <span>Home[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Gancheras" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Gancheras</span>
+                    <span>Gancheras[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Pre-altillo</span>
+                    <span>Pre-altillo[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Cajas" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Cajas</span>
+                    <span>Cajas[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Tendencias" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Tendencias</span>
+                    <span>Tendencias[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Showroom" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Showroom</span>
+                    <span>Showroom[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Bines" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Bines</span>
+                    <span>Bines[cite: 1]</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-4 h-4 text-orange-600 accent-orange-600">
-                    <span>Rumas</span>
+                    <span>Rumas[cite: 1]</span>
                 </label>
             </div>
             
             <button onclick="cerrarModalUbicacion()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">
-                Cancelar
+                Cancelar[cite: 1]
             </button>
         </div>
     </div>
@@ -482,17 +482,17 @@
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
             <div class="space-y-2">
-                <h4 id="txtNotificacionDinamicoTitulo" class="text-base font-bold text-gray-900">Estimado Usuario</h4>
-                <p id="txtNotificacionExitoDetalle" class="text-xs text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
+                <h4 id="txtNotificacionDinamicoTitulo" class="text-base font-bold text-gray-900">Estimado Usuario[cite: 1]</h4>
+                <p id="txtNotificacionExitoDetalle" class="text-xs text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.[cite: 1]</p>
             </div>
-            <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow transition uppercase tracking-wider">Aceptar</button>
+            <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow transition uppercase tracking-wider">Aceptar[cite: 1]</button>
         </div>
     </div>
 
     <!-- MODAL REPORTE CON VALIDACIÓN ESTRICTA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
-            <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
+            <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea[cite: 1]</h3>
             
             <div id="graficoAlertaDuplicado" class="hidden bg-red-100 border border-red-400 text-red-900 p-3 rounded-lg flex items-start gap-2.5 shadow-sm text-xs font-semibold animate-pulse">
                 <span class="text-xl">🛡️</span>
@@ -501,21 +501,21 @@
 
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):</label>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">Código observado (EAN/SKU):[cite: 1]</label>
                     <input type="text" id="incidenciacodigoInput" inputmode="numeric" pattern="[0-9]*"
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                            placeholder="" class="w-full p-2.5 border rounded focus:outline-none font-mono text-sm uppercase">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:</label>
+                    <label class="block text-xs font-bold text-gray-600 mb-1">¿Cuál es el problema detectado?:[cite: 1]</label>
                     <textarea id="incidenciaMotivoInput" rows="3" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                               placeholder="Escribe aquí el motivo detailed..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-2">
-                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer block">Enviar Alerta</button>
-                <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar</button>
+                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-xs transition shadow-sm border border-orange-600 cursor-pointer block">Enviar Alerta[cite: 1]</button>
+                <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded text-xs transition">Cerrar[cite: 1]</button>
             </div>
         </div>
     </div>
@@ -647,7 +647,7 @@
             const selectReset = document.getElementById("selectUsuarioResetAdmin");
             if (selectReset) {
                 let valPrev = selectReset.value;
-                selectReset.innerHTML = `<option value="" disabled ${!valPrev ? 'selected' : ''}>Seleccionar</option>`;
+                selectReset.innerHTML = `<option value="" disabled ${!valPrev ? 'selected' : ''}>Seleccionar[cite: 1]</option>`;
                 Object.keys(usuariosDB).forEach(u => {
                     if (u !== "ADMIN") {
                         selectReset.innerHTML += `<option value="${u}">${usuariosDB[u].nombre} (${u})</option>`;
@@ -668,7 +668,7 @@
                                 <td class="px-4 py-2.5 border text-center font-mono text-gray-400">••••••••</td>
                                 <td class="px-4 py-2.5 border text-center">
                                     <button onclick="solicitarEliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2.5 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
-                                        🗑️ Eliminar
+                                        🗑️ Eliminar[cite: 1]
                                     </button>
                                 </td>
                             </tr>`;
@@ -718,12 +718,12 @@
             const clave = document.getElementById('txtNuevaClaveCreacion').value.trim();
 
             if (!nom || !userHP || !clave) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor complete todos los campos requeridos.");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor complete todos los campos requeridos.[cite: 1]");
                 return;
             }
 
             if (!userHP.startsWith("HP")) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "La credencial debe iniciar con HP (Ej: HP70001122).");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "La credencial debe iniciar con HP (Ej: HP70001122).[cite: 1]");
                 return;
             }
 
@@ -735,8 +735,8 @@
                 
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                 document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Usuario Registrado";
-                document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).`;
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Usuario Registrado[cite: 1]";
+                document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).[cite: 1]`;
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             });
         }
@@ -787,11 +787,11 @@
                 if (data) {
                     reqJ_Satelite = data;
                     document.getElementById('statusJSatelite').className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).`;
+                    document.getElementById('statusJSatelite').innerText = `✅ Jsatélite cargado (${Object.keys(reqJ_Satelite).length} rutas mapeadas).[cite: 1]`;
                 } else {
                     reqJ_Satelite = {};
                     document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+                    document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...[cite: 1]";
                 }
             });
 
@@ -800,11 +800,11 @@
                 if (data && Array.isArray(data)) {
                     matrixDetalleReposicion = data;
                     document.getElementById('statusData2').className = "text-[11px] text-purple-600 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.`;
+                    document.getElementById('statusData2').innerText = `✅ Detalle_Reposicion filtrado con ${matrixDetalleReposicion.length} registros operativos.[cite: 1]`;
                 } else {
                     matrixDetalleReposicion = [];
                     document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusData2').innerText = "Waiting...";
+                    document.getElementById('statusData2').innerText = "Waiting...[cite: 1]";
                 }
                 forzarActualizacionTablaAdmin();
             });
@@ -867,7 +867,7 @@
         function procesarCambioClaveAsistente() {
             const nuevaClave = document.getElementById('txtNuevaClaveAsistente').value.trim();
             if (!nuevaClave) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.[cite: 1]");
                 return;
             }
             if (usuariosDB[idUsuarioLogueado]) {
@@ -876,8 +876,8 @@
                     document.getElementById('txtNuevaClaveAsistente').value = "";
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                     document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent";
-                    document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
+                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent[cite: 1]";
+                    document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.[cite: 1]";
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
                 });
             }
@@ -887,11 +887,11 @@
             const userTarget = document.getElementById('selectUsuarioResetAdmin').value;
             const nuevaClave = document.getElementById('txtNuevaClavePorAdmin').value.trim();
             if (!userTarget) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor seleccione un colaborador.");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Por favor seleccione un colaborador.[cite: 1]");
                 return;
             }
             if (!nuevaClave) {
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.[cite: 1]");
                 return;
             }
             if (usuariosDB[userTarget]) {
@@ -902,8 +902,8 @@
                     
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                     document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
-                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
-                    document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.`;
+                    document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada[cite: 1]";
+                    document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.[cite: 1]`;
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
                 });
             }
@@ -975,17 +975,17 @@
                     data1Cargada = true;
                     if(document.getElementById('statusData1') && !document.getElementById('statusData1').innerText.includes("⏳")) {
                         document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
-                        document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).`;
+                        document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).[cite: 1]`;
                     }
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                 } else {
                     inventarioData1 = []; data1Cargada = false;
                     if(document.getElementById('statusData1')) {
                         document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+                        document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.[cite: 1]";
                     }
                     
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo[cite: 1]";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
@@ -1214,10 +1214,10 @@
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
 
             } else {
-                tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
-                document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
-                document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
-                document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%";
+                tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...[cite: 1]</td></tr>`;
+                document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds[cite: 1]";
+                document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs[cite: 1]";
+                document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%[cite: 1]";
             }
         }
 
@@ -1247,7 +1247,7 @@
                         }
                     });
                     if (contadorPendientes === 0) {
-                        tbodyAdmin.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>`;
+                        tbodyAdmin.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...[cite: 1]</td></tr>`;
                     }
                 }
 
@@ -1277,8 +1277,8 @@
                                             <span class="text-xl text-green-600 font-bold">✔</span>
                                             <div>
                                                 <span class="font-bold text-gray-900">Completado: ${m.codigo}</span>
-                                                <p class="text-[11px] text-gray-600 font-sans mt-0.5">¡La base de datos ya fue corregida!</p>
-                                                <div class="mt-1.5 inline-block text-[10px] bg-green-600 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">Estado: Completado</div>
+                                                <p class="text-[11px] text-gray-600 font-sans mt-0.5">¡La base de datos ya fue corregida![cite: 1]</p>
+                                                <div class="mt-1.5 inline-block text-[10px] bg-green-600 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-xs">Estado: Completado[cite: 1]</div>
                                             </div>
                                         </div>
                                         <button onclick="removerNotificacionCompletadaLocal('${key}')" class="text-gray-400 hover:text-gray-700 font-sans font-bold text-sm px-1.5 cursor-pointer">✕</button>
@@ -1287,7 +1287,7 @@
                         }
                     });
                     if (contadorAlertasAsistente === 0) {
-                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...</p>`;
+                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-6">No has registrado reportes en este turno...[cite: 1]</p>`;
                     }
                 }
 
@@ -1326,7 +1326,7 @@
             );
 
             if (coincidenciaDuplicada) {
-                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.[cite: 1]`;
                 wrapperGrafico.classList.remove('hidden');
             } else {
                 wrapperGrafico.classList.add('hidden');
@@ -1420,7 +1420,7 @@
                     alternarModuloAdminView();
                 }
             } else { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.[cite: 1]");
             }
         }
 
@@ -1455,7 +1455,7 @@
                 if (!entradaOriginal) return;
 
                 if (!inventarioData1 || inventarioData1.length === 0) {
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo[cite: 1]";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
@@ -1498,18 +1498,18 @@
                 });
 
                 let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
-                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
+                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds[cite: 1]`;
 
                 if (lotesFiltradosTurno.length > 0) {
-                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO[cite: 1]";
                     document.getElementById('avisoAdvertenciaStock').className = "hidden";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                     document.getElementById('containerInputLpn').className = "block";
                     document.getElementById('containerResetBtn').className = "hidden";
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
-                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO[cite: 1]";
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva[cite: 1]";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-4 flex items-center gap-3 text-red-800 text-sm font-semibold shadow-sm block";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
@@ -1531,7 +1531,7 @@
         function solicitarUbicacionOEnviar() {
             const cantVal = document.getElementById('cantidadInput').value;
             if(!cantVal || parseInt(cantVal, 10) <= 0) { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida.[cite: 1]"); 
                 return; 
             }
             const radios = document.getElementsByName('optUbicacion');
@@ -1563,7 +1563,7 @@
                 
                 let lpnSugerido = "LPN-MANUAL";
                 let fvSugerida = "";
-                let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+                let historialConsumosLpns = [`MANUAL (-${remanente} Uds)[cite: 1]`];
 
                 let copiaLotesFiltrados = [...lotesFiltradosTurno];
 
@@ -1601,16 +1601,16 @@
                         if (!lpnsConsumidosUnicos.includes(lpnActual)) {
                             lpnsConsumidosUnicos.push(lpnActual);
                         }
-                        historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
+                        historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)[cite: 1]`);
                     }
 
                     lpnSugerido = lpnsConsumidosUnicos.join(", ");
                 }
 
                 let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
-                let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+                let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO[cite: 1]";
                 if (zonaDestino) {
-                    copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+                    copiaDescripcion += ` [Zona: ${zonaDestino}][cite: 1]`;
                 }
 
                 logRef.once("value", (snapshot) => {
@@ -1633,7 +1633,7 @@
 
                     if (keyExistente && regExistente) {
                         let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
-                        let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
+                        let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)[cite: 1]`;
                         
                         logRef.child(keyExistente).update({
                             cant: nuevaCantTotal,
@@ -1661,7 +1661,7 @@
                             return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
                         }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
 
-                        document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds`;
+                        document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds[cite: 1]`;
                     });
                 });
 
@@ -1777,7 +1777,7 @@
             let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
 
             if(!cod || !mot) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.[cite: 1]");
                 return;
             }
             
@@ -1795,7 +1795,7 @@
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                 document.getElementById('iconoNotificacionDinamico').className = "w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold";
                 document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.[cite: 1]";
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             });
         }
@@ -1819,7 +1819,7 @@
             
             const statusElem = document.getElementById('statusData1');
             statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
-            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
+            statusElem.innerText = "⏳ Procesando Excel en milisegundos...[cite: 1]";
 
             setTimeout(() => {
                 const lector = new FileReader();
@@ -1832,7 +1832,7 @@
                     
                     if (!filasMatriz || filasMatriz.length < 2) {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
+                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.[cite: 1]";
                         return;
                     }
 
@@ -1900,10 +1900,10 @@
 
                     dbRef.set(datosFormateados).then(() => {
                         statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
+                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).[cite: 1]`;
                     }).catch(err => {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.[cite: 1]";
                     });
                 };
                 lector.readAsArrayBuffer(file);
@@ -1919,13 +1919,42 @@
                 const data = new Uint8Array(e.target.result);
                 const libro = XLSX.read(data, { type: 'array', dense: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true });
+                const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
                 let tempJSatelite = {};
-                filas.forEach(f => {
-                    let sku = f["Articulo"] || f["SKU"] || f["Artículo"];
-                    let lpn = f["LPN"] || f["Nro LPN"];
-                    if(sku && lpn) tempJSatelite[sku.toString().trim()] = lpn.toString().trim();
-                });
+                
+                if (filasMatriz && filasMatriz.length > 0) {
+                    let headerRowIdx = 0;
+                    for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
+                        let rowStr = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (rowStr.includes("sku") || rowStr.includes("quantity") || rowStr.includes("articulo")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+
+                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    let idxSkuCol3 = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                    let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
+
+                    if (idxSkuCol3 === -1) idxSkuCol3 = filasMatriz[headerRowIdx].length > 3 ? 3 : (filasMatriz[headerRowIdx].length > 2 ? 2 : 0);
+                    if (idxQtyCol13 === -1) idxQtyCol13 = filasMatriz[headerRowIdx].length > 13 ? 13 : (filasMatriz[headerRowIdx].length > 12 ? 12 : 1);
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        let row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+                        let skuVal = row[idxSkuCol3] !== undefined ? row[idxSkuCol3].toString().trim() : "";
+                        let qtyVal = row[idxQtyCol13] !== undefined ? row[idxQtyCol13] : 0;
+
+                        if (skuVal) {
+                            let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            tempJSatelite[skuClean] = {
+                                skuOriginal: skuVal,
+                                cantidadSolicitada: parseInt(qtyVal, 10) || 0
+                            };
+                        }
+                    }
+                }
                 
                 sateliteRef.set(tempJSatelite);
             };
@@ -1945,7 +1974,7 @@
                 
                 if (!filas || filas.length < 2) {
                     document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.[cite: 1]";
                     return;
                 }
 
@@ -1982,7 +2011,7 @@
                     let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
                     let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
                     let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
+                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA[cite: 1]";
                     let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
@@ -2004,52 +2033,110 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CRUCE DE CUMPLIMIENTO 24 ADAPTADO A LA NUEVA ESTRUCTURA DE 9 COLUMNAS
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
-            if (matrixDetalleReposicion.length === 0) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Debe subir primero el archivo de Detalle_Reposicion.");
+            if (matrixDetalleReposicion.length === 0 && Object.keys(reqJ_Satelite).length === 0) {
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Debe subir primero los archivos de Detalle_Reposición o JSatélite.[cite: 1]");
                 return;
             }
             tbody.innerHTML = "";
+            
+            let mapaCumplimiento = {};
+
+            Object.keys(reqJ_Satelite).forEach(skuKey => {
+                let satItem = reqJ_Satelite[skuKey];
+                mapaCumplimiento[skuKey] = {
+                    sku: satItem.skuOriginal || skuKey,
+                    lpn: "N/A[cite: 1]",
+                    ubicacion: "RESERVA[cite: 1]",
+                    descripcion: "PRODUCTO SOLICITADO JSATÉLITE[cite: 1]",
+                    area: "JSATÉLITE[cite: 1]",
+                    cantidadSolicitada: satItem.cantidadSolicitada || 0,
+                    cantidadSalida: 0,
+                    fv: "",
+                    estado: "Pendiente[cite: 1]",
+                    lpnConsumido: ""
+                };
+            });
+
             matrixDetalleReposicion.forEach(puesta => {
-                let skuPuestaLimpio = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                
-                let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === puesta.lpn.toString().replace(/\s+/g, "").toUpperCase());
-                let ubicacionFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
-                let descripcionFisica = lpnMatchCajas && lpnMatchCajas.descripcion ? lpnMatchCajas.descripcion : "PRODUCTO MAPEADO";
-                let fvFisica = lpnMatchCajas ? formatearAFechaDDMMYYYY(lpnMatchCajas.vencimiento) : "";
-                let areaFisica = puesta.pantalla || "RF";
+                let skuClean = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                if (!mapaCumplimiento[skuClean]) {
+                    mapaCumplimiento[skuClean] = {
+                        sku: puesta.sku,
+                        lpn: puesta.lpn,
+                        ubicacion: "RESERVA[cite: 1]",
+                        descripcion: "PRODUCTO MAPEADO[cite: 1]",
+                        area: puesta.pantalla || "RF[cite: 1]",
+                        cantidadSolicitada: 0,
+                        cantidadSalida: 0,
+                        fv: "",
+                        estado: "Pendiente[cite: 1]",
+                        lpnConsumido: ""
+                    };
+                }
+
+                let reg = mapaCumplimiento[skuClean];
+                reg.lpn = puesta.lpn;
+                reg.area = puesta.pantalla;
+
+                let lpnMatch = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === puesta.lpn.toString().replace(/\s+/g, "").toUpperCase());
+                if (lpnMatch) {
+                    reg.ubicacion = lpnMatch.ubicacion || "RESERVA[cite: 1]";
+                    reg.descripcion = lpnMatch.descripcion || reg.descripcion;
+                    reg.fv = formatearAFechaDDMMYYYY(lpnMatch.vencimiento);
+                }
+
+                let cantAjust = Math.abs(parseInt(puesta.cantAjustada, 10) || 0);
+                if (cantAjust > 0) {
+                    reg.cantidadSalida += cantAjust;
+                }
 
                 let coincidenciaLog = registrosHistoricosRepotenciar.find(log => 
-                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuPuestaLimpio
+                    log.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean
                 );
-
-                let estadoHtml = "";
-                let lpnConsumidoStr = "";
 
                 if (coincidenciaLog) {
                     if (coincidenciaLog.fifoLpnOptimizado.toString().trim().toUpperCase().includes(puesta.lpn.toString().trim().toUpperCase())) {
-                        estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                        reg.estado = "Realizó FIFO[cite: 1]";
                     } else {
-                        estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                        lpnConsumidoStr = coincidenciaLog.fifoLpnOptimizado;
+                        reg.estado = "No realizó FIFO[cite: 1]";
+                        reg.lpnConsumido = coincidenciaLog.fifoLpnOptimizado;
                     }
+                }
+            });
+
+            let llavesSKU = Object.keys(mapaCumplimiento);
+            if (llavesSKU.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No se encontraron registros coincidentes para procesar...[cite: 1]</td></tr>`;
+                return;
+            }
+
+            llavesSKU.forEach(skuKey => {
+                let item = mapaCumplimiento[skuKey];
+                let qtyTotalSolicitada = item.cantidadSolicitada > 0 ? item.cantidadSolicitada : (item.cantidadSalida > 0 ? item.cantidadSalida : 1);
+                let formatoSalidaSolicitada = `${item.cantidadSalida}/${qtyTotalSolicitada}`;
+
+                let estadoHtml = "";
+                if (item.estado === "Realizó FIFO[cite: 1]") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO[cite: 1]</span>`;
+                } else if (item.estado === "No realizó FIFO[cite: 1]") {
+                    estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO[cite: 1]</span>`;
                 } else {
-                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente[cite: 1]</span>`;
                 }
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${puesta.sku}</td>
-                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${puesta.lpn}</td>
-                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisica}</td>
-                        <td class="px-3 py-2 border font-sans text-xs">${descripcionFisica}</td>
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-700">${areaFisica}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${puesta.cantAjustada || puesta.cantOriginal}</td>
-                        <td class="px-3 py-2 border text-center font-bold">${fvFisica}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
+                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
+                        <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700">${item.area}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${formatoSalidaSolicitada}</td>
+                        <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
                         <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${lpnConsumidoStr}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
                     </tr>`;
             });
         }
