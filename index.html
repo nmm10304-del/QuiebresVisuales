@@ -275,10 +275,16 @@
                             </select>
                         </div>
 
-                        <!-- CONTADOR DE SKUS REPUESTOS (ÚNICOS) -->
-                        <div class="flex items-center gap-1.5 text-xs text-gray-600">
-                            <span>Cantidad de SKUs Repuestos:</span>
-                            <span id="boxSkusRepuestosCumplimiento" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0/0</span>
+                        <!-- INDICADORES SOLICITADOS -->
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                            <div class="flex items-center gap-1.5">
+                                <span>SKUs con Stock:</span>
+                                <span id="boxSkusStockCumplimiento" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span>Por reponer:</span>
+                                <span id="boxPorReponerCumplimiento" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
+                            </div>
                         </div>
                     </div>
                     
@@ -1995,7 +2001,7 @@
                     let idxAreaCol6 = headers.findIndex(h => h.includes("area") || h.includes("área") || h.includes("seccion") || h.includes("sección") || h.includes("departamento"));
                     let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
 
-                    // Índices: Col 3 (índice 2), Col 6 (índice 5), Col 13 (índice 12)
+                    // Índices estrictos: Col 3 (índice 2), Col 6 (índice 5), Col 13 (índice 12)
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;
                     if (idxAreaCol6 === -1) idxAreaCol6 = 5;
                     if (idxQtyCol13 === -1) idxQtyCol13 = 12;
@@ -2095,22 +2101,23 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: DESGLOSE FIFO EN CASCADA CON CANTIDADES ENTERAS Y CONTADOR POR SKUS ÚNICOS
+        // CUMPLIMIENTO 24: ÁREA DESDE COLUMNA 6, CANTIDAD ENTERA REAL, E INDICADORES "SKUs con Stock / Por reponer"
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
             if (Object.keys(reqJ_Satelite).length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
-                document.getElementById('boxSkusRepuestosCumplimiento').innerText = "0/0";
+                document.getElementById('boxSkusStockCumplimiento').innerText = "0";
+                document.getElementById('boxPorReponerCumplimiento').innerText = "0";
                 document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = "0%";
                 return;
             }
             
             tbody.innerHTML = "";
             let filasGeneradasCumplimiento = [];
-            let skusUnicosTotalesSet = new Set();
-            let skusUnicosRepuestosSet = new Set();
+            let skusValidosConStockSet = new Set();
+            let skusRepuestosSet = new Set();
 
             Object.keys(reqJ_Satelite).forEach(skuKey => {
                 let satItem = reqJ_Satelite[skuKey];
@@ -2119,8 +2126,7 @@
 
                 if (cantidadRequeridaMeta <= 0) return;
 
-                skusUnicosTotalesSet.add(skuLimpio);
-
+                // Buscar cajas disponibles en Cajas_Tienda
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
@@ -2129,7 +2135,11 @@
                     return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
                 });
 
+                // Si no tiene stock en reserva, SE OMITE TOTALMENTE
                 if (lotesDisponibles.length === 0) return;
+
+                // Es un SKU válido con stock
+                skusValidosConStockSet.add(skuLimpio);
 
                 lotesDisponibles.sort((a, b) => {
                     let fA = parsearFechaEspanol(a.vencimiento);
@@ -2180,7 +2190,7 @@
 
                     let esRepuestoFila = estadoFila !== "Pendiente" || cantidadATomarDeEstaCaja > 0;
                     if (esRepuestoFila) {
-                        skusUnicosRepuestosSet.add(skuLimpio);
+                        skusRepuestosSet.add(skuLimpio);
                     }
 
                     filasGeneradasCumplimiento.push({
@@ -2189,7 +2199,7 @@
                         lpn: lote.lpn,
                         ubicacion: lote.ubicacion,
                         descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL", // Columna 6
+                        area: satItem.areaJSatelite || "GENERAL", // Columna 6 (Área literal)
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja, // Cantidad entera real
                         fv: fvFila,
                         estado: estadoFila,
@@ -2237,12 +2247,15 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // Conteo limpio basado en SKUs únicos totales y repuestos
-            let totalUnicos = skusUnicosTotalesSet.size;
-            let repuestosUnicos = skusUnicosRepuestosSet.size;
+            // Indicadores solicitados: SKUs con Stock y Por reponer
+            let totalSkusConStock = skusValidosConStockSet.size;
+            let totalRepuestosUnicos = skusRepuestosSet.size;
+            let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
 
-            document.getElementById('boxSkusRepuestosCumplimiento').innerText = `${repuestosUnicos}/${totalUnicos}`;
-            let porcAvance = totalUnicos > 0 ? Math.round((repuestosUnicos / totalUnicos) * 100) : 0;
+            document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
+            document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
+
+            let porcAvance = totalSkusConStock > 0 ? Math.round((totalRepuestosUnicos / totalSkusConStock) * 100) : 0;
             document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
         }
     </script>
