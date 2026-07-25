@@ -542,7 +542,8 @@
         
         let lotesFiltradosTurno = [];
 
-        let usuariosDB = {
+        // USUARIOS BASE INICIALES
+        let usuariosIniciales = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
             "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
@@ -553,6 +554,8 @@
             "HP48848362": { nombre: "Rommel", clave: "Hpsa2027" },
             "ADMIN": { nombre: "Administrador", clave: "Admin2026" }
         };
+
+        let usuariosDB = { ...usuariosIniciales };
 
         const urlActual = window.location.href;
         let pathBaseGitHub = "";
@@ -571,6 +574,7 @@
             setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
             
+            inicializarUsuariosNubeSiEstaVacio();
             escucharCredencialesNube();
             escucharUsuariosRegistradosNube();
             escucharPersistenciaArchivosCloud();
@@ -583,6 +587,15 @@
             validarPurgaMedianocheAutomática();
             setInterval(validarPurgaMedianocheAutomática, 30000); 
         });
+
+        // SI ES LA PRIMERA VEZ, SEMBRAR USUARIOS BASE EN LA NUBE CON ESTRUCTURA UNIFICADA
+        function inicializarUsuariosNubeSiEstaVacio() {
+            usersMasterRef.once("value", (snapshot) => {
+                if (!snapshot.exists()) {
+                    usersMasterRef.set(usuariosIniciales);
+                }
+            });
+        }
 
         function escucharCredencialesNube() {
             passRef.on("value", (snapshot) => {
@@ -597,14 +610,23 @@
             });
         }
 
+        // CONTROL DE SESIÓN EN TIEMPO REAL AL ELIMINAR USUARIO
         function escucharUsuariosRegistradosNube() {
             usersMasterRef.on("value", (snapshot) => {
-                const cloudUsers = snapshot.val();
-                if (cloudUsers) {
-                    Object.keys(cloudUsers).forEach(uKey => {
-                        usuariosDB[uKey] = cloudUsers[uKey];
-                    });
+                const cloudUsers = snapshot.val() || {};
+                
+                // Actualizar DB de usuarios local exclusivamente según lo que existe en Firebase
+                usuariosDB = { "ADMIN": usuariosIniciales["ADMIN"], ...cloudUsers };
+
+                // VERIFICACIÓN EN TIEMPO REAL: Si el usuario activo actual fue eliminado por el Admin, expulsa inmediatamente
+                if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
+                    if (!usuariosDB[idUsuarioLogueado]) {
+                        localStorage.clear();
+                        window.location.reload(); // Recarga automática e inmediata del celular del asistente
+                        return;
+                    }
                 }
+
                 actualizarCombosYTablaUsuarios();
             });
         }
@@ -635,7 +657,7 @@
                                 <td class="px-4 py-2.5 border font-mono font-semibold text-blue-700">${u}</td>
                                 <td class="px-4 py-2.5 border text-center font-mono text-gray-400">••••••••</td>
                                 <td class="px-4 py-2.5 border text-center">
-                                    <button onclick="eliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
+                                    <button onclick="eliminarUsuarioAsistente('${u}')" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2.5 py-1 rounded text-[11px] transition shadow-2xs cursor-pointer">
                                         🗑️ Eliminar
                                     </button>
                                 </td>
@@ -685,6 +707,7 @@
             });
         }
 
+        // ELIMINACIÓN DIRECTA QUE EXPULSA AL CELULAR EN SEGUNDOS
         function eliminarUsuarioAsistente(uKey) {
             if (confirm(`¿Estás seguro de dar de baja a ${usuariosDB[uKey].nombre} (${uKey})?`)) {
                 delete usuariosDB[uKey];
