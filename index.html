@@ -85,7 +85,7 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES 100% INDEPENDIENTES -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES INDEPENDIENTES -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -275,7 +275,7 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES EXACTOS EN TIEMPO REAL -->
+                        <!-- INDICADORES EXACTOS -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -820,7 +820,6 @@
             }).catch(() => {});
         }
 
-        // PERSISTENCIA CON RECALCULO AUTOMÁTICO EN TIEMPO REAL
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -833,7 +832,6 @@
                     document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
-                ejecutarCruceMacroGlobal();
             });
 
             detalleRepoRef.on("value", (snapshot) => {
@@ -848,7 +846,6 @@
                     document.getElementById('statusData2').innerText = "Waiting...";
                 }
                 forzarActualizacionTablaAdmin();
-                ejecutarCruceMacroGlobal(); // SOLUCIÓN RAZÓN C: Recalculo inmediato en vivo
             });
         }
 
@@ -1033,7 +1030,6 @@
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "hidden";
                 }
-                ejecutarCruceMacroGlobal();
             });
         }
 
@@ -1076,7 +1072,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1121,7 +1117,10 @@
                         let pUpper = m.pantalla.toUpperCase();
                         let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
                         
-                        if (esPantallaValida && m.lpn) {
+                        let cantAjustadaNum = parseInt(m.cantAjustada, 10);
+                        let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
+
+                        if (esPantallaValida && esBajadaReal && m.lpn) {
                             bolsaConsumosRF.push({
                                 sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
                                 lpn: m.lpn.toString().trim(),
@@ -1813,15 +1812,18 @@
                 dbRef.set(null);
                 fechaCargaRef.set(null);
             } else if (tipo === 'satelite') {
+                // ELIMINACIÓN INDEPENDIENTE DEL ARCHIVO JSATÉLITE
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 ejecutarCruceMacroGlobal();
             } else if (tipo === 'reposicion') {
+                // ELIMINACIÓN INDEPENDIENTE DEL DETALLE DE REPOSICIÓN
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
                 ejecutarCruceMacroGlobal();
                 forzarActualizacionTablaAdmin();
             } else if (tipo === 'satelite_vista') {
+                // BOTÓN ROJO TABLA CUMPLIMIENTO 24
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 matrixDetalleReposicion = [];
@@ -2041,7 +2043,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: SIN RESTRICCIONES RÍGIDAS DE NEGATIVOS O NOMBRES INCOMPATIBLES
+        // DETALLE_REPOSICIÓN: FILTRADO ESTRICTO POR LAS 2 PANTALLAS DE RADIOFRECUENCIA
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2097,18 +2099,16 @@
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
                     let uDestino = pPantalla.toUpperCase();
-                    // Acepta flexibilidad idéntica a Repotenciar Tienda
-                    if (uDestino.includes("REPONER") || uDestino.includes("RESERVA") || uDestino.includes("PUERTA") || uDestino === "") {
-                        if (pSku && pLpn) {
-                            tempDetalleRepo.push({
-                                lpn: pLpn,
-                                sku: pSku,
-                                pantalla: pPantalla,
-                                cantOriginal: pCantOrig,
-                                cantAjustada: pCantAjust,
-                                usuario: pUsuario
-                            });
-                        }
+                    // ESTRICTO EN LAS 2 PANTALLAS DE RF SOLICITADAS
+                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
+                        tempDetalleRepo.push({
+                            lpn: pLpn,
+                            sku: pSku,
+                            pantalla: pPantalla,
+                            cantOriginal: pCantOrig,
+                            cantAjustada: pCantAjust,
+                            usuario: pUsuario
+                        });
                     }
                 }
 
@@ -2117,13 +2117,11 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN IDÉNTICO A REPOTENCIAR TIENDA
+        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN CON BOTONES 3 ESTADOS E INDICADORES EN TIEMPO REAL
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
-            if (!tbody) return;
-
             if (Object.keys(reqJ_Satelite).length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
                 document.getElementById('boxSkusStockCumplimiento').innerText = "0";
@@ -2137,16 +2135,24 @@
             let skusValidosConStockSet = new Set();
             let skusRepuestosSet = new Set();
 
-            // Bolsa de consumos desde Detalle_Reposición (idéntico a Repotenciar Tienda)
+            // Bolsa de consumos desde Detalle_Reposición
             let bolsaConsumosRF = [];
             if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                 matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku || !m.lpn) return;
-                    bolsaConsumosRF.push({
-                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                        lpn: m.lpn.toString().trim().toUpperCase(),
-                        consumido: false
-                    });
+                    if (!m.sku || !m.pantalla) return;
+                    let pUpper = m.pantalla.toUpperCase();
+                    let esPantallaRFValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA");
+                    
+                    let cantAjustadaNum = parseInt(m.cantAjustada, 10);
+                    let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
+
+                    if (esPantallaRFValida && esBajadaReal && m.lpn) {
+                        bolsaConsumosRF.push({
+                            sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                            lpn: m.lpn.toString().trim().toUpperCase(),
+                            consumido: false
+                        });
+                    }
                 });
             }
 
@@ -2194,9 +2200,9 @@
                     let estadoFila = "Pendiente";
                     let lpnConsumidoFila = "";
 
-                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
+                    let lpnSugeridoLimpio = lote.lpn.toString().trim().toUpperCase();
 
-                    // Buscar match exacto de SKU + LPN en la bolsa de RF
+                    // Buscar match en la bolsa de RF
                     let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn === lpnSugeridoLimpio);
 
                     if (idxMatchExacto !== -1) {
@@ -2204,7 +2210,6 @@
                         estadoFila = "Realizó FIFO";
                         skusRepuestosSet.add(skuLimpio);
                     } else {
-                        // Buscar si bajó otro LPN para el mismo SKU
                         let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
 
                         if (idxOtroLpn !== -1) {
@@ -2278,7 +2283,7 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // Indicadores exactos
+            // Actualizar tarjetas e indicadores
             let totalSkusConStock = skusValidosConStockSet.size;
             let totalRepuestosUnicos = skusRepuestosSet.size;
             let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
