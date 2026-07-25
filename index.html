@@ -275,7 +275,7 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES SOLICITADOS -->
+                        <!-- INDICADORES EXACTOS DE SKUS -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -1072,7 +1072,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1972,7 +1972,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: COLUMNA 3 (SKU), COLUMNA 6 (ÁREA) Y COLUMNA 13 (QUANTITY)
+        // JSATÉLITE: LECTURA ESTRICTA DE COLUMNA F (ÍNDICE 5 - ÁREA), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -1996,15 +1996,16 @@
                         }
                     }
 
+                    // Búsqueda inteligente para asegurar la Columna F ("AREA" literal)
                     let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                    let idxSkuCol3 = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
-                    let idxAreaCol6 = headers.findIndex(h => h.includes("area") || h.includes("área") || h.includes("seccion") || h.includes("sección") || h.includes("departamento"));
-                    let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
+                    let idxSkuCol3 = headers.findIndex(h => h === "sku" || h === "articulo");
+                    let idxAreaCol6 = headers.findIndex(h => h === "area" || h === "área");
+                    let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad"));
 
-                    // Índices estrictos: Col 3 (índice 2), Col 6 (índice 5), Col 13 (índice 12)
-                    if (idxSkuCol3 === -1) idxSkuCol3 = 2;
-                    if (idxAreaCol6 === -1) idxAreaCol6 = 5;
-                    if (idxQtyCol13 === -1) idxQtyCol13 = 12;
+                    // Índices base-0 estrictos como respaldo directo (A=0, B=1, C=2, D=3, E=4, F=5, M=12)
+                    if (idxSkuCol3 === -1) idxSkuCol3 = 2;   // Columna C
+                    if (idxAreaCol6 === -1) idxAreaCol6 = 5;  // Columna F
+                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; // Columna M
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
@@ -2015,11 +2016,17 @@
 
                         if (skuVal) {
                             let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                            tempJSatelite[skuClean] = {
-                                skuOriginal: skuVal,
-                                areaJSatelite: areaVal || "GENERAL",
-                                cantidadSolicitada: parseInt(qtyVal, 10) || 0
-                            };
+                            
+                            // Consolidación limpia por SKU
+                            if (!tempJSatelite[skuClean]) {
+                                tempJSatelite[skuClean] = {
+                                    skuOriginal: skuVal,
+                                    areaJSatelite: areaVal || "GENERAL",
+                                    cantidadSolicitada: parseInt(qtyVal, 10) || 0
+                                };
+                            } else {
+                                tempJSatelite[skuClean].cantidadSolicitada += (parseInt(qtyVal, 10) || 0);
+                            }
                         }
                     }
                 }
@@ -2101,7 +2108,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: ÁREA DESDE COLUMNA 6, CANTIDAD ENTERA REAL, E INDICADORES "SKUs con Stock / Por reponer"
+        // CUMPLIMIENTO 24: ÁREA DESDE COLUMNA F, CANTIDAD ENTERA REAL Y CONTEO RIGUROSO DE SKUS CON STOCK Y POR REPONER
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2126,7 +2133,7 @@
 
                 if (cantidadRequeridaMeta <= 0) return;
 
-                // Buscar cajas disponibles en Cajas_Tienda
+                // Buscar cajas disponibles en Cajas_Tienda para este SKU
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
@@ -2188,8 +2195,7 @@
                         }
                     });
 
-                    let esRepuestoFila = estadoFila !== "Pendiente" || cantidadATomarDeEstaCaja > 0;
-                    if (esRepuestoFila) {
+                    if (estadoFila !== "Pendiente") {
                         skusRepuestosSet.add(skuLimpio);
                     }
 
@@ -2199,7 +2205,7 @@
                         lpn: lote.lpn,
                         ubicacion: lote.ubicacion,
                         descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL", // Columna 6 (Área literal)
+                        area: satItem.areaJSatelite || "GENERAL", // Texto real de Columna F
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja, // Cantidad entera real
                         fv: fvFila,
                         estado: estadoFila,
@@ -2211,7 +2217,7 @@
             registrosHistoricosCumplimiento24 = [];
 
             filasGeneradasCumplimiento.forEach(item => {
-                let esRepuestoItem = item.estado !== "Pendiente" || item.cantidadAsignadaFila > 0;
+                let esRepuestoItem = item.estado !== "Pendiente";
 
                 if (filterVal === "REPUESTO" && !esRepuestoItem) return;
                 if (filterVal === "PENDIENTE" && esRepuestoItem) return;
@@ -2247,7 +2253,7 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // Indicadores solicitados: SKUs con Stock y Por reponer
+            // Indicadores exactos
             let totalSkusConStock = skusValidosConStockSet.size;
             let totalRepuestosUnicos = skusRepuestosSet.size;
             let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
