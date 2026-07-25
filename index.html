@@ -265,7 +265,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
                         
-                        <!-- FILTRO AJUSTADO CON SOLO: Todos, Repuesto, Pendiente -->
+                        <!-- FILTRO CON OPCIONES: Todos, Repuesto, Pendiente -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
@@ -1066,7 +1066,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1787,7 +1787,7 @@
                 "Ubicación": i.ubicacion,
                 "Descripción": i.descripcion,
                 "Área": i.area,
-                "Cant": `${i.cantidadSalida}/${i.cantidadStockCajas}`,
+                "Cant": `${i.cantidadSalida}/${i.cantidadSolicitadaJSat}`,
                 "FV": i.fv,
                 "Estado": i.estado,
                 "LPN Consumido": i.lpnConsumido
@@ -1966,7 +1966,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: EXTRACCIÓN DE COLUMNA 3 (SKU), COLUMNA 6 (ÁREA) Y COLUMNA 13 (QUANTITY)
+        // JSATÉLITE: COLUMNA 3 (SKU), COLUMNA 5 (ÁREA) Y COLUMNA 13 (QUANTITY)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -1992,19 +1992,19 @@
 
                     let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     let idxSkuCol3 = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
-                    let idxAreaCol6 = headers.findIndex(h => h.includes("area") || h.includes("área") || h.includes("seccion") || h.includes("sección") || h.includes("departamento"));
+                    let idxAreaCol5 = headers.findIndex(h => h.includes("area") || h.includes("área") || h.includes("seccion") || h.includes("sección") || h.includes("departamento"));
                     let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
 
-                    // Índices según posición en caso no coincida el encabezado exacto (Col 3 = idx 2, Col 6 = idx 5, Col 13 = idx 12)
+                    // Índices estrictos: Col 3 (índice 2), Col 5 (índice 4), Col 13 (índice 12)
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;
-                    if (idxAreaCol6 === -1) idxAreaCol6 = 5;
+                    if (idxAreaCol5 === -1) idxAreaCol5 = 4;
                     if (idxQtyCol13 === -1) idxQtyCol13 = 12;
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
                         if (!row || row.length === 0) continue;
                         let skuVal = row[idxSkuCol3] !== undefined ? row[idxSkuCol3].toString().trim() : "";
-                        let areaVal = row[idxAreaCol6] !== undefined ? row[idxAreaCol6].toString().trim() : "GENERAL";
+                        let areaVal = row[idxAreaCol5] !== undefined ? row[idxAreaCol5].toString().trim() : "GENERAL";
                         let qtyVal = row[idxQtyCol13] !== undefined ? row[idxQtyCol13] : 0;
 
                         if (skuVal) {
@@ -2095,7 +2095,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CRUCE CUMPLIMIENTO 24: OMITIR SKUS SIN STOCK, ÁREA DESDE COL 6 Y FILTRO REPUESTO/PENDIENTE
+        // CRUCE CUMPLIMIENTO 24 CON DESGLOSE INTELIGENTE DE LPNS EN CASCADA FIFO Y ÁREA DE COLUMNA 5
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2108,14 +2108,18 @@
             }
             
             tbody.innerHTML = "";
-            let mapaCumplimiento = {};
+            let filasGeneradasCumplimiento = [];
 
-            // 1. Simulación e identificación de SKUs que SÍ TIENEN STOCK en Cajas_Tienda
+            // Procesar cada SKU solicitado en JSatélite
             Object.keys(reqJ_Satelite).forEach(skuKey => {
                 let satItem = reqJ_Satelite[skuKey];
                 let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                
-                // Buscar cajas con stock real disponible en Cajas_Tienda
+                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
+
+                // Omitir si la cantidad requerida es 0 o menor
+                if (cantidadRequeridaMeta <= 0) return;
+
+                // Buscar cajas disponibles en Cajas_Tienda para este SKU
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
@@ -2124,10 +2128,10 @@
                     return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
                 });
 
-                // REGLA 2: Si no hay cajas o no hay stock en reserva, SE OMITE DE LA LISTA
+                // REGLA 2: Si no hay stock en reserva, SE OMITE DE LA LISTA
                 if (lotesDisponibles.length === 0) return;
 
-                // Ordenar por FIFO y menor saldo (Macropurga)
+                // Ordenar por FIFO (vencimiento) y menor saldo (Macropurga)
                 lotesDisponibles.sort((a, b) => {
                     let fA = parsearFechaEspanol(a.vencimiento);
                     let fB = parsearFechaEspanol(b.vencimiento);
@@ -2137,80 +2141,78 @@
                     return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
                 });
 
-                // REGLA 4: Total de stock disponible extraído desde Cajas_Tienda
-                let totalStockCajasTienda = lotesDisponibles.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                // Consumir en cascada por LPN hasta cubrir exactamente la cantidad solicitada (QUANTITY de JSatélite)
+                let remanentePorCubrir = cantidadRequeridaMeta;
 
-                let lpnSugeridoOptimo = lotesDisponibles[0].lpn;
-                let ubicacionOptima = lotesDisponibles[0].ubicacion;
-                let descOptima = lotesDisponibles[0].descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
-                let fvOptima = formatearAFechaDDMMYYYY(lotesDisponibles[0].vencimiento);
+                for (let lote of lotesDisponibles) {
+                    if (remanentePorCubrir <= 0) break;
 
-                mapaCumplimiento[skuLimpio] = {
-                    sku: satItem.skuOriginal || skuKey,
-                    lpn: lpnSugeridoOptimo,
-                    ubicacion: ubicacionOptima,
-                    descripcion: descOptima,
-                    area: satItem.areaJSatelite || "GENERAL", // REGLA 3: Área desde Columna 6 de JSatélite
-                    cantidadStockCajas: totalStockCajasTienda, // REGLA 4: Basado en Cajas Tienda
-                    cantidadSalida: 0,
-                    fv: fvOptima,
-                    estado: "Pendiente",
-                    lpnConsumido: ""
-                };
-            });
+                    let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
+                    let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
+                    remanentePorCubrir -= cantidadATomarDeEstaCaja;
 
-            // 2. Auditoría con Detalle_Reposición
-            matrixDetalleReposicion.forEach(puesta => {
-                let skuClean = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                if (mapaCumplimiento[skuClean]) {
-                    let reg = mapaCumplimiento[skuClean];
-                    let cantAjust = Math.abs(parseInt(puesta.cantAjustada, 10) || 0);
-                    if (cantAjust > 0) reg.cantidadSalida += cantAjust;
+                    let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
+                    let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
 
-                    let lpnRF = puesta.lpn ? puesta.lpn.toString().trim().toUpperCase() : "";
-                    let lpnSugerido = reg.lpn.toString().trim().toUpperCase();
+                    // Evaluar estado cruzando con Detalle_Reposición
+                    let estadoFila = "Pendiente";
+                    let lpnConsumidoFila = "";
 
-                    if (lpnRF === lpnSugerido) {
-                        reg.estado = "Realizó FIFO";
-                    } else {
-                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRF);
-                        let fvLpnRF = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
-                        let itemSugeridoEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnSugerido);
-                        let fvLpnSugerido = itemSugeridoEnCajas ? itemSugeridoEnCajas.vencimiento : "";
+                    matrixDetalleReposicion.forEach(puesta => {
+                        let puestaSkuClean = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                        if (puestaSkuClean === skuLimpio) {
+                            let lpnRF = puesta.lpn ? puesta.lpn.toString().trim().toUpperCase() : "";
+                            let lpnSugeridoActual = lote.lpn.toString().trim().toUpperCase();
 
-                        if (fvLpnRF && fvLpnSugerido && fvLpnRF === fvLpnSugerido) {
-                            reg.estado = "Misma FV";
-                        } else {
-                            reg.estado = "No realizó FIFO";
-                            reg.lpnConsumido = lpnRF;
+                            if (lpnRF === lpnSugeridoActual) {
+                                estadoFila = "Realizó FIFO";
+                            } else {
+                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === lpnRF);
+                                let fvLpnRF = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+                                let fvLpnSugerido = lote.vencimiento || "";
+
+                                if (fvLpnRF && fvLpnSugerido && fvLpnRF === fvLpnSugerido) {
+                                    estadoFila = "Misma FV";
+                                } else {
+                                    estadoFila = "No realizó FIFO";
+                                    lpnConsumidoFila = lpnRF;
+                                }
+                            }
                         }
-                    }
+                    });
+
+                    filasGeneradasCumplimiento.push({
+                        sku: satItem.skuOriginal || skuKey,
+                        lpn: lote.lpn,
+                        ubicacion: lote.ubicacion,
+                        descripcion: descFila,
+                        area: satItem.areaJSatelite || "GENERAL", // REGLA 3: Área desde Columna 5
+                        cantidadSalida: cantidadATomarDeEstaCaja,
+                        cantidadSolicitadaJSat: cantidadRequeridaMeta,
+                        fv: fvFila,
+                        estado: estadoFila,
+                        lpnConsumido: lpnConsumidoFila
+                    });
                 }
             });
 
-            let llavesSKU = Object.keys(mapaCumplimiento);
             registrosHistoricosCumplimiento24 = [];
-
-            let totalSkusTotal = llavesSKU.length;
+            let totalSkusTotal = filasGeneradasCumplimiento.length;
             let totalSkusRepuestos = 0;
 
-            llavesSKU.forEach(skuKey => {
-                let item = mapaCumplimiento[skuKey];
+            filasGeneradasCumplimiento.forEach(item => {
                 let esRepuesto = item.estado !== "Pendiente" || item.cantidadSalida > 0;
-                
-                if (esRepuesto) {
-                    totalSkusRepuestos++;
-                }
+                if (esRepuesto) totalSkusRepuestos++;
 
-                // REGLA 5: Filtrar por "REPUESTO" o "PENDIENTE"
+                // REGLA 5: Filtrado por Repuesto o Pendiente
                 if (filterVal === "REPUESTO" && !esRepuesto) return;
                 if (filterVal === "PENDIENTE" && esRepuesto) return;
 
                 registrosHistoricosCumplimiento24.push(item);
 
-                let formatoSalidaSolicitada = `${item.cantidadSalida}/${item.cantidadStockCajas}`;
+                let formatoSalidaSolicitada = `${item.cantidadSalida}/${item.cantidadSolicitadaJSat}`;
                 let estadoHtml = "";
-                
+
                 if (item.estado === "Realizó FIFO") {
                     estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
                 } else if (item.estado === "Misma FV") {
@@ -2239,7 +2241,7 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // REGLA 1: Contador actualizado (SKUs VÁLIDOS CON STOCK REPUESTOS / SKUs VÁLIDOS CON STOCK TOTALES)
+            // Indicadores actualizados
             document.getElementById('boxSkusRepuestosCumplimiento').innerText = `${totalSkusRepuestos}/${totalSkusTotal}`;
             let porcAvance = totalSkusTotal > 0 ? Math.round((totalSkusRepuestos / totalSkusTotal) * 100) : 0;
             document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
