@@ -275,7 +275,7 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES EXACTOS -->
+                        <!-- INDICADORES EXACTOS EN TIEMPO REAL -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -820,6 +820,7 @@
             }).catch(() => {});
         }
 
+        // PERSISTENCIA CON RECALCULO AUTOMÁTICO EN TIEMPO REAL
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -832,6 +833,7 @@
                     document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
+                ejecutarCruceMacroGlobal();
             });
 
             detalleRepoRef.on("value", (snapshot) => {
@@ -846,6 +848,7 @@
                     document.getElementById('statusData2').innerText = "Waiting...";
                 }
                 forzarActualizacionTablaAdmin();
+                ejecutarCruceMacroGlobal(); // SOLUCIÓN RAZÓN C: Recalculo inmediato en vivo
             });
         }
 
@@ -1030,6 +1033,7 @@
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "hidden";
                 }
+                ejecutarCruceMacroGlobal();
             });
         }
 
@@ -1812,18 +1816,15 @@
                 dbRef.set(null);
                 fechaCargaRef.set(null);
             } else if (tipo === 'satelite') {
-                // ELIMINACIÓN INDEPENDIENTE DEL ARCHIVO JSATÉLITE
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 ejecutarCruceMacroGlobal();
             } else if (tipo === 'reposicion') {
-                // ELIMINACIÓN INDEPENDIENTE DEL DETALLE DE REPOSICIÓN
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
                 ejecutarCruceMacroGlobal();
                 forzarActualizacionTablaAdmin();
             } else if (tipo === 'satelite_vista') {
-                // BOTÓN ROJO TABLA CUMPLIMIENTO 24
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 matrixDetalleReposicion = [];
@@ -1982,7 +1983,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: COLUMNA F (ÍNDICE 5 - ÁREA LITERAL), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
+        // JSATÉLITE: LECTURA ESTRICTA DE COLUMNA F (ÍNDICE 5 - ÁREA LITERAL), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2043,7 +2044,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: FILTRADO ESTRICTO POR LAS 2 PANTALLAS DE RADIOFRECUENCIA
+        // DETALLE_REPOSICIÓN: NORMALIZACIÓN Y LECTURA
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2099,8 +2100,7 @@
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
                     let uDestino = pPantalla.toUpperCase();
-                    // ESTRICTO EN LAS 2 PANTALLAS DE RF SOLICITADAS
-                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
+                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA") || uDestino.includes("REPONER") || uDestino.includes("RESERVA")) {
                         tempDetalleRepo.push({
                             lpn: pLpn,
                             sku: pSku,
@@ -2117,11 +2117,13 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN CON BOTONES 3 ESTADOS E INDICADORES EN TIEMPO REAL
+        // CUMPLIMIENTO 24: CRUCE Y RECALCULO AUTOMÁTICO EN TIEMPO REAL
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
+            if (!tbody) return;
+
             if (Object.keys(reqJ_Satelite).length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
                 document.getElementById('boxSkusStockCumplimiento').innerText = "0";
@@ -2135,13 +2137,13 @@
             let skusValidosConStockSet = new Set();
             let skusRepuestosSet = new Set();
 
-            // Bolsa de consumos desde Detalle_Reposición
+            // Bolsa de consumos desde Detalle_Reposición limpiando SKUs y LPNs
             let bolsaConsumosRF = [];
             if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                 matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku || !m.pantalla) return;
-                    let pUpper = m.pantalla.toUpperCase();
-                    let esPantallaRFValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA");
+                    if (!m.sku) return;
+                    let pUpper = (m.pantalla || "").toUpperCase();
+                    let esPantallaRFValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
                     
                     let cantAjustadaNum = parseInt(m.cantAjustada, 10);
                     let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
@@ -2200,9 +2202,9 @@
                     let estadoFila = "Pendiente";
                     let lpnConsumidoFila = "";
 
-                    let lpnSugeridoLimpio = lote.lpn.toString().trim().toUpperCase();
+                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
 
-                    // Buscar match en la bolsa de RF
+                    // Buscar match exacto en RF
                     let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn === lpnSugeridoLimpio);
 
                     if (idxMatchExacto !== -1) {
@@ -2283,7 +2285,7 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // Actualizar tarjetas e indicadores
+            // Indicadores exactos
             let totalSkusConStock = skusValidosConStockSet.size;
             let totalRepuestosUnicos = skusRepuestosSet.size;
             let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
