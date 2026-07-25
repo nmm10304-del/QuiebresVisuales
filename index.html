@@ -85,7 +85,7 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES INDEPENDIENTES -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES 100% INDEPENDIENTES -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -1076,7 +1076,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1121,10 +1121,7 @@
                         let pUpper = m.pantalla.toUpperCase();
                         let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
                         
-                        let cantAjustadaNum = parseInt(m.cantAjustada, 10);
-                        let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
-
-                        if (esPantallaValida && esBajadaReal && m.lpn) {
+                        if (esPantallaValida && m.lpn) {
                             bolsaConsumosRF.push({
                                 sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
                                 lpn: m.lpn.toString().trim(),
@@ -1983,7 +1980,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: LECTURA ESTRICTA DE COLUMNA F (ÍNDICE 5 - ÁREA LITERAL), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
+        // JSATÉLITE: COLUMNA F (ÍNDICE 5 - ÁREA LITERAL), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2044,7 +2041,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: NORMALIZACIÓN Y LECTURA
+        // DETALLE_REPOSICIÓN: SIN RESTRICCIONES RÍGIDAS DE NEGATIVOS O NOMBRES INCOMPATIBLES
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2100,15 +2097,18 @@
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
                     let uDestino = pPantalla.toUpperCase();
-                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA") || uDestino.includes("REPONER") || uDestino.includes("RESERVA")) {
-                        tempDetalleRepo.push({
-                            lpn: pLpn,
-                            sku: pSku,
-                            pantalla: pPantalla,
-                            cantOriginal: pCantOrig,
-                            cantAjustada: pCantAjust,
-                            usuario: pUsuario
-                        });
+                    // Acepta flexibilidad idéntica a Repotenciar Tienda
+                    if (uDestino.includes("REPONER") || uDestino.includes("RESERVA") || uDestino.includes("PUERTA") || uDestino === "") {
+                        if (pSku && pLpn) {
+                            tempDetalleRepo.push({
+                                lpn: pLpn,
+                                sku: pSku,
+                                pantalla: pPantalla,
+                                cantOriginal: pCantOrig,
+                                cantAjustada: pCantAjust,
+                                usuario: pUsuario
+                            });
+                        }
                     }
                 }
 
@@ -2117,7 +2117,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE Y RECALCULO AUTOMÁTICO EN TIEMPO REAL
+        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN IDÉNTICO A REPOTENCIAR TIENDA
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2137,24 +2137,16 @@
             let skusValidosConStockSet = new Set();
             let skusRepuestosSet = new Set();
 
-            // Bolsa de consumos desde Detalle_Reposición limpiando SKUs y LPNs
+            // Bolsa de consumos desde Detalle_Reposición (idéntico a Repotenciar Tienda)
             let bolsaConsumosRF = [];
             if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                 matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku) return;
-                    let pUpper = (m.pantalla || "").toUpperCase();
-                    let esPantallaRFValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
-                    
-                    let cantAjustadaNum = parseInt(m.cantAjustada, 10);
-                    let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
-
-                    if (esPantallaRFValida && esBajadaReal && m.lpn) {
-                        bolsaConsumosRF.push({
-                            sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                            lpn: m.lpn.toString().trim().toUpperCase(),
-                            consumido: false
-                        });
-                    }
+                    if (!m.sku || !m.lpn) return;
+                    bolsaConsumosRF.push({
+                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                        lpn: m.lpn.toString().trim().toUpperCase(),
+                        consumido: false
+                    });
                 });
             }
 
@@ -2204,7 +2196,7 @@
 
                     let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
 
-                    // Buscar match exacto en RF
+                    // Buscar match exacto de SKU + LPN en la bolsa de RF
                     let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn === lpnSugeridoLimpio);
 
                     if (idxMatchExacto !== -1) {
@@ -2212,6 +2204,7 @@
                         estadoFila = "Realizó FIFO";
                         skusRepuestosSet.add(skuLimpio);
                     } else {
+                        // Buscar si bajó otro LPN para el mismo SKU
                         let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
 
                         if (idxOtroLpn !== -1) {
