@@ -259,17 +259,50 @@
                 </div>
             </div>
 
-            <!-- CUADRO CUMPLIMIENTO 24 -->
+            <!-- CUADRO CUMPLIMIENTO 24 (REESTRUCTURADO Y CON CABECERA COMPLETA) -->
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
-                    <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
-                        <p class="text-xs text-gray-500">Compara las puestas físicas del sistema de Radiofrecuencia para auditar si el personal ejecutó el FIFO correspondiente.</p>
+                        
+                        <!-- FILTRO DE CUMPLIMIENTO 24 -->
+                        <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
+                            <span class="text-xs font-bold text-gray-700">Filtrar:</span>
+                            <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
+                                <option value="TODOS">Todos</option>
+                                <option value="FIFO_OK">Realizó FIFO</option>
+                                <option value="FIFO_NO">No realizó FIFO</option>
+                                <option value="PENDIENTE">Pendiente</option>
+                            </select>
+                        </div>
+
+                        <!-- CONTADOR DE SKUS REPUESTOS -->
+                        <div class="flex items-center gap-1.5 text-xs text-gray-600">
+                            <span>Cantidad de SKUs Repuestos:</span>
+                            <span id="boxSkusRepuestosCumplimiento" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0/0</span>
+                        </div>
                     </div>
-                    <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-                        Procesar y Cruzar Archivos
-                    </button>
+                    
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- INDICADOR DE AVANCE % -->
+                        <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
+                            <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:</span>
+                            <span id="boxPorcentajeAvanceCumplimiento" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
+                        </div>
+
+                        <!-- BOTONES DE ACCIÓN COMPLETA -->
+                        <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Procesar y Cruzar Archivos
+                        </button>
+                        <button onclick="descargarExcelCumplimiento24()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Descargar Excel
+                        </button>
+                        <button onclick="eliminarData('satelite', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Eliminar data
+                        </button>
+                    </div>
                 </div>
+
                 <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
                     <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
                         <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0 z-10 shadow-xs">
@@ -544,6 +577,7 @@
         let reqJ_Satelite = {};
         let matrixDetalleReposicion = []; 
         let registrosHistoricosRepotenciar = []; 
+        let registrosHistoricosCumplimiento24 = []; 
         let databaseCat_Ean = {}; 
         let cacheAlertasGlobales = {}; 
         let rolUsuarioActivo = "";
@@ -1033,7 +1067,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1746,6 +1780,27 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
+        // DESCARGA DE EXCEL DE CUMPLIMIENTO 24
+        function descargarExcelCumplimiento24() {
+            if (!registrosHistoricosCumplimiento24 || registrosHistoricosCumplimiento24.length === 0) return;
+            let dataProcesada = registrosHistoricosCumplimiento24.map(i => ({
+                "SKU": i.sku,
+                "LPN": i.lpn,
+                "Ubicación": i.ubicacion,
+                "Descripción": i.descripcion,
+                "Área": i.area,
+                "Cant": `${i.cantidadSalida}/${i.cantidadSolicitada}`,
+                "FV": i.fv,
+                "Estado": i.estado,
+                "LPN Consumido": i.lpnConsumido
+            }));
+
+            const hoja = XLSX.utils.json_to_sheet(dataProcesada);
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, "Cumplimiento24");
+            XLSX.writeFile(libro, "Reporte_Cumplimiento_24.xlsx");
+        }
+
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1753,6 +1808,9 @@
                 fechaCargaRef.set(null);
             } else if (tipo === 'satelite') {
                 sateliteRef.set(null);
+                matrixDetalleReposicion = [];
+                detalleRepoRef.set(null);
+                ejecutarCruceMacroGlobal();
             } else if (tipo === 'reposicion') {
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
@@ -1910,7 +1968,7 @@
             }, 30);
         }
 
-        // PROCESADOR DE JSATÉLITE MAPEANDO COLUMNA 3 (SKU) Y COLUMNA 13 (QUANTITY)
+        // PROCESADOR DE JSATÉLITE (MAPEANDO COLUMNA 3 [SKU] Y COLUMNA 13 [QUANTITY])
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -1938,8 +1996,9 @@
                     let idxSkuCol3 = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                     let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad") || h.includes("solicitada"));
 
-                    if (idxSkuCol3 === -1) idxSkuCol3 = filasMatriz[headerRowIdx].length > 3 ? 3 : (filasMatriz[headerRowIdx].length > 2 ? 2 : 0);
-                    if (idxQtyCol13 === -1) idxQtyCol13 = filasMatriz[headerRowIdx].length > 13 ? 13 : (filasMatriz[headerRowIdx].length > 12 ? 12 : 1);
+                    // Índices estrictos por defecto: Columna 3 (índice 2) y Columna 13 (índice 12)
+                    if (idxSkuCol3 === -1) idxSkuCol3 = 2;
+                    if (idxQtyCol13 === -1) idxQtyCol13 = 12;
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
@@ -2034,17 +2093,22 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CRUCE DE CUMPLIMIENTO 24 CON FORMATO "0/20" SEGÚN ESTADO Y MATCH CON JSATÉLITE Y CAJAS TIENDA
+        // CRUCE DE CUMPLIMIENTO 24 COMPLETO CON REPORTE Y FILTRADO
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
+            const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
+            
             if (matrixDetalleReposicion.length === 0 && Object.keys(reqJ_Satelite).length === 0) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Debe subir primero los archivos de Detalle_Reposición o JSatélite.");
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>`;
+                document.getElementById('boxSkusRepuestosCumplimiento').innerText = "0/0";
+                document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = "0%";
                 return;
             }
-            tbody.innerHTML = "";
             
+            tbody.innerHTML = "";
             let mapaCumplimiento = {};
 
+            // 1. Mapear datos solicitados de JSatélite
             Object.keys(reqJ_Satelite).forEach(skuKey => {
                 let satItem = reqJ_Satelite[skuKey];
                 mapaCumplimiento[skuKey] = {
@@ -2061,6 +2125,7 @@
                 };
             });
 
+            // 2. Cruzar con Detalle_Reposición y Cajas_Tienda
             matrixDetalleReposicion.forEach(puesta => {
                 let skuClean = puesta.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                 if (!mapaCumplimiento[skuClean]) {
@@ -2109,20 +2174,34 @@
             });
 
             let llavesSKU = Object.keys(mapaCumplimiento);
-            if (llavesSKU.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No se encontraron registros coincidentes para procesar...</td></tr>`;
-                return;
-            }
+            registrosHistoricosCumplimiento24 = [];
+
+            let totalSkusTotal = llavesSKU.length;
+            let totalSkusRepuestos = 0;
 
             llavesSKU.forEach(skuKey => {
                 let item = mapaCumplimiento[skuKey];
                 let qtyTotalSolicitada = item.cantidadSolicitada > 0 ? item.cantidadSolicitada : (item.cantidadSalida > 0 ? item.cantidadSalida : 1);
-                let formatoSalidaSolicitada = `${item.cantidadSalida}/${qtyTotalSolicitada}`;
+                
+                if (item.cantidadSalida > 0) {
+                    totalSkusRepuestos++;
+                }
 
+                let esCumpleFifo = item.estado === "Realizó FIFO";
+                let esNoFifo = item.estado === "No realizó FIFO";
+                let esPendiente = item.estado === "Pendiente";
+
+                if (filterVal === "FIFO_OK" && !esCumpleFifo) return;
+                if (filterVal === "FIFO_NO" && !esNoFifo) return;
+                if (filterVal === "PENDIENTE" && !esPendiente) return;
+
+                registrosHistoricosCumplimiento24.push(item);
+
+                let formatoSalidaSolicitada = `${item.cantidadSalida}/${qtyTotalSolicitada}`;
                 let estadoHtml = "";
-                if (item.estado === "Realizó FIFO") {
+                if (esCumpleFifo) {
                     estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
-                } else if (item.estado === "No realizó FIFO") {
+                } else if (esNoFifo) {
                     estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                 } else {
                     estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
@@ -2141,6 +2220,11 @@
                         <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
                     </tr>`;
             });
+
+            // Actualización de contadores de cabecera en Cumplimiento 24
+            document.getElementById('boxSkusRepuestosCumplimiento').innerText = `${totalSkusRepuestos}/${totalSkusTotal}`;
+            let porcAvance = totalSkusTotal > 0 ? Math.round((totalSkusRepuestos / totalSkusTotal) * 100) : 0;
+            document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
         }
     </script>
 </body>
