@@ -194,7 +194,7 @@
                 </div>
             </div>
 
-            <!-- CUADRO REPOTENCIAR TIENDA (CON INDICADORES HOMOLOGADOS) -->
+            <!-- CUADRO REPOTENCIAR TIENDA -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -265,7 +265,6 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
                         
-                        <!-- FILTRO -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
@@ -275,7 +274,6 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -289,13 +287,11 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2">
-                        <!-- CAJA DE AVANCE % -->
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
                             <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:</span>
                             <span id="boxPorcentajeAvanceCumplimiento" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
                         </div>
 
-                        <!-- BOTONES DE ACCIÓN -->
                         <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
                             Procesar y Cruzar Archivos
                         </button>
@@ -331,7 +327,7 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE ================= -->
+        <!-- PANEL ASISTENTE -->
         <div id="panelAsistente" class="hidden max-w-2xl mx-auto w-full bg-white rounded-lg shadow-md border border-gray-200 relative overflow-hidden pb-6 my-auto">
             <div class="w-full bg-promart border-b py-3 flex justify-center items-center px-4 shadow-sm">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
@@ -801,16 +797,18 @@
             });
         }
 
+        // PURGA AUTOMÁTICA A MEDIANOCHE (CONSERVA EL BUZÓN DE INCIDENCIAS INTEGRAL)
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
                     if (fechaCargada && fechaCargada !== fechaHoy) {
-                        dbRef.set(null);
-                        sateliteRef.set(null);
-                        detalleRepoRef.set(null);
-                        fechaCargaRef.set(null);
+                        dbRef.set(null);          // Cajas_Tienda
+                        sateliteRef.set(null);   // JSatélite
+                        detalleRepoRef.set(null);// Detalle_Reposición
+                        logRef.set(null);        // Repotenciar Tienda
+                        fechaCargaRef.set(null); // Resetea fecha de carga
                     }
                 }
             }).catch(() => {});
@@ -1092,7 +1090,6 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
-        // RENDERIZAR REPOTENCIAR TIENDA (DISCRIMINA CON Y SIN FV)
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -2016,7 +2013,6 @@
             }, 30);
         }
 
-        // JSATÉLITE: LECTURA DE QUANTITY (COLUMNA M)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2047,7 +2043,7 @@
 
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;   // Columna C
                     if (idxAreaCol6 === -1) idxAreaCol6 = 5;  // Columna F (AREA)
-                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; // Columna M (QUANTITY)
+                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; // Columna M
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
@@ -2077,7 +2073,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: LECTURA CON HERENCIA DE SKU
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2156,7 +2151,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN Y EVALUACIÓN DE BOTONES CON/SIN FV
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2188,7 +2182,6 @@
                 });
             }
 
-            // Copia temporal de reserva para simular descuento de saldos de cajas
             let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
 
             Object.keys(reqJ_Satelite).forEach(skuKey => {
