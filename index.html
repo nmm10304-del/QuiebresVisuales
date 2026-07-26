@@ -85,7 +85,7 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES 100% INDEPENDIENTES -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -194,7 +194,7 @@
                 </div>
             </div>
 
-            <!-- CUADRO REPOTENCIAR TIENDA (INDICADORES ACTUALIZADOS A 'SKUs con Stock' Y 'Por reponer') -->
+            <!-- CUADRO REPOTENCIAR TIENDA (CON INDICADORES HOMOLOGADOS) -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -209,7 +209,6 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES REEMPLAZADOS IGUALES A QUIEBRES VISUALES -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -266,7 +265,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
                         
-                        <!-- FILTRO: Todos, Repuesto, Pendiente -->
+                        <!-- FILTRO -->
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
                             <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
@@ -276,7 +275,7 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES EXACTOS EN TIEMPO REAL -->
+                        <!-- INDICADORES -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -425,7 +424,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR USUARIO -->
+    <!-- MODALES -->
     <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[110]">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">⚠️</div>
@@ -440,7 +439,6 @@
         </div>
     </div>
 
-    <!-- MODAL AGREGAR USUARIO -->
     <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[95]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
             <h3 class="font-bold text-base border-b pb-2 text-blue-700 uppercase flex items-center gap-2">
@@ -467,7 +465,6 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
             <h3 class="font-bold text-base border-b pb-2 text-orange-600 uppercase flex items-center gap-2">
@@ -516,7 +513,6 @@
         </div>
     </div>
 
-    <!-- MODAL DINÁMICO NOTIFICACIONES -->
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full space-y-5 border text-center">
             <div id="iconoNotificacionDinamico" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold">✔</div>
@@ -528,7 +524,6 @@
         </div>
     </div>
 
-    <!-- MODAL REPORTE CON VALIDACIÓN ESTRICTA -->
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg shadow-lg p-5 max-w-sm w-full space-y-4 relative">
             <h3 class="font-bold text-red-700 text-base flex items-center gap-2 border-b pb-2">🚨 SKU/EAN no escanea</h3>
@@ -1097,6 +1092,7 @@
             renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
         }
 
+        // RENDERIZAR REPOTENCIAR TIENDA (DISCRIMINA CON Y SIN FV)
         function renderizarTablaRepotenciar(data) {
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
@@ -1109,7 +1105,7 @@
                 let copiaRegistros = [...registrosHistoricosRepotenciar];
                 copiaRegistros.reverse(); 
 
-                tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
+                tbody.innerHTML = "";
                 
                 let contadorTotalFilasLpn = 0;
                 let contadorLpnsProcesadosRF = 0;
@@ -1180,6 +1176,7 @@
                         
                         let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
                         let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
+                        let tieneFVValida = fvFormateada && fvFormateada !== "" && fvFormateada !== "SIN FECHA";
 
                         let badgeFifoHtml = ""; 
                         let lpnConsumidoAnomalia = ""; 
@@ -1197,12 +1194,13 @@
                                 contadorLpnsProcesadosRF++;
                                 esRepuesto = true;
                                 skusRepuestosSetRepo.add(skuLogLimpio);
-                                textoEstadoExport = "Realizó FIFO";
 
-                                if (!fvFormateada || fvFormateada === "") {
+                                if (!tieneFVValida) {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                    textoEstadoExport = "Repuesto";
                                 } else {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                                    textoEstadoExport = "Realizó FIFO";
                                 }
                             } else {
                                 let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio);
@@ -1214,7 +1212,7 @@
                                     esRepuesto = true;
                                     skusRepuestosSetRepo.add(skuLogLimpio);
 
-                                    if (!fvFormateada || fvFormateada === "") {
+                                    if (!tieneFVValida) {
                                         badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                         textoEstadoExport = "Repuesto";
                                     } else {
@@ -1223,7 +1221,7 @@
 
                                         if (fvOtroLpn && fvOtroLpn === fvLpnFila) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
-                                            textoEstadoExport = "Misma FV";
+                                            textoEstadoExport = "LPN con la misma FV";
                                         } else {
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                             lpnConsumidoAnomalia = bajadaDispo.lpn;
@@ -1232,13 +1230,23 @@
                                     }
                                 } else {
                                     badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                                    textoEstadoExport = "Pendiente";
                                 }
                             }
                         } else {
                             badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                            textoEstadoExport = "Pendiente";
                         }
 
                         subItem.estadoExport = textoEstadoExport;
+                        subItem.lpnConsumidoExport = lpnConsumidoAnomalia;
+                        subItem.esRepuestoFlag = esRepuesto;
+                        subItem.asistente = idUsuarioCredencial;
+                        subItem.reponer = zonaExtraida;
+                        subItem.sku = item.sku || "";
+                        subItem.ubicacionFisica = ubicacionFisicaLpn;
+                        subItem.descripcionLimpia = descLimpia;
+                        subItem.fvFormateada = fvFormateada;
 
                         if (filtroVistaVal === "REPUESTO" && !esRepuesto) return;
                         if (filtroVistaVal === "PENDIENTE" && esRepuesto) return;
@@ -1259,7 +1267,6 @@
                     });
                 });
 
-                // ACTUALIZACIÓN DE INDICADORES EN REPOTENCIAR TIENDA
                 let totalSkusConStockRepo = skusValidosConStockSetRepo.size;
                 let totalRepuestosRepo = skusRepuestosSetRepo.size;
                 let porReponerRepo = Math.max(0, totalSkusConStockRepo - totalRepuestosRepo);
@@ -1740,9 +1747,11 @@
             setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
-        // DESCARGAR EXCEL REPOTENCIAR: INCLUYE EXCLUSIVAMENTE LA COLUMNA ESTADO
+        // EXPORTAR EXCEL REPOTENCIAR TIENDA SEGÚN EL FILTRO VISIBLE
         function descargarExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) return;
+
+            const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
             let dataProcesada = [];
 
             registrosHistoricosRepotenciar.forEach(item => {
@@ -1756,7 +1765,6 @@
                 }
 
                 let idUsuarioCredencial = item.idAsistente || item.operador || "HP00000000";
-
                 let purgaStr = item.purgaCompletaRuta || "";
                 let desglosesLpn = [];
 
@@ -1785,6 +1793,11 @@
                     let ubiFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
                     let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
 
+                    let esRepuestoItem = subItem.esRepuestoFlag || false;
+
+                    if (filtroVistaVal === "REPUESTO" && !esRepuestoItem) return;
+                    if (filtroVistaVal === "PENDIENTE" && esRepuestoItem) return;
+
                     dataProcesada.push({
                         "Asistente": idUsuarioCredencial,
                         "Reponer": zonaExtraida,
@@ -1794,10 +1807,13 @@
                         "Descripción": descLimpia,
                         "Cant": subItem.cant,
                         "FV": formatearAFechaDDMMYYYY(fvLpnFila),
-                        "Estado": subItem.estadoExport || "Pendiente" // SOLO COLUMNA ESTADO
+                        "Estado": subItem.estadoExport || "Pendiente",
+                        "LPN Consumido": subItem.lpnConsumidoExport || ""
                     });
                 });
             });
+
+            if (dataProcesada.length === 0) return;
 
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
             const libro = XLSX.utils.book_new();
@@ -1805,9 +1821,10 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
-        // DESCARGAR EXCEL CUMPLIMIENTO 24: INCLUYE EXCLUSIVAMENTE LA COLUMNA ESTADO
+        // EXPORTAR EXCEL CUMPLIMIENTO 24 SEGÚN EL FILTRO VISIBLE
         function descargarExcelCumplimiento24() {
             if (!registrosHistoricosCumplimiento24 || registrosHistoricosCumplimiento24.length === 0) return;
+
             let dataProcesada = registrosHistoricosCumplimiento24.map(i => ({
                 "SKU": i.sku,
                 "LPN": i.lpn,
@@ -1816,7 +1833,8 @@
                 "Área": i.area,
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
-                "Estado": i.estado // SOLO COLUMNA ESTADO
+                "Estado": i.estadoTextoPlano || "Pendiente",
+                "LPN Consumido": i.lpnConsumido || ""
             }));
 
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
@@ -1825,7 +1843,6 @@
             XLSX.writeFile(libro, "Reporte_Cumplimiento_24.xlsx");
         }
 
-        // FUNCIONES DE ELIMINACIÓN INDEPENDIENTES
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1999,7 +2016,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: BÚSQUEDA DE ENCABEZADO EXACTO 'QUANTITY'
+        // JSATÉLITE: LECTURA DE QUANTITY (COLUMNA M)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2030,7 +2047,7 @@
 
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;   // Columna C
                     if (idxAreaCol6 === -1) idxAreaCol6 = 5;  // Columna F (AREA)
-                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; // Columna M
+                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; // Columna M (QUANTITY)
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
@@ -2060,6 +2077,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // DETALLE_REPOSICIÓN: LECTURA CON HERENCIA DE SKU
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2138,7 +2156,7 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN IDÉNTICO A REPOTENCIAR TIENDA
+        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN Y EVALUACIÓN DE BOTONES CON/SIN FV
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2170,6 +2188,9 @@
                 });
             }
 
+            // Copia temporal de reserva para simular descuento de saldos de cajas
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
+
             Object.keys(reqJ_Satelite).forEach(skuKey => {
                 let satItem = reqJ_Satelite[skuKey];
                 let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -2177,7 +2198,7 @@
 
                 if (cantidadRequeridaMeta <= 0) return;
 
-                let lotesDisponibles = inventarioData1.filter(item => {
+                let lotesDisponibles = inventarioCajasTemporal.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
                     if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
@@ -2205,12 +2226,16 @@
 
                     let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
                     let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
+                    
+                    lote.unidades = unidadesEnEstaCaja - cantidadATomarDeEstaCaja;
                     remanentePorCubrir -= cantidadATomarDeEstaCaja;
 
                     let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
                     let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
+                    let tieneFVValida = fvFila && fvFila !== "" && fvFila !== "SIN FECHA";
 
                     let estadoFila = "Pendiente";
+                    let estadoTextoPlano = "Pendiente";
                     let lpnConsumidoFila = "";
 
                     let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
@@ -2219,25 +2244,39 @@
 
                     if (idxMatchExacto !== -1) {
                         bolsaConsumosRF[idxMatchExacto].consumido = true;
-                        estadoFila = "Realizó FIFO";
                         skusRepuestosSet.add(skuLimpio);
+
+                        if (!tieneFVValida) {
+                            estadoFila = "Repuesto";
+                            estadoTextoPlano = "Repuesto";
+                        } else {
+                            estadoFila = "Realizó FIFO";
+                            estadoTextoPlano = "Realizó FIFO";
+                        }
                     } else {
                         let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
 
                         if (idxOtroLpn !== -1) {
                             let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
                             bolsaConsumosRF[idxOtroLpn].consumido = true;
-                            
-                            let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
-                            let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
-
-                            if (fvOtroLpn && fvOtroLpn === lote.vencimiento) {
-                                estadoFila = "Misma FV";
-                            } else {
-                                estadoFila = "No realizó FIFO";
-                                lpnConsumidoFila = bajadaDispo.lpn;
-                            }
                             skusRepuestosSet.add(skuLimpio);
+
+                            if (!tieneFVValida) {
+                                estadoFila = "Repuesto";
+                                estadoTextoPlano = "Repuesto";
+                            } else {
+                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
+                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+
+                                if (fvOtroLpn && fvOtroLpn === lote.vencimiento) {
+                                    estadoFila = "Misma FV";
+                                    estadoTextoPlano = "LPN con la misma FV";
+                                } else {
+                                    estadoFila = "No realizó FIFO";
+                                    estadoTextoPlano = "No realizó FIFO";
+                                    lpnConsumidoFila = bajadaDispo.lpn;
+                                }
+                            }
                         }
                     }
 
@@ -2247,10 +2286,11 @@
                         lpn: lote.lpn,
                         ubicacion: lote.ubicacion,
                         descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL", // Columna F
+                        area: satItem.areaJSatelite || "GENERAL",
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja,
                         fv: fvFila,
                         estado: estadoFila,
+                        estadoTextoPlano: estadoTextoPlano,
                         lpnConsumido: lpnConsumidoFila
                     });
                 }
@@ -2269,6 +2309,8 @@
                 let estadoHtml = "";
                 if (item.estado === "Realizó FIFO") {
                     estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                } else if (item.estado === "Repuesto") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                 } else if (item.estado === "Misma FV") {
                     estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                 } else if (item.estado === "No realizó FIFO") {
