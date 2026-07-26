@@ -85,7 +85,7 @@
                 </select>
             </div>
 
-            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES INDEPENDIENTES -->
+            <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL CON BOTONES 100% INDEPENDIENTES -->
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
                     <button onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
@@ -194,7 +194,7 @@
                 </div>
             </div>
 
-            <!-- CUADRO REPOTENCIAR TIENDA -->
+            <!-- CUADRO REPOTENCIAR TIENDA (INDICADORES ACTUALIZADOS A 'SKUs con Stock' Y 'Por reponer') -->
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -209,14 +209,15 @@
                             </select>
                         </div>
 
+                        <!-- INDICADORES REEMPLAZADOS IGUALES A QUIEBRES VISUALES -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
-                                <span>Unidades Validadas:</span>
-                                <span id="boxUnidadesRepotenciar" class="bg-orange-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 Uds</span>
+                                <span>SKUs con Stock:</span>
+                                <span id="boxSkusStockRepo" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <span>Cantidad de SKUs:</span>
-                                <span id="boxSkusUnicosRepotenciar" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0 SKUs</span>
+                                <span>Por reponer:</span>
+                                <span id="boxPorReponerRepo" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                         </div>
                     </div>
@@ -275,7 +276,7 @@
                             </select>
                         </div>
 
-                        <!-- INDICADORES EXACTOS -->
+                        <!-- INDICADORES EXACTOS EN TIEMPO REAL -->
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -832,6 +833,7 @@
                     document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
+                ejecutarCruceMacroGlobal();
             });
 
             detalleRepoRef.on("value", (snapshot) => {
@@ -846,6 +848,7 @@
                     document.getElementById('statusData2').innerText = "Waiting...";
                 }
                 forzarActualizacionTablaAdmin();
+                ejecutarCruceMacroGlobal();
             });
         }
 
@@ -1030,6 +1033,8 @@
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "hidden";
                 }
+                forzarActualizacionTablaAdmin();
+                ejecutarCruceMacroGlobal();
             });
         }
 
@@ -1072,7 +1077,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1105,34 +1110,29 @@
                 copiaRegistros.reverse(); 
 
                 tbody.innerHTML = ""; totalUnidadesRepotenciar = 0;
-                const skusUnicosSet = new Set();
                 
                 let contadorTotalFilasLpn = 0;
                 let contadorLpnsProcesadosRF = 0;
+                let skusValidosConStockSetRepo = new Set();
+                let skusRepuestosSetRepo = new Set();
 
                 let bolsaConsumosRF = [];
                 if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                     matrixDetalleReposicion.forEach(m => {
-                        if (!m.sku || !m.pantalla) return;
-                        let pUpper = m.pantalla.toUpperCase();
-                        let esPantallaValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA") || pUpper.includes("REPONER") || pUpper.includes("RESERVA");
-                        
-                        let cantAjustadaNum = parseInt(m.cantAjustada, 10);
-                        let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
-
-                        if (esPantallaValida && esBajadaReal && m.lpn) {
-                            bolsaConsumosRF.push({
-                                sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                                lpn: m.lpn.toString().trim(),
-                                consumido: false
-                            });
-                        }
+                        if (!m.sku || !m.lpn) return;
+                        bolsaConsumosRF.push({
+                            sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                            lpn: m.lpn.toString().trim().toUpperCase(),
+                            consumido: false
+                        });
                     });
                 }
 
                 copiaRegistros.forEach(item => {
-                    totalUnidadesRepotenciar += parseInt(item.cant || 0);
-                    if(item.sku) skusUnicosSet.add(item.sku.toString().trim().toUpperCase());
+                    if (item.sku) {
+                        let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                        skusValidosConStockSetRepo.add(skuLogLimpio);
+                    }
                     
                     let rawDesc = item.desc || "";
                     let zonaExtraida = "General";
@@ -1184,17 +1184,20 @@
                         let badgeFifoHtml = ""; 
                         let lpnConsumidoAnomalia = ""; 
                         let esRepuesto = false;
+                        let textoEstadoExport = "Pendiente";
 
                         if (item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             let lpnSugeridoLimpio = lpnFila.toUpperCase();
 
-                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.toUpperCase() === lpnSugeridoLimpio);
+                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
 
                             if (idxMatchExacto !== -1) {
                                 bolsaConsumosRF[idxMatchExacto].consumido = true;
                                 contadorLpnsProcesadosRF++;
                                 esRepuesto = true;
+                                skusRepuestosSetRepo.add(skuLogLimpio);
+                                textoEstadoExport = "Realizó FIFO";
 
                                 if (!fvFormateada || fvFormateada === "") {
                                     badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
@@ -1209,23 +1212,33 @@
                                     bolsaConsumosRF[idxOtroLpn].consumido = true;
                                     contadorLpnsProcesadosRF++;
                                     esRepuesto = true;
+                                    skusRepuestosSetRepo.add(skuLogLimpio);
 
                                     if (!fvFormateada || fvFormateada === "") {
                                         badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                        textoEstadoExport = "Repuesto";
                                     } else {
-                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === bajadaDispo.lpn.toUpperCase());
+                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                         let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
                                         if (fvOtroLpn && fvOtroLpn === fvLpnFila) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                                            textoEstadoExport = "Misma FV";
                                         } else {
                                             badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
                                             lpnConsumidoAnomalia = bajadaDispo.lpn;
+                                            textoEstadoExport = "No realizó FIFO";
                                         }
                                     }
+                                } else {
+                                    badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
                                 }
                             }
+                        } else {
+                            badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
                         }
+
+                        subItem.estadoExport = textoEstadoExport;
 
                         if (filtroVistaVal === "REPUESTO" && !esRepuesto) return;
                         if (filtroVistaVal === "PENDIENTE" && esRepuesto) return;
@@ -1246,16 +1259,21 @@
                     });
                 });
 
-                document.getElementById('boxUnidadesRepotenciar').innerText = `${totalUnidadesRepotenciar} Uds`;
-                document.getElementById('boxSkusUnicosRepotenciar').innerText = `${skusUnicosSet.size} SKUs`;
+                // ACTUALIZACIÓN DE INDICADORES EN REPOTENCIAR TIENDA
+                let totalSkusConStockRepo = skusValidosConStockSetRepo.size;
+                let totalRepuestosRepo = skusRepuestosSetRepo.size;
+                let porReponerRepo = Math.max(0, totalSkusConStockRepo - totalRepuestosRepo);
+
+                document.getElementById('boxSkusStockRepo').innerText = totalSkusConStockRepo;
+                document.getElementById('boxPorReponerRepo').innerText = porReponerRepo;
 
                 let porcAvance = contadorTotalFilasLpn > 0 ? Math.round((contadorLpnsProcesadosRF / contadorTotalFilasLpn) * 100) : 0;
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
 
             } else {
                 tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
-                document.getElementById('boxUnidadesRepotenciar').innerText = "0 Uds";
-                document.getElementById('boxSkusUnicosRepotenciar').innerText = "0 SKUs";
+                document.getElementById('boxSkusStockRepo').innerText = "0";
+                document.getElementById('boxPorReponerRepo').innerText = "0";
                 document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%";
             }
         }
@@ -1722,6 +1740,7 @@
             setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
         }
 
+        // DESCARGAR EXCEL REPOTENCIAR: INCLUYE EXCLUSIVAMENTE LA COLUMNA ESTADO
         function descargarExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) return;
             let dataProcesada = [];
@@ -1774,7 +1793,8 @@
                         "Ubicación": ubiFisica,
                         "Descripción": descLimpia,
                         "Cant": subItem.cant,
-                        "FV": formatearAFechaDDMMYYYY(fvLpnFila)
+                        "FV": formatearAFechaDDMMYYYY(fvLpnFila),
+                        "Estado": subItem.estadoExport || "Pendiente" // SOLO COLUMNA ESTADO
                     });
                 });
             });
@@ -1785,6 +1805,7 @@
             XLSX.writeFile(libro, "Reporte_Repotenciacion_Tienda.xlsx");
         }
 
+        // DESCARGAR EXCEL CUMPLIMIENTO 24: INCLUYE EXCLUSIVAMENTE LA COLUMNA ESTADO
         function descargarExcelCumplimiento24() {
             if (!registrosHistoricosCumplimiento24 || registrosHistoricosCumplimiento24.length === 0) return;
             let dataProcesada = registrosHistoricosCumplimiento24.map(i => ({
@@ -1795,8 +1816,7 @@
                 "Área": i.area,
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
-                "Estado": i.estado,
-                "LPN Consumido": i.lpnConsumido
+                "Estado": i.estado // SOLO COLUMNA ESTADO
             }));
 
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
@@ -1805,25 +1825,22 @@
             XLSX.writeFile(libro, "Reporte_Cumplimiento_24.xlsx");
         }
 
-        // FUNCIONES DE ELIMINACIÓN INDEPENDIENTES Y AISLADAS
+        // FUNCIONES DE ELIMINACIÓN INDEPENDIENTES
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
                 dbRef.set(null);
                 fechaCargaRef.set(null);
             } else if (tipo === 'satelite') {
-                // ELIMINACIÓN INDEPENDIENTE DEL ARCHIVO JSATÉLITE
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 ejecutarCruceMacroGlobal();
             } else if (tipo === 'reposicion') {
-                // ELIMINACIÓN INDEPENDIENTE DEL DETALLE DE REPOSICIÓN
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
                 ejecutarCruceMacroGlobal();
                 forzarActualizacionTablaAdmin();
             } else if (tipo === 'satelite_vista') {
-                // BOTÓN ROJO TABLA CUMPLIMIENTO 24
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 matrixDetalleReposicion = [];
@@ -1982,7 +1999,7 @@
             }, 30);
         }
 
-        // JSATÉLITE: COLUMNA F (ÍNDICE 5 - ÁREA LITERAL), COLUMNA C (ÍNDICE 2 - SKU) Y COLUMNA M (ÍNDICE 12 - QUANTITY)
+        // JSATÉLITE: BÚSQUEDA DE ENCABEZADO EXACTO 'QUANTITY'
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2009,7 +2026,7 @@
                     let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     let idxSkuCol3 = headers.findIndex(h => h === "sku" || h === "articulo");
                     let idxAreaCol6 = headers.findIndex(h => h === "area" || h === "área");
-                    let idxQtyCol13 = headers.findIndex(h => h.includes("quantity") || h.includes("cantidad"));
+                    let idxQtyCol13 = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad"));
 
                     if (idxSkuCol3 === -1) idxSkuCol3 = 2;   // Columna C
                     if (idxAreaCol6 === -1) idxAreaCol6 = 5;  // Columna F (AREA)
@@ -2043,7 +2060,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: FILTRADO ESTRICTO POR LAS 2 PANTALLAS DE RADIOFRECUENCIA
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2086,6 +2102,7 @@
                 if (idxLpn === -1) idxLpn = 2;
 
                 let tempDetalleRepo = [];
+                let ultimoSkuVisto = "";
 
                 for (let i = headerRowIdx + 1; i < filas.length; i++) {
                     const row = filas[i];
@@ -2098,9 +2115,13 @@
                     let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
                     let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
 
-                    let uDestino = pPantalla.toUpperCase();
-                    // ESTRICTO EN LAS 2 PANTALLAS DE RF SOLICITADAS
-                    if (uDestino.includes("RF_REPONER_RESERVA") || uDestino.includes("RF_REPONER_PUERTA")) {
+                    if (pSku) {
+                        ultimoSkuVisto = pSku;
+                    } else if (!pSku && ultimoSkuVisto) {
+                        pSku = ultimoSkuVisto;
+                    }
+
+                    if (pSku && pLpn) {
                         tempDetalleRepo.push({
                             lpn: pLpn,
                             sku: pSku,
@@ -2117,11 +2138,13 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN CON BOTONES 3 ESTADOS E INDICADORES EN TIEMPO REAL
+        // CUMPLIMIENTO 24: CRUCE DE DETALLE_REPOSICIÓN IDÉNTICO A REPOTENCIAR TIENDA
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
+            if (!tbody) return;
+
             if (Object.keys(reqJ_Satelite).length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
                 document.getElementById('boxSkusStockCumplimiento').innerText = "0";
@@ -2135,24 +2158,15 @@
             let skusValidosConStockSet = new Set();
             let skusRepuestosSet = new Set();
 
-            // Bolsa de consumos desde Detalle_Reposición
             let bolsaConsumosRF = [];
             if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
                 matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku || !m.pantalla) return;
-                    let pUpper = m.pantalla.toUpperCase();
-                    let esPantallaRFValida = pUpper.includes("RF_REPONER_RESERVA") || pUpper.includes("RF_REPONER_PUERTA");
-                    
-                    let cantAjustadaNum = parseInt(m.cantAjustada, 10);
-                    let esBajadaReal = !isNaN(cantAjustadaNum) ? cantAjustadaNum < 0 : true;
-
-                    if (esPantallaRFValida && esBajadaReal && m.lpn) {
-                        bolsaConsumosRF.push({
-                            sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                            lpn: m.lpn.toString().trim().toUpperCase(),
-                            consumido: false
-                        });
-                    }
+                    if (!m.sku || !m.lpn) return;
+                    bolsaConsumosRF.push({
+                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                        lpn: m.lpn.toString().trim().toUpperCase(),
+                        consumido: false
+                    });
                 });
             }
 
@@ -2163,7 +2177,6 @@
 
                 if (cantidadRequeridaMeta <= 0) return;
 
-                // Buscar cajas disponibles en Cajas_Tienda
                 let lotesDisponibles = inventarioData1.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
@@ -2200,10 +2213,9 @@
                     let estadoFila = "Pendiente";
                     let lpnConsumidoFila = "";
 
-                    let lpnSugeridoLimpio = lote.lpn.toString().trim().toUpperCase();
+                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
 
-                    // Buscar match en la bolsa de RF
-                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn === lpnSugeridoLimpio);
+                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
 
                     if (idxMatchExacto !== -1) {
                         bolsaConsumosRF[idxMatchExacto].consumido = true;
@@ -2216,7 +2228,7 @@
                             let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
                             bolsaConsumosRF[idxOtroLpn].consumido = true;
                             
-                            let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase() === bajadaDispo.lpn);
+                            let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                             let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
                             if (fvOtroLpn && fvOtroLpn === lote.vencimiento) {
@@ -2283,7 +2295,6 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
             }
 
-            // Actualizar tarjetas e indicadores
             let totalSkusConStock = skusValidosConStockSet.size;
             let totalRepuestosUnicos = skusRepuestosSet.size;
             let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
