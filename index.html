@@ -799,18 +799,24 @@
             });
         }
 
-        // PURGA AUTOMÁTICA A MEDIANOCHE (CONSERVA EL BUZÓN DE INCIDENCIAS INTEGRAL)
+        // PURGA AUTOMÁTICA Y AUTO-RESCATE / REFREGA DE PÁGINA A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
                     if (fechaCargada && fechaCargada !== fechaHoy) {
-                        dbRef.set(null);          // Cajas_Tienda
-                        sateliteRef.set(null);   // JSatélite
-                        detalleRepoRef.set(null);// Detalle_Reposición
-                        logRef.set(null);        // Repotenciar Tienda
-                        fechaCargaRef.set(null); // Resetea fecha de carga
+                        // Vacía la base de datos cloud
+                        Promise.all([
+                            dbRef.set(null),          
+                            sateliteRef.set(null),   
+                            detalleRepoRef.set(null),
+                            logRef.set(null),        
+                            fechaCargaRef.set(null)
+                        ]).then(() => {
+                            // Fuerza la recarga completa de la pantalla a las 00:00:00
+                            window.location.reload();
+                        });
                     }
                 }
             }).catch(() => {});
@@ -2077,7 +2083,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // DETALLE_REPOSICIÓN: INCLUYE RF_REPONER_RESERVA, RF_REPONER_PUERTA Y RF_DIVIDIR
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2140,7 +2145,6 @@
                     }
 
                     let uDestino = pPantalla.toUpperCase();
-                    // ACTIVADA LA PANTALLA RF_DIVIDIR
                     let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
                                            uDestino.includes("RF_REPONER_PUERTA") || 
                                            uDestino.includes("RF_DIVIDIR") || 
