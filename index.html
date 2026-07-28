@@ -328,13 +328,13 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE (FIJADO ARRIBA Y COMPACTADO) ================= -->
+        <!-- ================= PANEL DEL ASISTENTE ================= -->
         <div id="panelAsistente" class="hidden max-w-lg mx-auto w-full bg-white rounded-lg shadow border border-gray-200 relative overflow-hidden pb-2 mt-1 mb-auto">
             <div class="w-full bg-promart border-b py-1 flex justify-center items-center px-2 shadow-2xs">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-7 w-auto object-contain mx-auto">
             </div>
 
-            <div class="px-2 mt-1.5 space-y-1.5">
+            <div class="px-2.5 mt-1.5 space-y-1.5">
                 <div class="bg-gray-50 p-1 border rounded flex items-center gap-1.5 shadow-inner">
                     <label class="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Módulo:</label>
                     <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-1 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-2xs cursor-pointer flex-1">
@@ -346,18 +346,18 @@
 
                 <div id="submoduloAsistenteEscaneo" class="space-y-1.5">
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs">
-                        <span class="text-lg">⚠️</span>
+                        <span class="text-xl">⚠️</span>
                         <div id="txtMensajeAdvertenciaStock" class="leading-tight text-[11px]">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
                     </div>
 
-                    <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-2 space-y-0.5">
-                        <div class="flex justify-between items-center">
+                    <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-2.5 space-y-0.5">
+                        <div class="flex justify-between items-center border-b border-orange-200/50 pb-0.5 mb-0.5">
                             <div class="text-[10px] uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
                             <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">Reserva: 0 Uds</span>
                         </div>
-                        <div id="asistenteInfoDescripcion" class="text-xs font-bold text-gray-900 leading-tight"></div>
-                        <div class="pt-0.5 border-t border-orange-200/60 flex items-center justify-between">
-                            <span class="text-[10px] text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-xs text-gray-900"></b></span>
+                        <div id="asistenteInfoDescripcion" class="text-sm font-bold text-gray-900 leading-tight tracking-wide"></div>
+                        <div class="pt-0.5 flex items-center justify-between">
+                            <span class="text-[11px] text-gray-600 font-medium">SKU: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900 font-bold"></b></span>
                         </div>
                     </div>
 
@@ -366,7 +366,7 @@
                             <div class="col-span-2 space-y-0.5">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
                                 <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
-                                       class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-sm uppercase focus:outline-none"
+                                       class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-sm font-semibold uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
@@ -419,7 +419,7 @@
         </div>
     </div>
 
-    <!-- MODALES -->
+    <!-- MODAL CONFIRMACIÓN -->
     <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[110]">
         <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
             <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
@@ -460,7 +460,7 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (CUADRÍCULA DE 2 COLUMNAS COMPLETA VISIBLE SIN SCROLL) -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
@@ -471,35 +471,35 @@
             <div class="grid grid-cols-2 gap-1.5 py-0.5 font-sans text-xs">
                 <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-1.5 p-2 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
                     <input type="radio" name="optUbicacion" value="Home" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Home</span>
+                    <span class="truncate text-xs font-bold text-orange-950">Home</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Gancheras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Gancheras</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Gancheras</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Pre-altillo</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Pre-altillo</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Cajas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Cajas</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Cajas</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Tendencias" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Tendencias</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Tendencias</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Showroom" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Showroom</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Showroom</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Bines</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Bines</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate">Rumas</span>
+                    <span class="truncate text-xs font-bold text-gray-800">Rumas</span>
                 </label>
             </div>
             
@@ -799,17 +799,18 @@
             });
         }
 
+        // PURGA AUTOMÁTICA A MEDIANOCHE (CONSERVA EL BUZÓN DE INCIDENCIAS INTEGRAL)
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
                     if (fechaCargada && fechaCargada !== fechaHoy) {
-                        dbRef.set(null);          
-                        sateliteRef.set(null);   
-                        detalleRepoRef.set(null);
-                        logRef.set(null);        
-                        fechaCargaRef.set(null); 
+                        dbRef.set(null);          // Cajas_Tienda
+                        sateliteRef.set(null);   // JSatélite
+                        detalleRepoRef.set(null);// Detalle_Reposición
+                        logRef.set(null);        // Repotenciar Tienda
+                        fechaCargaRef.set(null); // Resetea fecha de carga
                     }
                 }
             }).catch(() => {});
@@ -1325,8 +1326,8 @@
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
                                 contenedorNotifAsistente.innerHTML += `
-                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-2 rounded shadow-2xs text-xs font-mono flex items-start gap-2 animate-pulse">
-                                        <span class="text-base">⏳</span>
+                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-2 rounded shadow-xs text-xs font-mono flex items-start gap-2 animate-pulse">
+                                        <span class="text-lg">⏳</span>
                                         <div>
                                             <span class="font-bold text-gray-900">Reportado: ${m.codigo}</span>
                                             <p class="text-[10px] text-gray-600 font-sans mt-0.5">Motivo: ${m.motivo}</p>
@@ -1335,7 +1336,7 @@
                                     </div>`;
                             } else if (m.estado === "Completado") {
                                 contenedorNotifAsistente.innerHTML += `
-                                    <div class="bg-green-50 border border-green-200 text-green-950 p-2 rounded shadow-2xs text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
+                                    <div class="bg-green-50 border border-green-200 text-green-950 p-2.5 rounded shadow-xs text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
                                         <div class="flex items-start gap-2">
                                             <span class="text-base text-green-600 font-bold">✔</span>
                                             <div>
@@ -1574,7 +1575,7 @@
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
-                    document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "block";
                 }
@@ -2076,6 +2077,7 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // DETALLE_REPOSICIÓN: INCLUYE RF_REPONER_RESERVA, RF_REPONER_PUERTA Y RF_DIVIDIR
         function procesarData2() {
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
@@ -2137,7 +2139,16 @@
                         pSku = ultimoSkuVisto;
                     }
 
-                    if (pSku && pLpn) {
+                    let uDestino = pPantalla.toUpperCase();
+                    // ACTIVADA LA PANTALLA RF_DIVIDIR
+                    let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
+                                           uDestino.includes("RF_REPONER_PUERTA") || 
+                                           uDestino.includes("RF_DIVIDIR") || 
+                                           uDestino.includes("DIVIDIR") || 
+                                           uDestino.includes("REPONER") || 
+                                           uDestino.includes("RESERVA");
+
+                    if (pSku && pLpn && esPantallaValida) {
                         tempDetalleRepo.push({
                             lpn: pLpn,
                             sku: pSku,
