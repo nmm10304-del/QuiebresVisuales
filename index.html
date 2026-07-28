@@ -24,37 +24,37 @@
 </head>
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
 
-    <nav class="bg-promart p-3 text-white flex justify-between items-center shadow-md">
-        <div class="flex items-center gap-3">
-            <h1 class="text-lg font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
+    <nav class="bg-promart p-2.5 text-white flex justify-between items-center shadow-md">
+        <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
         </div>
-        <div id="navUsuario" class="hidden text-xs font-semibold flex items-center gap-3">
+        <div id="navUsuario" class="hidden text-xs font-semibold flex items-center gap-2">
             <div class="flex flex-col text-right">
-                <span class="text-[10px] opacity-90">Colaborador</span>
-                <span id="nombreUsuarioActivo" class="font-bold font-mono text-xs bg-black text-white px-2 py-0.5 rounded shadow-sm"></span>
+                <span class="text-[9px] opacity-90">Colaborador</span>
+                <span id="nombreUsuarioActivo" class="font-bold font-mono text-[11px] bg-black text-white px-1.5 py-0.5 rounded shadow-sm"></span>
             </div>
-            <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-2.5 rounded text-[11px] transition shadow-sm border border-gray-800">
+            <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-2 rounded text-[10px] transition shadow-sm border border-gray-800">
                 Salir
             </button>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto p-2 md:p-6 flex-1 w-full flex flex-col justify-start">
+    <div class="max-w-7xl mx-auto p-1.5 md:p-6 flex-1 w-full flex flex-col justify-start">
 
-        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-6 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-5 my-auto">
-            <div class="flex justify-center pb-2 rounded-lg p-4 shadow-inner">
-                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-14 w-auto object-contain mx-auto">
+        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-5 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-4 my-auto">
+            <div class="flex justify-center pb-1 rounded-lg p-3 shadow-inner">
+                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
             </div>
-            <h2 class="text-lg font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
-            <div class="space-y-4">
+            <h2 class="text-base font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
+            <div class="space-y-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                    <input type="text" id="userInput" onkeydown="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Usuario</label>
+                    <input type="text" id="userInput" onkeydown="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
                     <div class="relative">
-                        <input type="password" id="passwordInput" onkeydown="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2.5 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none">
+                        <input type="password" id="passwordInput" onkeydown="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none text-sm">
                         <button type="button" onclick="alternarVisibilidadPassword('passwordInput', 'iconoOjoLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-orange-500">
                             <svg id="iconoOjoLogin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -63,7 +63,7 @@
                         </button>
                     </div>
                 </div>
-                <button onclick="autenticarUsuario()" class="w-full bg-promart hover:opacity-95 text-white font-bold py-2.5 rounded shadow transition uppercase text-sm tracking-wider">
+                <button onclick="autenticarUsuario()" class="w-full bg-promart hover:opacity-95 text-white font-bold py-2 rounded shadow transition uppercase text-xs tracking-wider">
                     Ingresar al Sistema
                 </button>
             </div>
@@ -328,14 +328,14 @@
             </div>
         </div>
 
-        <!-- ================= PANEL DEL ASISTENTE (DISEÑO OPTIMIZADO PARA HONEYWELL) ================= -->
-        <div id="panelAsistente" class="hidden max-w-lg mx-auto w-full bg-white rounded-lg shadow border border-gray-200 relative overflow-hidden pb-3 my-auto">
-            <div class="w-full bg-promart border-b py-1.5 flex justify-center items-center px-2 shadow-xs">
-                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-8 w-auto object-contain mx-auto">
+        <!-- ================= PANEL DEL ASISTENTE (FIJADO ARRIBA Y COMPACTADO) ================= -->
+        <div id="panelAsistente" class="hidden max-w-lg mx-auto w-full bg-white rounded-lg shadow border border-gray-200 relative overflow-hidden pb-2 mt-1 mb-auto">
+            <div class="w-full bg-promart border-b py-1 flex justify-center items-center px-2 shadow-2xs">
+                <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-7 w-auto object-contain mx-auto">
             </div>
 
-            <div class="px-2.5 mt-2 space-y-2">
-                <div class="bg-gray-50 p-1.5 border rounded flex items-center gap-2 shadow-inner">
+            <div class="px-2 mt-1.5 space-y-1.5">
+                <div class="bg-gray-50 p-1 border rounded flex items-center gap-1.5 shadow-inner">
                     <label class="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Módulo:</label>
                     <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-1 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-2xs cursor-pointer flex-1">
                         <option value="escaneo">🔍 Escaneo de reposición</option>
@@ -344,40 +344,40 @@
                     </select>
                 </div>
 
-                <div id="submoduloAsistenteEscaneo" class="space-y-2">
-                    <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-2.5 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-xs">
-                        <span class="text-xl">⚠️</span>
-                        <div id="txtMensajeAdvertenciaStock" class="leading-tight">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
+                <div id="submoduloAsistenteEscaneo" class="space-y-1.5">
+                    <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs">
+                        <span class="text-lg">⚠️</span>
+                        <div id="txtMensajeAdvertenciaStock" class="leading-tight text-[11px]">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
                     </div>
 
-                    <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-2.5 space-y-1">
+                    <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-2 space-y-0.5">
                         <div class="flex justify-between items-center">
                             <div class="text-[10px] uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
-                            <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-[11px] font-bold px-1.5 py-0.5 rounded shadow-2xs">Reserva: 0 Uds</span>
+                            <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">Reserva: 0 Uds</span>
                         </div>
-                        <div id="asistenteInfoDescripcion" class="text-xs font-bold text-gray-900 leading-snug"></div>
-                        <div class="pt-1 border-t border-orange-200/60 flex items-center justify-between">
-                            <span class="text-[11px] text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-xs text-gray-900"></b></span>
+                        <div id="asistenteInfoDescripcion" class="text-xs font-bold text-gray-900 leading-tight"></div>
+                        <div class="pt-0.5 border-t border-orange-200/60 flex items-center justify-between">
+                            <span class="text-[10px] text-gray-600">SKU: <b id="lblSkuConvertido" class="font-mono text-xs text-gray-900"></b></span>
                         </div>
                     </div>
 
-                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); solicitarUbicacionOEnviar();" class="p-2 border border-gray-300 rounded bg-gray-50/50">
-                        <div class="grid grid-cols-3 gap-2 items-end">
+                    <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); solicitarUbicacionOEnviar();" class="p-1.5 border border-gray-300 rounded bg-gray-50/50">
+                        <div class="grid grid-cols-3 gap-1.5 items-end">
                             <div class="col-span-2 space-y-0.5">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
                                 <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
-                                       class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-base uppercase focus:outline-none"
+                                       class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-sm uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
                             </div>
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                                       class="w-full p-2 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-base font-bold text-center focus:outline-none" 
+                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                             <div id="containerResetBtn" class="hidden">
-                                <button type="button" onclick="cancelarRegistro()" class="w-full p-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-xs transition shadow-2xs cursor-pointer flex justify-center items-center gap-1">
+                                <button type="button" onclick="cancelarRegistro()" class="w-full p-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-xs transition shadow-2xs cursor-pointer flex justify-center items-center gap-1">
                                     🔄 Reset
                                 </button>
                             </div>
@@ -387,30 +387,30 @@
 
                     <div id="resultadoEscaneo" class="hidden"></div>
 
-                    <div class="pt-1.5 border-t flex flex-col gap-1">
-                        <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3 rounded border border-red-300 text-[11px] transition tracking-wide uppercase shadow-2xs cursor-pointer block">
+                    <div class="pt-1 border-t flex flex-col gap-1">
+                        <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1 px-2.5 rounded border border-red-300 text-[10px] transition tracking-wide uppercase shadow-2xs cursor-pointer block">
                             🚨 SKU/EAN no escanea
                         </button>
                     </div>
                 </div>
 
-                <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-3">
-                    <h2 class="text-base font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
-                    <p class="text-[11px] text-gray-500 italic">Estado en tiempo real de tus incidencias enviadas.</p>
-                    <div id="contenedorNotificacionesAsistente" class="space-y-2 max-h-72 overflow-y-auto pt-1">
-                        <p class="text-xs text-gray-400 text-center italic py-4">No has registrado reportes en este turno...</p>
+                <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-2">
+                    <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
+                    <p class="text-[10px] text-gray-500 italic">Estado en tiempo real de tus incidencias enviadas.</p>
+                    <div id="contenedorNotificacionesAsistente" class="space-y-1.5 max-h-64 overflow-y-auto pt-0.5">
+                        <p class="text-xs text-gray-400 text-center italic py-3">No has registrado reportes en este turno...</p>
                     </div>
                 </div>
 
-                <div id="submoduloAsistenteCambiarClave" class="hidden space-y-3">
-                    <h2 class="text-base font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña</h2>
-                    <p class="text-[11px] text-gray-500 italic">Modifica tu clave de acceso al sistema.</p>
-                    <div class="p-3 border border-gray-200 rounded-lg bg-gray-50/50 space-y-2 max-w-sm">
+                <div id="submoduloAsistenteCambiarClave" class="hidden space-y-2">
+                    <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña</h2>
+                    <p class="text-[10px] text-gray-500 italic">Modifica tu clave de acceso al sistema.</p>
+                    <div class="p-2.5 border border-gray-200 rounded-lg bg-gray-50/50 space-y-2 max-w-sm">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-1">Nueva Contraseña</label>
-                            <input type="password" id="txtNuevaClaveAsistente" placeholder="Escribe tu nueva contraseña" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-sans text-xs">
+                            <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Nueva Contraseña</label>
+                            <input type="password" id="txtNuevaClaveAsistente" placeholder="Escribe tu nueva contraseña" class="w-full p-1.5 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-sans text-xs">
                         </div>
-                        <button onclick="procesarCambioClaveAsistente()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-3 rounded text-xs transition tracking-wide uppercase shadow-2xs cursor-pointer">
+                        <button onclick="procesarCambioClaveAsistente()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition tracking-wide uppercase shadow-2xs cursor-pointer">
                             Actualizar Contraseña
                         </button>
                     </div>
@@ -419,135 +419,134 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN PARA ELIMINAR USUARIO -->
-    <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[110]">
-        <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-center">
-            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">⚠️</div>
+    <!-- MODALES -->
+    <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[110]">
+        <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
             <div class="space-y-1">
-                <h4 class="text-base font-bold text-gray-900">Atención</h4>
+                <h4 class="text-sm font-bold text-gray-900">Atención</h4>
                 <p id="txtMensajeConfirmarEliminar" class="text-xs text-gray-600 leading-relaxed font-sans"></p>
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
-                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
+                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL AGREGAR USUARIO -->
-    <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[95]">
-        <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-gray-800">
-            <h3 class="font-bold text-sm border-b pb-2 text-blue-700 uppercase flex items-center gap-2">
+    <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-3 z-[95]">
+        <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-gray-800">
+            <h3 class="font-bold text-xs border-b pb-1.5 text-blue-700 uppercase flex items-center gap-1.5">
                 👤 Agregar Nuevo Asistente
             </h3>
-            <div class="space-y-2.5">
+            <div class="space-y-2">
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-700 mb-0.5">Nombre Colaborador</label>
-                    <input type="text" id="txtNuevoNombreColaborador" placeholder="" class="w-full p-2 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Nombre Colaborador</label>
+                    <input type="text" id="txtNuevoNombreColaborador" placeholder="" class="w-full p-1.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-700 mb-0.5">Credencial</label>
-                    <input type="text" id="txtNuevoUserHP" placeholder="" class="w-full p-2 border rounded text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Credencial</label>
+                    <input type="text" id="txtNuevoUserHP" placeholder="" class="w-full p-1.5 border rounded text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-700 mb-0.5">Contraseña Inicial</label>
-                    <input type="password" id="txtNuevaClaveCreacion" placeholder="••••••••" class="w-full p-2 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Contraseña Inicial</label>
+                    <input type="password" id="txtNuevaClaveCreacion" placeholder="••••••••" class="w-full p-1.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
             <div class="flex gap-2 pt-1">
-                <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
-                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-2 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
+                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (CON DESPLIEGUE LIMPIO SIN TECLADO) -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (CUADRÍCULA DE 2 COLUMNAS COMPLETA VISIBLE SIN SCROLL) -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
-        <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-gray-800">
-            <h3 class="font-bold text-sm border-b pb-1.5 text-orange-600 uppercase flex items-center gap-2">
+        <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
+            <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
                 📍 Selección de Ubicación
             </h3>
-            <p class="text-[11px] text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
+            <p class="text-[10px] text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
             
-            <div class="space-y-1.5 py-1 max-h-56 overflow-y-auto font-sans text-xs">
-                <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-2.5 p-2 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
+            <div class="grid grid-cols-2 gap-1.5 py-0.5 font-sans text-xs">
+                <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-1.5 p-2 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
                     <input type="radio" name="optUbicacion" value="Home" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Home</span>
+                    <span class="truncate">Home</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Gancheras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Gancheras</span>
+                    <span class="truncate">Gancheras</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Pre-altillo</span>
+                    <span class="truncate">Pre-altillo</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Cajas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Cajas</span>
+                    <span class="truncate">Cajas</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Tendencias" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Tendencias</span>
+                    <span class="truncate">Tendencias</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Showroom" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Showroom</span>
+                    <span class="truncate">Showroom</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Bines</span>
+                    <span class="truncate">Bines</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-2.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer font-medium text-gray-800 transition">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span>Rumas</span>
+                    <span class="truncate">Rumas</span>
                 </label>
             </div>
             
-            <button onclick="cerrarModalUbicacion()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">
+            <button onclick="cerrarModalUbicacion()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase mt-1">
                 Cancelar
             </button>
         </div>
     </div>
 
     <!-- MODAL DINÁMICO NOTIFICACIONES -->
-    <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white rounded-2xl shadow-xl p-5 max-w-xs w-full space-y-4 border text-center">
-            <div id="iconoNotificacionDinamico" class="w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">✔</div>
-            <div class="space-y-1">
-                <h4 id="txtNotificacionDinamicoTitulo" class="text-sm font-bold text-gray-900">Estimado Usuario</h4>
-                <p id="txtNotificacionExitoDetalle" class="text-xs text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
+    <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[100]">
+        <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
+            <div id="iconoNotificacionDinamico" class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✔</div>
+            <div class="space-y-0.5">
+                <h4 id="txtNotificacionDinamicoTitulo" class="text-xs font-bold text-gray-900">Estimado Usuario</h4>
+                <p id="txtNotificacionExitoDetalle" class="text-[11px] text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
             </div>
-            <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2 rounded-xl shadow transition uppercase tracking-wider">Aceptar</button>
+            <button onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 rounded-xl shadow transition uppercase tracking-wider">Aceptar</button>
         </div>
     </div>
 
     <!-- MODAL REPORTE -->
-    <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-lg p-4 max-w-xs w-full space-y-3 relative">
-            <h3 class="font-bold text-red-700 text-sm flex items-center gap-2 border-b pb-1.5">🚨 SKU/EAN no escanea</h3>
+    <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-3 z-50">
+        <div class="bg-white rounded-lg shadow-lg p-3.5 max-w-xs w-full space-y-2.5 relative">
+            <h3 class="font-bold text-red-700 text-xs flex items-center gap-1.5 border-b pb-1">🚨 SKU/EAN no escanea</h3>
             
-            <div id="graficoAlertaDuplicado" class="hidden bg-red-100 border border-red-400 text-red-900 p-2.5 rounded-lg flex items-start gap-2 shadow-xs text-xs font-semibold animate-pulse">
-                <span class="text-lg">🛡️</span>
+            <div id="graficoAlertaDuplicado" class="hidden bg-red-100 border border-red-400 text-red-900 p-2 rounded-lg flex items-start gap-1.5 shadow-2xs text-[11px] font-semibold animate-pulse">
+                <span class="text-base">🛡️</span>
                 <div id="txtAlertaDuplicado" class="leading-tight"></div>
             </div>
 
-            <div class="space-y-2.5">
+            <div class="space-y-2">
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-600 mb-0.5">Código observado (EAN/SKU):</label>
+                    <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Código observado (EAN/SKU):</label>
                     <input type="text" id="incidenciacodigoInput" inputmode="numeric" pattern="[0-9]*"
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
-                           placeholder="" class="w-full p-2 border rounded focus:outline-none font-mono text-xs uppercase">
+                           placeholder="" class="w-full p-1.5 border rounded focus:outline-none font-mono text-xs uppercase">
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-600 mb-0.5">¿Cuál es el problema detectado?:</label>
-                    <textarea id="incidenciaMotivoInput" rows="2.5" 
+                    <label class="block text-[10px] font-bold text-gray-600 mb-0.5">¿Cuál es el problema detectado?:</label>
+                    <textarea id="incidenciaMotivoInput" rows="2" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
-                              placeholder="Escribe el motivo..." class="w-full p-2 border rounded text-xs focus:outline-none"></textarea>
+                              placeholder="Escribe el motivo..." class="w-full p-1.5 border rounded text-xs focus:outline-none"></textarea>
                 </div>
             </div>
             <div class="flex gap-2 pt-1">
-                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded text-xs transition shadow-xs border border-orange-600 cursor-pointer block">Enviar Alerta</button>
+                <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded text-xs transition shadow-2xs border border-orange-600 cursor-pointer block">Enviar Alerta</button>
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded text-xs transition">Cerrar</button>
             </div>
         </div>
@@ -768,7 +767,7 @@
                 cerrarModalAgregarUsuario();
                 
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold";
+                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                 document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Usuario Registrado";
                 document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).`;
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
@@ -912,7 +911,7 @@
                 passRef.child(idUsuarioLogueado).set(nuevaClave).then(() => {
                     document.getElementById('txtNuevaClaveAsistente').value = "";
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                    document.getElementById('iconoNotificacionDinamico').className = "w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold";
+                    document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                     document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Excellent";
                     document.getElementById('txtNotificacionExitoDetalle').innerText = "Tu contraseña ha sido actualizada con éxito.";
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
@@ -938,7 +937,7 @@
                     document.getElementById('selectUsuarioResetAdmin').value = "";
                     
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                    document.getElementById('iconoNotificacionDinamico').className = "w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold";
+                    document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                     document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
                     document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha cambiado la contraseña para ${usuariosDB[userTarget].nombre} (${userTarget}) correctamente.`;
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
@@ -947,9 +946,9 @@
         }
 
         function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
-            if (document.activeElement) document.activeElement.blur(); // Ocultar teclado en colectores
+            if (document.activeElement) document.activeElement.blur(); 
             document.getElementById('iconoNotificacionDinamico').innerText = "⚠️";
-            document.getElementById('iconoNotificacionDinamico').className = "w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold";
+            document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
             document.getElementById('txtNotificacionDinamicoTitulo').innerText = titulo;
             document.getElementById('txtNotificacionExitoDetalle').innerText = mensaje;
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
@@ -1024,7 +1023,7 @@
                     }
                     
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2.5 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-xs block";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "hidden";
@@ -1326,8 +1325,8 @@
                             contadorAlertasAsistente++;
                             if (m.estado === "Pendiente") {
                                 contenedorNotifAsistente.innerHTML += `
-                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-2.5 rounded shadow-xs text-xs font-mono flex items-start gap-2 animate-pulse">
-                                        <span class="text-lg">⏳</span>
+                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-2 rounded shadow-2xs text-xs font-mono flex items-start gap-2 animate-pulse">
+                                        <span class="text-base">⏳</span>
                                         <div>
                                             <span class="font-bold text-gray-900">Reportado: ${m.codigo}</span>
                                             <p class="text-[10px] text-gray-600 font-sans mt-0.5">Motivo: ${m.motivo}</p>
@@ -1336,9 +1335,9 @@
                                     </div>`;
                             } else if (m.estado === "Completado") {
                                 contenedorNotifAsistente.innerHTML += `
-                                    <div class="bg-green-50 border border-green-200 text-green-950 p-2.5 rounded shadow-xs text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
+                                    <div class="bg-green-50 border border-green-200 text-green-950 p-2 rounded shadow-2xs text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
                                         <div class="flex items-start gap-2">
-                                            <span class="text-lg text-green-600 font-bold">✔</span>
+                                            <span class="text-base text-green-600 font-bold">✔</span>
                                             <div>
                                                 <span class="font-bold text-gray-900">Completado: ${m.codigo}</span>
                                                 <p class="text-[10px] text-gray-600 font-sans mt-0.5">¡La base de datos ya fue corregida!</p>
@@ -1351,7 +1350,7 @@
                         }
                     });
                     if (contadorAlertasAsistente === 0) {
-                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-4">No has registrado reportes en este turno...</p>`;
+                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-3">No has registrado reportes en este turno...</p>`;
                     }
                 }
 
@@ -1520,7 +1519,7 @@
 
                 if (!inventarioData1 || inventarioData1.length === 0) {
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2.5 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-xs block";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "hidden";
@@ -1574,7 +1573,7 @@
                 } else {
                     descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                     document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2.5 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-xs block";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
                     document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "block";
@@ -1598,7 +1597,7 @@
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
                 return; 
             }
-            if (document.activeElement) document.activeElement.blur(); // Ocultar teclado Android
+            if (document.activeElement) document.activeElement.blur(); 
             const radios = document.getElementsByName('optUbicacion');
             radios.forEach(r => r.checked = false);
             
@@ -1900,7 +1899,7 @@
                 cancelarRegistro();
                 
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-14 h-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold";
+                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                 document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
                 document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
