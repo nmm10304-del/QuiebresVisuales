@@ -799,14 +799,12 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y AUTO-RESCATE / REFREGA DE PÁGINA A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
                     if (fechaCargada && fechaCargada !== fechaHoy) {
-                        // Vacía la base de datos cloud
                         Promise.all([
                             dbRef.set(null),          
                             sateliteRef.set(null),   
@@ -814,7 +812,6 @@
                             logRef.set(null),        
                             fechaCargaRef.set(null)
                         ]).then(() => {
-                            // Fuerza la recarga completa de la pantalla a las 00:00:00
                             window.location.reload();
                         });
                     }
@@ -1556,8 +1553,26 @@
                         return false;
                     }
 
+                    // LISTA NEGRA DE UBICACIONES OMITIDAS
                     let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) {
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) {
                         return false;
                     }
 
@@ -1727,7 +1742,24 @@
                         let nuevoStockDisponible = inventarioData1.filter(item => {
                             if (!item || !item.sku || !item.ubicacion) return false;
                             let u = item.ubicacion.toString().toUpperCase().trim();
-                            if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
+                            if (
+                                u.includes("DE-PROVEEDOR") || 
+                                u.includes("ST-PROVEEDOR") || 
+                                u.includes("DEV-PRV-VIA-CD") || 
+                                u.includes("DEV-PRV-SVT-001") || 
+                                u.includes("JAU-BAT-ALM-001") || 
+                                u.includes("DSCTO-") || 
+                                u.includes("DAD-RECP") || 
+                                u.includes("CMM-ALM") || 
+                                u.includes("CD-FALTANTE") || 
+                                u.includes("MM-") || 
+                                u.includes("NAV-TDA") || 
+                                u.includes("VCTO-") || 
+                                u.includes("JAU-BAT") || 
+                                u.includes("DEV-PRV") || 
+                                u.includes("ST-ALM") || 
+                                u.includes("CD-SOBRANTE")
+                            ) return false;
                             let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                             return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
                         }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
@@ -1993,8 +2025,26 @@
 
                         if (!skuVal || uVal <= 0 || !ubiVal) continue;
 
+                        // LISTA NEGRA DE UBICACIONES OMITIDAS
                         let uUpper = ubiVal.toUpperCase();
-                        if (uUpper.includes("DE-PROVEEDOR") || uUpper.includes("DSCTO-") || uUpper.includes("DAD-RECP") || uUpper.includes("CMM-ALM") || uUpper.includes("CD-FALTANTE") || uUpper.includes("MM-") || uUpper.includes("NAV-TDA") || uUpper.includes("VCTO-") || uUpper.includes("JAU-BAT") || uUpper.includes("DEV-PRV") || uUpper.includes("ST-ALM") || uUpper.includes("CD-SOBRANTE")) {
+                        if (
+                            uUpper.includes("DE-PROVEEDOR") || 
+                            uUpper.includes("ST-PROVEEDOR") || 
+                            uUpper.includes("DEV-PRV-VIA-CD") || 
+                            uUpper.includes("DEV-PRV-SVT-001") || 
+                            uUpper.includes("JAU-BAT-ALM-001") || 
+                            uUpper.includes("DSCTO-") || 
+                            uUpper.includes("DAD-RECP") || 
+                            uUpper.includes("CMM-ALM") || 
+                            uUpper.includes("CD-FALTANTE") || 
+                            uUpper.includes("MM-") || 
+                            uUpper.includes("NAV-TDA") || 
+                            uUpper.includes("VCTO-") || 
+                            uUpper.includes("JAU-BAT") || 
+                            uUpper.includes("DEV-PRV") || 
+                            uUpper.includes("ST-ALM") || 
+                            uUpper.includes("CD-SOBRANTE")
+                        ) {
                             continue;
                         }
 
@@ -2212,7 +2262,24 @@
                 let lotesDisponibles = inventarioCajasTemporal.filter(item => {
                     if (!item || !item.sku || !item.ubicacion) return false;
                     let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (u.includes("DE-PROVEEDOR") || u.includes("DSCTO-") || u.includes("DAD-RECP") || u.includes("CMM-ALM") || u.includes("CD-FALTANTE") || u.includes("MM-") || u.includes("NAV-TDA") || u.includes("VCTO-") || u.includes("JAU-BAT") || u.includes("DEV-PRV") || u.includes("ST-ALM") || u.includes("CD-SOBRANTE")) return false;
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) return false;
                     let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                     return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
                 });
