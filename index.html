@@ -1222,7 +1222,10 @@
                                         let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                         let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                        if (fvOtroLpn && fvOtroLpn === fvLpnFila) {
+                                        let fechaOriginalSugerida = parsearFechaEspanol(fvLpnFila);
+                                        let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+
+                                        if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
                                             badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
                                             textoEstadoExport = "LPN con la misma FV";
                                         } else {
@@ -2346,7 +2349,11 @@
                                 let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                 let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                if (fvOtroLpn && fvOtroLpn === lote.vencimiento) {
+                                // VALIDACIÓN POR FECHA DE VENCIMIENTO (FV)
+                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
+                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+
+                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
                                     estadoFila = "Misma FV";
                                     estadoTextoPlano = "LPN con la misma FV";
                                 } else {
