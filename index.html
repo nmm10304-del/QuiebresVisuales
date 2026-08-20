@@ -460,7 +460,7 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (ACTUALIZADO: CABECERAS Y LINEAL DE CAJAS) -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
@@ -473,6 +473,10 @@
                     <input type="radio" name="optUbicacion" value="Home" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-orange-950">Home</span>
                 </label>
+                <label onclick="confirmarUbicacionYGuardar('Cabeceras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                    <input type="radio" name="optUbicacion" value="Cabeceras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
+                    <span class="truncate text-xs font-bold text-gray-800">Cabeceras</span>
+                </label>
                 <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Gancheras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Gancheras</span>
@@ -481,9 +485,9 @@
                     <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Pre-altillo</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-                    <input type="radio" name="optUbicacion" value="Cajas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate text-xs font-bold text-gray-800">Cajas</span>
+                <label onclick="confirmarUbicacionYGuardar('Lineal de cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                    <input type="radio" name="optUbicacion" value="Lineal de cajas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
+                    <span class="truncate text-xs font-bold text-gray-800">Lineal de cajas</span>
                 </label>
                 <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Tendencias" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
@@ -497,7 +501,7 @@
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Bines</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition col-span-2">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Rumas</span>
                 </label>
@@ -799,6 +803,7 @@
             });
         }
 
+        // PURGA AUTOMÁTICA Y CIERRE DE SESIÓN TOTAL A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             fechaCargaRef.get().then((snapshot) => {
@@ -812,6 +817,8 @@
                             logRef.set(null),        
                             fechaCargaRef.set(null)
                         ]).then(() => {
+                            // Cierre forzoso de credenciales en navegador
+                            localStorage.clear();
                             window.location.reload();
                         });
                     }
@@ -1534,19 +1541,23 @@
                 }
 
                 let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
-                let skuTraducido = entradaOriginal; 
+                let skuTraducido = ""; 
                 let descripcionTraducida = "";
+                let existeEnCatalogo = false;
 
+                // VALIDACIÓN DE CATÁLOGO / PRODUCTO NUEVO
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
+                    existeEnCatalogo = true;
                 } else if (databaseCat_Ean[entradaSinCeros]) {
                     skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
                     descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
+                    existeEnCatalogo = true;
                 }
 
-                skuEscaneadoTemporal = skuTraducido;
-                let numeroSkuLimpioExcel = skuTraducido.replace(/[^0-9]/g, "").trim();
+                skuEscaneadoTemporal = skuTraducido || entradaOriginal;
+                let numeroSkuLimpioExcel = (skuTraducido || entradaOriginal).replace(/[^0-9]/g, "").trim();
                 let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
 
                 lotesFiltradosTurno = inventarioData1.filter(item => {
@@ -1596,15 +1607,20 @@
                     document.getElementById('containerResetBtn').className = "hidden";
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
-                    descripcionTraducida = descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    // DISCRIMINACIÓN DE MENSAJE: SI EXISTE PERO NO TIENE STOCK VS SI ES PRODUCTO NUEVO/NO EXISTE
+                    if (existeEnCatalogo) {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    } else {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el SKU no se encuentra en la data. Por favor repórtalo en el botón de abajo.";
+                    }
+
                     document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
                     document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
                     document.getElementById('containerInputLpn').className = "hidden";
                     document.getElementById('containerResetBtn').className = "block";
                 }
 
-                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida;
+                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida || "PRODUCTO IDENTIFICADO";
                 document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
             }
         }
@@ -1638,6 +1654,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
+        // GUARDADO INMEDIATO (CARGA INSTANTÁNEA EN PANTALLA)
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1702,74 +1719,50 @@
                     copiaDescripcion += ` [Zona: ${zonaDestino}]`;
                 }
 
-                logRef.once("value", (snapshot) => {
-                    let logsActuales = snapshot.val() || {};
-                    let keyExistente = null;
-                    let regExistente = null;
+                // Sincronización asíncrona no bloqueante
+                setTimeout(() => {
+                    logRef.once("value", (snapshot) => {
+                        let logsActuales = snapshot.val() || {};
+                        let keyExistente = null;
+                        let regExistente = null;
 
-                    Object.keys(logsActuales).forEach(k => {
-                        let r = logsActuales[k];
-                        if (
-                            r.idAsistente === idUsuarioLogueado &&
-                            r.sku === copiaSkuTemporal &&
-                            r.fifoLpnOptimizado === lpnSugerido &&
-                            r.desc === copiaDescripcion
-                        ) {
-                            keyExistente = k;
-                            regExistente = r;
-                        }
-                    });
-
-                    if (keyExistente && regExistente) {
-                        let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
-                        let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
-                        
-                        logRef.child(keyExistente).update({
-                            cant: nuevaCantTotal,
-                            purgaCompletaRuta: desgloseActualizado
-                        });
-                    } else {
-                        logRef.push({
-                            idAsistente: idUsuarioLogueado,
-                            operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
-                            sku: copiaSkuTemporal,
-                            fifoLpnOptimizado: lpnSugerido, 
-                            desc: copiaDescripcion,
-                            cant: cantidadNumerica,
-                            fv: fvSugerida,
-                            purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
-                        });
-                    }
-
-                    dbRef.set(inventarioData1).then(() => {
-                        let nuevoStockDisponible = inventarioData1.filter(item => {
-                            if (!item || !item.sku || !item.ubicacion) return false;
-                            let u = item.ubicacion.toString().toUpperCase().trim();
+                        Object.keys(logsActuales).forEach(k => {
+                            let r = logsActuales[k];
                             if (
-                                u.includes("DE-PROVEEDOR") || 
-                                u.includes("ST-PROVEEDOR") || 
-                                u.includes("DEV-PRV-VIA-CD") || 
-                                u.includes("DEV-PRV-SVT-001") || 
-                                u.includes("JAU-BAT-ALM-001") || 
-                                u.includes("DSCTO-") || 
-                                u.includes("DAD-RECP") || 
-                                u.includes("CMM-ALM") || 
-                                u.includes("CD-FALTANTE") || 
-                                u.includes("MM-") || 
-                                u.includes("NAV-TDA") || 
-                                u.includes("VCTO-") || 
-                                u.includes("JAU-BAT") || 
-                                u.includes("DEV-PRV") || 
-                                u.includes("ST-ALM") || 
-                                u.includes("CD-SOBRANTE")
-                            ) return false;
-                            let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                            return skuMat === copiaSkuTemporal.replace(/^0+/, "") && parseInt(item.unidades || 0, 10) > 0;
-                        }).reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                                r.idAsistente === idUsuarioLogueado &&
+                                r.sku === copiaSkuTemporal &&
+                                r.fifoLpnOptimizado === lpnSugerido &&
+                                r.desc === copiaDescripcion
+                            ) {
+                                keyExistente = k;
+                                regExistente = r;
+                            }
+                        });
 
-                        document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${nuevoStockDisponible} Uds`;
+                        if (keyExistente && regExistente) {
+                            let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
+                            let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
+                            
+                            logRef.child(keyExistente).update({
+                                cant: nuevaCantTotal,
+                                purgaCompletaRuta: desgloseActualizado
+                            });
+                        } else {
+                            logRef.push({
+                                idAsistente: idUsuarioLogueado,
+                                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                                sku: copiaSkuTemporal,
+                                fifoLpnOptimizado: lpnSugerido, 
+                                desc: copiaDescripcion,
+                                cant: cantidadNumerica,
+                                fv: fvSugerida,
+                                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+                            });
+                        }
+
+                        dbRef.set(inventarioData1);
                     });
-                });
+                }, 0);
 
             } catch (errGeneral) {
                 console.error("Error capturado en guardarRegistro:", errGeneral);
@@ -2349,7 +2342,7 @@
                                 let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                 let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                // VALIDACIÓN POR FECHA DE VENCIMIENTO (FV)
+                                // VALIDACIÓN EXACTA DE FV SIN INFLUENCIA DE SALDOS
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
