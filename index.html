@@ -340,7 +340,7 @@
                 </div>
             </div>
 
-            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS CON STOCK FÍSICO EN CAJAS_TIENDA) -->
+            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA) -->
             <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -866,6 +866,7 @@
             });
         }
 
+        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             
@@ -972,7 +973,7 @@
                 input.type = "text";
                 icono.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45(0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                     </svg>`;
             } else {
                 input.type = "password";
@@ -1984,7 +1985,7 @@
             XLSX.writeFile(libro, "Reporte_Supply_Quiebre.xlsx");
         }
 
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRE (SOLO REGISTROS CON STOCK FÍSICO EN CAJAS_TIENDA)
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA
         function ejecutarCruceSupplyQuiebre() {
             if (rolUsuarioActivo !== 'admin') return;
 
@@ -2009,7 +2010,13 @@
                     let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
                     
                     let satItem = reqJ_Satelite[skuClean];
-                    let cantPedida = satItem ? satItem.cantidadSolicitada : supItem.cantidad;
+
+                    // REGLA: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
+                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
+                        return;
+                    }
+
+                    let cantPedidaJSatelite = satItem.cantidadSolicitada;
 
                     // Busca coincidencia en Cajas_Tienda respetando lista negra y que tenga stock real
                     let cajaMatch = inventarioCajasTemporal.find(i => 
@@ -2034,7 +2041,7 @@
                         lpn: supItem.lpn || cajaMatch.lpn || "-",
                         ubicacion: ubicacionFisica,
                         descripcion: descFinal,
-                        cant: cantPedida || supItem.cantidad || 0
+                        cant: cantPedidaJSatelite
                     };
 
                     registrosHistoricosSupplyQuiebre.push(filaData);
@@ -2056,9 +2063,12 @@
                     let satItem = reqJ_Satelite[skuKey];
                     let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
                     
+                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
+                        return;
+                    }
+
                     let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && 
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
@@ -2524,216 +2534,216 @@
             lector.readAsArrayBuffer(file);
         }
 
-        function ejecutarCruceMacroGlobal() {
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA
+        function ejecutarCruceSupplyQuiebre() {
             if (rolUsuarioActivo !== 'admin') return;
 
-            const tbody = document.getElementById("tablaMacroGlobalBody");
-            const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
-            
+            const tbody = document.getElementById("tablaSupplyQuiebreBody");
             if (!tbody) return;
 
-            if (Object.keys(reqJ_Satelite).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
-                document.getElementById('boxSkusStockCumplimiento').innerText = "0";
-                document.getElementById('boxPorReponerCumplimiento').innerText = "0";
-                document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = "0%";
+            if (Object.keys(reqJ_Satelite).length === 0 && matrixSupplyChain.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
+                document.getElementById('boxTotalSupply').innerText = "0";
                 return;
             }
-            
-            tbody.innerHTML = "";
-            let filasGeneradasCumplimiento = [];
-            let skusValidosConStockSet = new Set();
-            let skusRepuestosSet = new Set();
 
-            let bolsaConsumosRF = [];
-            if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
-                matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku || !m.lpn) return;
-                    bolsaConsumosRF.push({
-                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                        lpn: m.lpn.toString().trim().toUpperCase(),
-                        consumido: false
-                    });
-                });
-            }
+            tbody.innerHTML = "";
+            registrosHistoricosSupplyQuiebre = [];
 
             let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
 
-            Object.keys(reqJ_Satelite).forEach(skuKey => {
-                let satItem = reqJ_Satelite[skuKey];
-                let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
-
-                if (cantidadRequeridaMeta <= 0) return;
-
-                let lotesDisponibles = inventarioCajasTemporal.filter(item => {
-                    if (!item || !item.sku || !item.ubicacion) return false;
-                    let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (
-                        u.includes("DE-PROVEEDOR") || 
-                        u.includes("ST-PROVEEDOR") || 
-                        u.includes("DEV-PRV-VIA-CD") || 
-                        u.includes("DEV-PRV-SVT-001") || 
-                        u.includes("JAU-BAT-ALM-001") || 
-                        u.includes("DSCTO-") || 
-                        u.includes("DAD-RECP") || 
-                        u.includes("CMM-ALM") || 
-                        u.includes("CD-FALTANTE") || 
-                        u.includes("MM-") || 
-                        u.includes("NAV-TDA") || 
-                        u.includes("VCTO-") || 
-                        u.includes("JAU-BAT") || 
-                        u.includes("DEV-PRV") || 
-                        u.includes("ST-ALM") || 
-                        u.includes("CD-SOBRANTE")
-                    ) return false;
-                    let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
-                });
-
-                if (lotesDisponibles.length === 0) return;
-
-                skusValidosConStockSet.add(skuLimpio);
-
-                lotesDisponibles.sort((a, b) => {
-                    let fA = parsearFechaEspanol(a.vencimiento);
-                    let fB = parsearFechaEspanol(b.vencimiento);
-                    if (fA.getTime() !== fB.getTime()) {
-                        return fA - fB;
-                    }
-                    return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
-                });
-
-                let remanentePorCubrir = cantidadRequeridaMeta;
-
-                for (let lote of lotesDisponibles) {
-                    if (remanentePorCubrir <= 0) break;
-
-                    let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
-                    let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
+            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
+            if (matrixSupplyChain.length > 0) {
+                matrixSupplyChain.forEach(supItem => {
+                    let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
                     
-                    lote.unidades = unidadesEnEstaCaja - cantidadATomarDeEstaCaja;
-                    remanentePorCubrir -= cantidadATomarDeEstaCaja;
+                    let satItem = reqJ_Satelite[skuClean];
 
-                    let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
-                    let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
-                    let tieneFVValida = fvFila && fvFila !== "" && fvFila !== "SIN FECHA";
-
-                    let estadoFila = "Pendiente";
-                    let estadoTextoPlano = "Pendiente";
-                    let lpnConsumidoFila = "";
-
-                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
-
-                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
-
-                    if (idxMatchExacto !== -1) {
-                        bolsaConsumosRF[idxMatchExacto].consumido = true;
-                        skusRepuestosSet.add(skuLimpio);
-
-                        if (!tieneFVValida) {
-                            estadoFila = "Repuesto";
-                            estadoTextoPlano = "Repuesto";
-                        } else {
-                            estadoFila = "Realizó FIFO";
-                            estadoTextoPlano = "Realizó FIFO";
-                        }
-                    } else {
-                        let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
-
-                        if (idxOtroLpn !== -1) {
-                            let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
-                            bolsaConsumosRF[idxOtroLpn].consumido = true;
-                            skusRepuestosSet.add(skuLimpio);
-
-                            if (!tieneFVValida) {
-                                estadoFila = "Repuesto";
-                                estadoTextoPlano = "Repuesto";
-                            } else {
-                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
-                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
-
-                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
-                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
-
-                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
-                                    estadoFila = "Misma FV";
-                                    estadoTextoPlano = "LPN con la misma FV";
-                                } else {
-                                    estadoFila = "No realizó FIFO";
-                                    estadoTextoPlano = "No realizó FIFO";
-                                    lpnConsumidoFila = bajadaDispo.lpn;
-                                }
-                            }
-                        }
+                    // REGLA: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
+                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
+                        return;
                     }
 
-                    filasGeneradasCumplimiento.push({
-                        sku: satItem.skuOriginal || skuKey,
-                        skuCleanRef: skuLimpio,
-                        lpn: lote.lpn,
-                        ubicacion: lote.ubicacion,
-                        descripcion: descFila,
+                    let cantPedidaJSatelite = satItem.cantidadSolicitada;
+
+                    // Busca coincidencia en Cajas_Tienda respetando lista negra y que tenga stock real
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && 
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, "")))) &&
+                        parseInt(i.unidades || 0, 10) > 0
+                    );
+
+                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                        return;
+                    }
+
+                    let ubicacionFisica = cajaMatch.ubicacion;
+                    let descFinal = supItem.descripcion || cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: supItem.pallet || "P/L",
+                        area: supItem.area || (satItem ? satItem.areaJSatelite : "GENERAL"),
+                        sku: supItem.sku || (satItem ? satItem.skuOriginal : skuClean),
+                        lpn: supItem.lpn || cajaMatch.lpn || "-",
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: cantPedidaJSatelite
+                    };
+
+                    registrosHistoricosSupplyQuiebre.push(filaData);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
+            } else if (Object.keys(reqJ_Satelite).length > 0) {
+                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
+                Object.keys(reqJ_Satelite).forEach(skuKey => {
+                    let satItem = reqJ_Satelite[skuKey];
+                    let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    
+                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
+                        return;
+                    }
+
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        parseInt(i.unidades || 0, 10) > 0
+                    );
+
+                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                        return;
+                    }
+
+                    let ubicacionFisica = cajaMatch.ubicacion;
+                    let descFinal = cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: "P/L",
                         area: satItem.areaJSatelite || "GENERAL",
-                        cantidadAsignadaFila: cantidadATomarDeEstaCaja,
-                        fv: fvFila,
-                        estado: estadoFila,
-                        estadoTextoPlano: estadoTextoPlano,
-                        lpnConsumido: lpnConsumidoFila
-                    });
-                }
-            });
+                        sku: satItem.skuOriginal || skuKey,
+                        lpn: cajaMatch.lpn || "-",
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: satItem.cantidadSolicitada || 0
+                    };
 
-            registrosHistoricosCumplimiento24 = [];
+                    registrosHistoricosSupplyQuiebre.push(filaData);
 
-            filasGeneradasCumplimiento.forEach(item => {
-                let esRepuestoItem = item.estado !== "Pendiente";
-
-                if (filterVal === "REPUESTO" && !esRepuestoItem) return;
-                if (filterVal === "PENDIENTE" && esRepuestoItem) return;
-
-                registrosHistoricosCumplimiento24.push(item);
-
-                let estadoHtml = "";
-                if (item.estado === "Realizó FIFO") {
-                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
-                } else if (item.estado === "Repuesto") {
-                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
-                } else if (item.estado === "Misma FV") {
-                    estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
-                } else if (item.estado === "No realizó FIFO") {
-                    estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                } else {
-                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
-                }
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
-                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
-                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
-                        <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${item.area}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${item.cantidadAsignadaFila}</td>
-                        <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
-                        <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
-                    </tr>`;
-            });
-
-            if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
             }
 
-            let totalSkusConStock = skusValidosConStockSet.size;
-            let totalRepuestosUnicos = skusRepuestosSet.size;
-            let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No hay registros con stock físico en la reserva para mostrar...</td></tr>`;
+            }
 
-            document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
-            document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
+            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
+        }
 
-            let porcAvance = totalSkusConStock > 0 ? Math.round((totalRepuestosUnicos / totalSkusConStock) * 100) : 0;
-            document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
+        function eliminarData(tipo, event) {
+            if (event) event.stopPropagation();
+            if (tipo === 'cajas') {
+                dbRef.set(null);
+                fechaCargaRef.set(null);
+            } else if (tipo === 'satelite') {
+                sateliteRef.set(null);
+                reqJ_Satelite = {};
+                ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'reposicion') {
+                matrixDetalleReposicion = [];
+                detalleRepoRef.set(null);
+                ejecutarCruceMacroGlobal();
+                forzarActualizacionTablaAdmin();
+            } else if (tipo === 'supply') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'supply_vista') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'satelite_vista') {
+                sateliteRef.set(null);
+                reqJ_Satelite = {};
+                matrixDetalleReposicion = [];
+                detalleRepoRef.set(null);
+                ejecutarCruceMacroGlobal();
+            } else if (tipo === 'repotenciacion') {
+                registrosHistoricosRepotenciar = [];
+                logRef.set(null);
+                forzarActualizacionTablaAdmin();
+            }
+        }
+
+        function abrirModalReporteIncidencia() {
+            if (document.activeElement) document.activeElement.blur();
+            document.getElementById('modalReporte').classList.remove('hidden');
+            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciaMotivoInput').value = "";
+            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
+        }
+
+        function enviarReporteIncidencia() {
+            let cod = document.getElementById('incidenciacodigoInput').value.trim();
+            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+
+            if(!cod || !mot) {
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
+                return;
+            }
+            
+            msgRef.push({
+                idAsistente: idUsuarioLogueado,
+                remitente: nombreUser,
+                codigo: cod,
+                motivo: mot,
+                estado: "Pendiente",
+                timestamp: new Date().toLocaleString()
+            }).then(() => {
+                cerrarModalReporteIncidencia();
+                cancelarRegistro();
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            });
+        }
+
+        function cerrarModalReporteIncidencia() { 
+            document.getElementById('modalReporte').classList.add('hidden'); 
+        }
+
+        function cerrarNotificacionExitoPersonalizada() {
+            document.getElementById('modalNotificacionExito').classList.add('hidden');
+            if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
+                document.getElementById('passwordInput').value = "";
+                document.getElementById('passwordInput').focus();
+            }
         }
     </script>
 </body>
