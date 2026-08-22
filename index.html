@@ -20,6 +20,7 @@
         .drop-zone--over { border-color: #ff6e00; background-color: #fff7ed; }
         .drop-zone-blue--over { border-color: #2563eb; background-color: #eff6ff; }
         .drop-zone-purple--over { border-color: #9333ea; background-color: #faf5ff; }
+        .drop-zone-teal--over { border-color: #0d9488; background-color: #f0fdfa; }
     </style>
 </head>
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
@@ -80,6 +81,7 @@
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
                     <option value="repotenciar">⚡ Repotenciar Tienda</option>
                     <option value="quiebres">🎯 Quiebres Visuales</option>
+                    <option value="supply">📦 Supply-Quiebre</option>
                     <option value="buzon">📥 Buzón de incidencias</option>
                     <option value="resetclave">🔑 Resetear contraseña</option>
                     <option value="usuarios">👤 Usuarios</option>
@@ -119,6 +121,17 @@
                         Seleccionar Archivo
                     </button>
                     <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Waiting...</p>
+                </div>
+
+                <div id="cardSupplyChain" class="hidden bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-teal-600 text-center cursor-pointer relative group">
+                    <button onclick="eliminarData('supply', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-20">✕</button>
+                    <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">SupplyChain</h3>
+                    <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para cargar datos de Supply.</p>
+                    <input type="file" id="fileSupplyChain" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarSupplyChain()"/>
+                    <button id="btnClickSupplyChain" type="button" class="bg-teal-50 text-teal-700 border border-teal-600 hover:bg-teal-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
+                        Seleccionar Archivo
+                    </button>
+                    <p id="statusSupplyChain" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo SupplyChain...</p>
                 </div>
             </div>
 
@@ -326,6 +339,52 @@
                     </table>
                 </div>
             </div>
+
+            <!-- CUADRO SUPPLY-QUIEBRE (NUEVO MÓDULO) -->
+            <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRE</h3>
+                        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+                            <div class="flex items-center gap-1.5">
+                                <span>Registros Supply:</span>
+                                <span id="boxTotalSupply" class="bg-teal-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="ejecutarCruceSupplyQuiebre()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Procesar Supply-Quiebre
+                        </button>
+                        <button onclick="descargarExcelSupplyQuiebre()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Descargar Excel
+                        </button>
+                        <button onclick="eliminarData('supply_vista', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
+                            Eliminar data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
+                    <table class="min-w-[1000px] w-full text-sm text-left border-collapse">
+                        <thead class="bg-orange-100 text-orange-950 uppercase text-xs sticky top-0 z-10 shadow-xs">
+                            <tr>
+                                <th class="px-3 py-2 border font-bold">PL</th>
+                                <th class="px-3 py-2 border font-bold">ÁREA</th>
+                                <th class="px-3 py-2 border font-bold">SKU</th>
+                                <th class="px-3 py-2 border font-bold">LPN</th>
+                                <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
+                                <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
+                                <th class="px-3 py-2 border text-center font-bold">CANT</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSupplyQuiebreBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap font-mono">
+                            <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- ================= PANEL DEL ASISTENTE ================= -->
@@ -460,7 +519,7 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (ACTUALIZADO: CABECERAS Y LINEAL DE CAJAS) -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
@@ -571,6 +630,7 @@
         const msgRef = db.ref("alertasIncidencias");
         const sateliteRef = db.ref("sateliteData");
         const detalleRepoRef = db.ref("detalleReposicionData");
+        const supplyRef = db.ref("supplyChainData");
         const fechaCargaRef = db.ref("fechaCargaData");
         const passRef = db.ref("credencialesUsuariosData");
         const usersMasterRef = db.ref("usuariosRegistradosNube");
@@ -579,8 +639,10 @@
         let inventarioData1 = [];     
         let reqJ_Satelite = {};
         let matrixDetalleReposicion = []; 
+        let matrixSupplyChain = [];
         let registrosHistoricosRepotenciar = []; 
         let registrosHistoricosCumplimiento24 = []; 
+        let registrosHistoricosSupplyQuiebre = [];
         let databaseCat_Ean = {}; 
         let cacheAlertasGlobales = {}; 
         let rolUsuarioActivo = "";
@@ -627,6 +689,7 @@
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
             setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
+            setupDragAndDrop("cardSupplyChain", "fileSupplyChain", procesarSupplyChain, "drop-zone-teal--over");
             
             inicializarUsuariosNubeSiEstaVacio();
             escucharCredencialesNube();
@@ -639,7 +702,7 @@
             verificarSesionGuardada();
 
             validarPurgaMedianocheAutomática();
-            setInterval(validarPurgaMedianocheAutomática, 30000); 
+            setInterval(validarPurgaMedianocheAutomática, 15000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -803,9 +866,17 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y CIERRE DE SESIÓN TOTAL A LAS 00:00:00
+        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
+            
+            let fechaSesion = localStorage.getItem("sesion_fecha");
+            if (fechaSesion && fechaSesion !== fechaHoy) {
+                localStorage.clear();
+                window.location.reload();
+                return;
+            }
+
             fechaCargaRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     let fechaCargada = snapshot.val();
@@ -814,10 +885,10 @@
                             dbRef.set(null),          
                             sateliteRef.set(null),   
                             detalleRepoRef.set(null),
+                            supplyRef.set(null),
                             logRef.set(null),        
                             fechaCargaRef.set(null)
                         ]).then(() => {
-                            // Cierre forzoso de credenciales en navegador
                             localStorage.clear();
                             window.location.reload();
                         });
@@ -839,6 +910,7 @@
                     document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
                 }
                 ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
             });
 
             detalleRepoRef.on("value", (snapshot) => {
@@ -855,13 +927,36 @@
                 forzarActualizacionTablaAdmin();
                 ejecutarCruceMacroGlobal();
             });
+
+            supplyRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                if (data && Array.isArray(data)) {
+                    matrixSupplyChain = data;
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-teal-600 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = `✅ SupplyChain cargado (${matrixSupplyChain.length} registros).`;
+                } else {
+                    matrixSupplyChain = [];
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = "Esperando archivo SupplyChain...";
+                }
+                ejecutarCruceSupplyQuiebre();
+            });
         }
 
         function verificarSesionGuardada() {
+            let fechaHoy = new Date().toLocaleDateString('es-PE');
+            let fechaSesion = localStorage.getItem("sesion_fecha");
+
+            if (fechaSesion && fechaSesion !== fechaHoy) {
+                localStorage.clear();
+                return;
+            }
+
             const usuarioGuardado = localStorage.getItem("sesion_usuario");
             const rolGuardado = localStorage.getItem("sesion_rol");
             if (usuarioGuardado && rolGuardado) {
-                rolUsuarioActivo = rolGuardado; idUsuarioLogueado = usuarioGuardado;
+                rolUsuarioActivo = rolGuardado; 
+                idUsuarioLogueado = usuarioGuardado;
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
@@ -972,9 +1067,11 @@
             const cardCajas = document.getElementById("cardCajasTienda");
             const cardSatelite = document.getElementById("cardJSatelite");
             const cardRepo = document.getElementById("cardDetalleReposicion");
+            const cardSupply = document.getElementById("cardSupplyChain");
             
             const cuadroRepo = document.getElementById("containerCuadroRepotenciar");
             const cuadroCruce = document.getElementById("containerCuadroCruceMacropurga");
+            const cuadroSupply = document.getElementById("containerCuadroSupplyQuiebre");
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
             const moduloGestionUsuarios = document.getElementById("wrapperModuloGestionUsuarios");
@@ -983,9 +1080,11 @@
             cardCajas.classList.add("hidden");
             cardSatelite.classList.add("hidden");
             cardRepo.classList.add("hidden");
+            cardSupply.classList.add("hidden");
             
             cuadroRepo.classList.add("hidden");
             cuadroCruce.classList.add("hidden");
+            cuadroSupply.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
             moduloResetClave.classList.add("hidden");
             moduloGestionUsuarios.classList.add("hidden");
@@ -1001,8 +1100,15 @@
                 cardCajas.classList.remove("hidden");
                 cardSatelite.classList.remove("hidden");
                 cardRepo.classList.remove("hidden");
-                
                 cuadroCruce.classList.remove("hidden");
+
+            } else if (val === "supply") {
+                gridTarjetas.classList.remove("hidden");
+                cardCajas.classList.remove("hidden");
+                cardSatelite.classList.remove("hidden");
+                cardSupply.classList.remove("hidden");
+                cuadroSupply.classList.remove("hidden");
+                ejecutarCruceSupplyQuiebre();
 
             } else if (val === "buzon") {
                 moduloBuzon.classList.remove("hidden");
@@ -1027,7 +1133,8 @@
                     }
                     document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
                 } else {
-                    inventarioData1 = []; data1Cargada = false;
+                    inventarioData1 = []; 
+                    data1Cargada = false;
                     if(document.getElementById('statusData1')) {
                         document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
@@ -1041,6 +1148,7 @@
                 }
                 forzarActualizacionTablaAdmin();
                 ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
             });
         }
 
@@ -1104,14 +1212,20 @@
         }
 
         function renderizarTablaRepotenciar(data) {
+            if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+                registrosHistoricosRepotenciar = Array.isArray(data) ? data : Object.values(data);
+            } else {
+                registrosHistoricosRepotenciar = [];
+            }
+
+            if (rolUsuarioActivo !== 'admin') return;
+
             const tbody = document.getElementById('tablaRepotenciarBody');
             if (!tbody) return;
 
             const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
 
-            if (data && Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0) {
-                registrosHistoricosRepotenciar = Array.isArray(data) ? data : Object.values(data);
-                
+            if (registrosHistoricosRepotenciar.length > 0) {
                 let copiaRegistros = [...registrosHistoricosRepotenciar];
                 copiaRegistros.reverse(); 
 
@@ -1482,8 +1596,10 @@
             if (usuariosDB[user] && usuariosDB[user].clave === pass) {
                 rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
                 idUsuarioLogueado = user;
+                let fechaHoy = new Date().toLocaleDateString('es-PE');
                 localStorage.setItem("sesion_usuario", user);
                 localStorage.setItem("sesion_rol", rolUsuarioActivo);
+                localStorage.setItem("sesion_fecha", fechaHoy);
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
@@ -1545,7 +1661,6 @@
                 let descripcionTraducida = "";
                 let existeEnCatalogo = false;
 
-                // VALIDACIÓN DE CATÁLOGO / PRODUCTO NUEVO
                 if (databaseCat_Ean[entradaOriginal]) {
                     skuTraducido = databaseCat_Ean[entradaOriginal].sku;
                     descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
@@ -1607,7 +1722,6 @@
                     document.getElementById('containerResetBtn').className = "hidden";
                     setTimeout(() => document.getElementById('cantidadInput').focus(), 100);
                 } else {
-                    // DISCRIMINACIÓN DE MENSAJE: SI EXISTE PERO NO TIENE STOCK VS SI ES PRODUCTO NUEVO/NO EXISTE
                     if (existeEnCatalogo) {
                         document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
                     } else {
@@ -1654,7 +1768,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // GUARDADO INMEDIATO (CARGA INSTANTÁNEA EN PANTALLA)
+        // GUARDADO OPTIMIZADO 100% EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
         function guardarRegistro(zonaDestino) {
             try {
                 const inputCantElem = document.getElementById('cantidadInput');
@@ -1719,54 +1833,26 @@
                     copiaDescripcion += ` [Zona: ${zonaDestino}]`;
                 }
 
-                // Sincronización asíncrona no bloqueante
+                cancelarRegistro();
+
+                const registroAPush = {
+                    idAsistente: idUsuarioLogueado,
+                    operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                    sku: copiaSkuTemporal,
+                    fifoLpnOptimizado: lpnSugerido, 
+                    desc: copiaDescripcion,
+                    cant: cantidadNumerica,
+                    fv: fvSugerida,
+                    purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+                };
+
                 setTimeout(() => {
-                    logRef.once("value", (snapshot) => {
-                        let logsActuales = snapshot.val() || {};
-                        let keyExistente = null;
-                        let regExistente = null;
-
-                        Object.keys(logsActuales).forEach(k => {
-                            let r = logsActuales[k];
-                            if (
-                                r.idAsistente === idUsuarioLogueado &&
-                                r.sku === copiaSkuTemporal &&
-                                r.fifoLpnOptimizado === lpnSugerido &&
-                                r.desc === copiaDescripcion
-                            ) {
-                                keyExistente = k;
-                                regExistente = r;
-                            }
-                        });
-
-                        if (keyExistente && regExistente) {
-                            let nuevaCantTotal = parseInt(regExistente.cant || 0, 10) + cantidadNumerica;
-                            let desgloseActualizado = `${lpnSugerido} (-${nuevaCantTotal} Uds)`;
-                            
-                            logRef.child(keyExistente).update({
-                                cant: nuevaCantTotal,
-                                purgaCompletaRuta: desgloseActualizado
-                            });
-                        } else {
-                            logRef.push({
-                                idAsistente: idUsuarioLogueado,
-                                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
-                                sku: copiaSkuTemporal,
-                                fifoLpnOptimizado: lpnSugerido, 
-                                desc: copiaDescripcion,
-                                cant: cantidadNumerica,
-                                fv: fvSugerida,
-                                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
-                            });
-                        }
-
-                        dbRef.set(inventarioData1);
-                    });
-                }, 0);
+                    logRef.push(registroAPush);
+                    dbRef.set(inventarioData1);
+                }, 5);
 
             } catch (errGeneral) {
                 console.error("Error capturado en guardarRegistro:", errGeneral);
-            } finally {
                 cancelarRegistro();
             }
         }
@@ -1780,7 +1866,10 @@
             document.getElementById('containerResetBtn').className = "hidden";
             document.getElementById('avisoAdvertenciaStock').className = "hidden";
             lotesFiltradosTurno = [];
-            setTimeout(() => document.getElementById('barcodeInput').focus(), 100);
+            setTimeout(() => {
+                const bInput = document.getElementById('barcodeInput');
+                if (bInput) bInput.focus();
+            }, 30);
         }
 
         function descargarExcelRepotenciar() {
@@ -1877,6 +1966,25 @@
             XLSX.writeFile(libro, "Reporte_Cumplimiento_24.xlsx");
         }
 
+        function descargarExcelSupplyQuiebre() {
+            if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return;
+
+            let dataProcesada = registrosHistoricosSupplyQuiebre.map(i => ({
+                "PL": i.pallet,
+                "ÁREA": i.area,
+                "SKU": i.sku,
+                "LPN": i.lpn,
+                "UBICACIÓN": i.ubicacion,
+                "DESCRIPCIÓN": i.descripcion,
+                "CANT": i.cant
+            }));
+
+            const hoja = XLSX.utils.json_to_sheet(dataProcesada);
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, "SupplyQuiebre");
+            XLSX.writeFile(libro, "Reporte_Supply_Quiebre.xlsx");
+        }
+
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -1886,11 +1994,20 @@
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
                 ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
             } else if (tipo === 'reposicion') {
                 matrixDetalleReposicion = [];
                 detalleRepoRef.set(null);
                 ejecutarCruceMacroGlobal();
                 forzarActualizacionTablaAdmin();
+            } else if (tipo === 'supply') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'supply_vista') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                ejecutarCruceSupplyQuiebre();
             } else if (tipo === 'satelite_vista') {
                 sateliteRef.set(null);
                 reqJ_Satelite = {};
@@ -2215,7 +2332,190 @@
             lector.readAsArrayBuffer(file);
         }
 
+        // PROCESAMIENTO DE SUPPLY CHAIN (NUEVO ARCHIVO)
+        function procesarSupplyChain() {
+            const input = document.getElementById("fileSupplyChain");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pallet") || strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("cantidad enviada")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
+                let idxArea = headers.findIndex(h => h === "área" || h === "area");
+                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
+                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
+                let idxDesc = headers.findIndex(h => h.includes("descripci"));
+                let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
+
+                if (idxPallet === -1) idxPallet = 0;
+                if (idxArea === -1) idxArea = 1;
+                if (idxLpn === -1) idxLpn = 2;
+                if (idxSku === -1) idxSku = 3;
+                if (idxDesc === -1) idxDesc = 4;
+                if (idxCantEnviada === -1) idxCantEnviada = 5;
+
+                let tempSupply = [];
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
+                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                    let pCant = row[idxCantEnviada] !== undefined ? parseInt(row[idxCantEnviada] || 0, 10) : 0;
+
+                    if (pSku || pLpn) {
+                        tempSupply.push({
+                            pallet: pPallet,
+                            area: pArea,
+                            lpn: pLpn,
+                            sku: pSku,
+                            descripcion: pDesc,
+                            cantidad: pCant
+                        });
+                    }
+                }
+
+                supplyRef.set(tempSupply);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRE
+        function ejecutarCruceSupplyQuiebre() {
+            if (rolUsuarioActivo !== 'admin') return;
+
+            const tbody = document.getElementById("tablaSupplyQuiebreBody");
+            if (!tbody) return;
+
+            if (Object.keys(reqJ_Satelite).length === 0 && matrixSupplyChain.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
+                document.getElementById('boxTotalSupply').innerText = "0";
+                return;
+            }
+
+            tbody.innerHTML = "";
+            registrosHistoricosSupplyQuiebre = [];
+
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
+
+            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
+            if (matrixSupplyChain.length > 0) {
+                matrixSupplyChain.forEach(supItem => {
+                    let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
+                    
+                    let satItem = reqJ_Satelite[skuClean];
+                    let cantPedida = satItem ? satItem.cantidadSolicitada : supItem.cantidad;
+
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && 
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, ""))))
+                    );
+
+                    let ubicacionFisica = cajaMatch && cajaMatch.ubicacion ? cajaMatch.ubicacion : "RESERVA";
+                    let descFinal = supItem.descripcion || (cajaMatch ? cajaMatch.descripcion : "") || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: supItem.pallet || "P/L",
+                        area: supItem.area || (satItem ? satItem.areaJSatelite : "GENERAL"),
+                        sku: supItem.sku || (satItem ? satItem.skuOriginal : skuClean),
+                        lpn: supItem.lpn || (cajaMatch ? cajaMatch.lpn : "-"),
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: cantPedida || supItem.cantidad || 0
+                    };
+
+                    registrosHistoricosSupplyQuiebre.push(filaData);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
+            } else if (Object.keys(reqJ_Satelite).length > 0) {
+                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
+                Object.keys(reqJ_Satelite).forEach(skuKey => {
+                    let satItem = reqJ_Satelite[skuKey];
+                    let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean
+                    );
+
+                    let ubicacionFisica = cajaMatch && cajaMatch.ubicacion ? cajaMatch.ubicacion : "RESERVA";
+                    let descFinal = (cajaMatch ? cajaMatch.descripcion : "") || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: "P/L",
+                        area: satItem.areaJSatelite || "GENERAL",
+                        sku: satItem.skuOriginal || skuKey,
+                        lpn: cajaMatch ? cajaMatch.lpn : "-",
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: satItem.cantidadSolicitada || 0
+                    };
+
+                    registrosHistoricosSupplyQuiebre.push(filaData);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
+            }
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No se encontraron registros coincidentes...</td></tr>`;
+            }
+
+            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
+        }
+
         function ejecutarCruceMacroGlobal() {
+            if (rolUsuarioActivo !== 'admin') return;
+
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
             
@@ -2342,7 +2642,7 @@
                                 let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                 let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                // VALIDACIÓN EXACTA DE FV SIN INFLUENCIA DE SALDOS
+                                // VALIDACIÓN POR FECHA DE VENCIMIENTO (FV)
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
