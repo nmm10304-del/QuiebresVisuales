@@ -340,14 +340,14 @@
                 </div>
             </div>
 
-            <!-- CUADRO SUPPLY-QUIEBRE (NUEVO MÓDULO) -->
+            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS CON STOCK FÍSICO EN CAJAS_TIENDA) -->
             <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRE</h3>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
-                                <span>Registros Supply:</span>
+                                <span>Registros con Stock:</span>
                                 <span id="boxTotalSupply" class="bg-teal-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                         </div>
@@ -866,7 +866,6 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             
@@ -1985,6 +1984,124 @@
             XLSX.writeFile(libro, "Reporte_Supply_Quiebre.xlsx");
         }
 
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRE (SOLO REGISTROS CON STOCK FÍSICO EN CAJAS_TIENDA)
+        function ejecutarCruceSupplyQuiebre() {
+            if (rolUsuarioActivo !== 'admin') return;
+
+            const tbody = document.getElementById("tablaSupplyQuiebreBody");
+            if (!tbody) return;
+
+            if (Object.keys(reqJ_Satelite).length === 0 && matrixSupplyChain.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
+                document.getElementById('boxTotalSupply').innerText = "0";
+                return;
+            }
+
+            tbody.innerHTML = "";
+            registrosHistoricosSupplyQuiebre = [];
+
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
+
+            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
+            if (matrixSupplyChain.length > 0) {
+                matrixSupplyChain.forEach(supItem => {
+                    let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
+                    
+                    let satItem = reqJ_Satelite[skuClean];
+                    let cantPedida = satItem ? satItem.cantidadSolicitada : supItem.cantidad;
+
+                    // Busca coincidencia en Cajas_Tienda respetando lista negra y que tenga stock real
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && 
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, "")))) &&
+                        parseInt(i.unidades || 0, 10) > 0
+                    );
+
+                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                        return;
+                    }
+
+                    let ubicacionFisica = cajaMatch.ubicacion;
+                    let descFinal = supItem.descripcion || cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: supItem.pallet || "P/L",
+                        area: supItem.area || (satItem ? satItem.areaJSatelite : "GENERAL"),
+                        sku: supItem.sku || (satItem ? satItem.skuOriginal : skuClean),
+                        lpn: supItem.lpn || cajaMatch.lpn || "-",
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: cantPedida || supItem.cantidad || 0
+                    };
+
+                    registrosHistoricosSupplyQuiebre.push(filaData);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
+            } else if (Object.keys(reqJ_Satelite).length > 0) {
+                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
+                Object.keys(reqJ_Satelite).forEach(skuKey => {
+                    let satItem = reqJ_Satelite[skuKey];
+                    let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    
+                    let cajaMatch = inventarioCajasTemporal.find(i => 
+                        i && i.sku && 
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        parseInt(i.unidades || 0, 10) > 0
+                    );
+
+                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                        return;
+                    }
+
+                    let ubicacionFisica = cajaMatch.ubicacion;
+                    let descFinal = cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                    let filaData = {
+                        pallet: "P/L",
+                        area: satItem.areaJSatelite || "GENERAL",
+                        sku: satItem.skuOriginal || skuKey,
+                        lpn: cajaMatch.lpn || "-",
+                        ubicacion: ubicacionFisica,
+                        descripcion: descFinal,
+                        cant: satItem.cantidadSolicitada || 0
+                    };
+
+                    registrosHistoricosSupplyQuiebre.push(filaData);
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-teal-50/40 text-xs">
+                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                        </tr>`;
+                });
+            }
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No hay registros con stock físico en la reserva para mostrar...</td></tr>`;
+            }
+
+            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
+        }
+
         function eliminarData(tipo, event) {
             if (event) event.stopPropagation();
             if (tipo === 'cajas') {
@@ -2138,7 +2255,6 @@
 
                         if (!skuVal || uVal <= 0 || !ubiVal) continue;
 
-                        // LISTA NEGRA DE UBICACIONES OMITIDAS
                         let uUpper = ubiVal.toUpperCase();
                         if (
                             uUpper.includes("DE-PROVEEDOR") || 
@@ -2332,7 +2448,6 @@
             lector.readAsArrayBuffer(file);
         }
 
-        // PROCESAMIENTO DE SUPPLY CHAIN (NUEVO ARCHIVO)
         function procesarSupplyChain() {
             const input = document.getElementById("fileSupplyChain");
             const file = input.files ? input.files[0] : null;
@@ -2407,110 +2522,6 @@
                 supplyRef.set(tempSupply);
             };
             lector.readAsArrayBuffer(file);
-        }
-
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRE
-        function ejecutarCruceSupplyQuiebre() {
-            if (rolUsuarioActivo !== 'admin') return;
-
-            const tbody = document.getElementById("tablaSupplyQuiebreBody");
-            if (!tbody) return;
-
-            if (Object.keys(reqJ_Satelite).length === 0 && matrixSupplyChain.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
-                document.getElementById('boxTotalSupply').innerText = "0";
-                return;
-            }
-
-            tbody.innerHTML = "";
-            registrosHistoricosSupplyQuiebre = [];
-
-            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
-
-            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
-            if (matrixSupplyChain.length > 0) {
-                matrixSupplyChain.forEach(supItem => {
-                    let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
-                    
-                    let satItem = reqJ_Satelite[skuClean];
-                    let cantPedida = satItem ? satItem.cantidadSolicitada : supItem.cantidad;
-
-                    let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && 
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
-                        (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, ""))))
-                    );
-
-                    let ubicacionFisica = cajaMatch && cajaMatch.ubicacion ? cajaMatch.ubicacion : "RESERVA";
-                    let descFinal = supItem.descripcion || (cajaMatch ? cajaMatch.descripcion : "") || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
-
-                    let filaData = {
-                        pallet: supItem.pallet || "P/L",
-                        area: supItem.area || (satItem ? satItem.areaJSatelite : "GENERAL"),
-                        sku: supItem.sku || (satItem ? satItem.skuOriginal : skuClean),
-                        lpn: supItem.lpn || (cajaMatch ? cajaMatch.lpn : "-"),
-                        ubicacion: ubicacionFisica,
-                        descripcion: descFinal,
-                        cant: cantPedida || supItem.cantidad || 0
-                    };
-
-                    registrosHistoricosSupplyQuiebre.push(filaData);
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-teal-50/40 text-xs">
-                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
-                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
-                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
-                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
-                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
-                        </tr>`;
-                });
-            } else if (Object.keys(reqJ_Satelite).length > 0) {
-                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
-                Object.keys(reqJ_Satelite).forEach(skuKey => {
-                    let satItem = reqJ_Satelite[skuKey];
-                    let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    
-                    let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean
-                    );
-
-                    let ubicacionFisica = cajaMatch && cajaMatch.ubicacion ? cajaMatch.ubicacion : "RESERVA";
-                    let descFinal = (cajaMatch ? cajaMatch.descripcion : "") || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
-
-                    let filaData = {
-                        pallet: "P/L",
-                        area: satItem.areaJSatelite || "GENERAL",
-                        sku: satItem.skuOriginal || skuKey,
-                        lpn: cajaMatch ? cajaMatch.lpn : "-",
-                        ubicacion: ubicacionFisica,
-                        descripcion: descFinal,
-                        cant: satItem.cantidadSolicitada || 0
-                    };
-
-                    registrosHistoricosSupplyQuiebre.push(filaData);
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-teal-50/40 text-xs">
-                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
-                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
-                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
-                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
-                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
-                        </tr>`;
-                });
-            }
-
-            if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No se encontraron registros coincidentes...</td></tr>`;
-            }
-
-            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
         }
 
         function ejecutarCruceMacroGlobal() {
@@ -2642,7 +2653,6 @@
                                 let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
                                 let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                // VALIDACIÓN POR FECHA DE VENCIMIENTO (FV)
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
