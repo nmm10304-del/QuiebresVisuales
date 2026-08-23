@@ -301,11 +301,6 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2">
-                        <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
-                            <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:</span>
-                            <span id="boxPorcentajeAvanceCumplimiento" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
-                        </div>
-
                         <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
                             Procesar y Cruzar Archivos
                         </button>
@@ -340,14 +335,14 @@
                 </div>
             </div>
 
-            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA) -->
+            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO) -->
             <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                         <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRE</h3>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
-                                <span>Registros con Stock:</span>
+                                <span>Quiebres en Puerta:</span>
                                 <span id="boxTotalSupply" class="bg-teal-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                         </div>
@@ -481,7 +476,7 @@
     <!-- MODAL CONFIRMACIÓN -->
     <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[110]">
         <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
-            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
+            <div id="iconoConfirmarEliminar" class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
             <div class="space-y-1">
                 <h4 class="text-sm font-bold text-gray-900">Atención</h4>
                 <p id="txtMensajeConfirmarEliminar" class="text-xs text-gray-600 leading-relaxed font-sans"></p>
@@ -866,7 +861,7 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00
+        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00 (O CRUCE DE DÍA)
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             
@@ -973,7 +968,7 @@
                 input.type = "text";
                 icono.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45(0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                     </svg>`;
             } else {
                 input.type = "password";
@@ -1101,6 +1096,7 @@
                 cardSatelite.classList.remove("hidden");
                 cardRepo.classList.remove("hidden");
                 cuadroCruce.classList.remove("hidden");
+                ejecutarCruceMacroGlobal();
 
             } else if (val === "supply") {
                 gridTarjetas.classList.remove("hidden");
@@ -1191,7 +1187,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1985,10 +1981,8 @@
             XLSX.writeFile(libro, "Reporte_Supply_Quiebre.xlsx");
         }
 
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO
         function ejecutarCruceSupplyQuiebre() {
-            if (rolUsuarioActivo !== 'admin') return;
-
             const tbody = document.getElementById("tablaSupplyQuiebreBody");
             if (!tbody) return;
 
@@ -2011,7 +2005,7 @@
                     
                     let satItem = reqJ_Satelite[skuClean];
 
-                    // REGLA: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
+                    // REGLA 1: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
                     if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
                         return;
                     }
@@ -2026,8 +2020,16 @@
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
-                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    // REGLA 2: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
                     if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                        return;
+                    }
+
+                    // REGLA 3: FILTRO ESTRICTO - SOLO UBICACIÓN PUERTA / PISO DE RECEPCIÓN
+                    let uUbi = cajaMatch.ubicacion.toString().toUpperCase().trim();
+                    let esPuerta = uUbi.includes("PUERTA") || uUbi.includes("PISO-ALM") || uUbi.includes("PISO") || uUbi.includes("PTA") || uUbi.includes("REC-") || uUbi.includes("RECEPCION");
+                    
+                    if (!esPuerta) {
                         return;
                     }
 
@@ -2068,561 +2070,21 @@
                     }
 
                     let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
-                        parseInt(i.unidades || 0, 10) > 0
-                    );
-
-                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
-                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
-                        return;
-                    }
-
-                    let ubicacionFisica = cajaMatch.ubicacion;
-                    let descFinal = cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
-
-                    let filaData = {
-                        pallet: "P/L",
-                        area: satItem.areaJSatelite || "GENERAL",
-                        sku: satItem.skuOriginal || skuKey,
-                        lpn: cajaMatch.lpn || "-",
-                        ubicacion: ubicacionFisica,
-                        descripcion: descFinal,
-                        cant: satItem.cantidadSolicitada || 0
-                    };
-
-                    registrosHistoricosSupplyQuiebre.push(filaData);
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-teal-50/40 text-xs">
-                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
-                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
-                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
-                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
-                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
-                        </tr>`;
-                });
-            }
-
-            if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No hay registros con stock físico en la reserva para mostrar...</td></tr>`;
-            }
-
-            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
-        }
-
-        function eliminarData(tipo, event) {
-            if (event) event.stopPropagation();
-            if (tipo === 'cajas') {
-                dbRef.set(null);
-                fechaCargaRef.set(null);
-            } else if (tipo === 'satelite') {
-                sateliteRef.set(null);
-                reqJ_Satelite = {};
-                ejecutarCruceMacroGlobal();
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'reposicion') {
-                matrixDetalleReposicion = [];
-                detalleRepoRef.set(null);
-                ejecutarCruceMacroGlobal();
-                forzarActualizacionTablaAdmin();
-            } else if (tipo === 'supply') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'supply_vista') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'satelite_vista') {
-                sateliteRef.set(null);
-                reqJ_Satelite = {};
-                matrixDetalleReposicion = [];
-                detalleRepoRef.set(null);
-                ejecutarCruceMacroGlobal();
-            } else if (tipo === 'repotenciacion') {
-                registrosHistoricosRepotenciar = [];
-                logRef.set(null);
-                forzarActualizacionTablaAdmin();
-            }
-        }
-
-        function abrirModalReporteIncidencia() {
-            if (document.activeElement) document.activeElement.blur();
-            document.getElementById('modalReporte').classList.remove('hidden');
-            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
-            document.getElementById('incidenciaMotivoInput').value = "";
-            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
-        }
-
-        function enviarReporteIncidencia() {
-            let cod = document.getElementById('incidenciacodigoInput').value.trim();
-            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
-            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-
-            if(!cod || !mot) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
-                return;
-            }
-            
-            msgRef.push({
-                idAsistente: idUsuarioLogueado,
-                remitente: nombreUser,
-                codigo: cod,
-                motivo: mot,
-                estado: "Pendiente",
-                timestamp: new Date().toLocaleString()
-            }).then(() => {
-                cerrarModalReporteIncidencia();
-                cancelarRegistro();
-                
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
-            });
-        }
-
-        function cerrarModalReporteIncidencia() { 
-            document.getElementById('modalReporte').classList.add('hidden'); 
-        }
-
-        function cerrarNotificacionExitoPersonalizada() {
-            document.getElementById('modalNotificacionExito').classList.add('hidden');
-            if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
-                document.getElementById('passwordInput').value = "";
-                document.getElementById('passwordInput').focus();
-            }
-        }
-
-        function procesarData1() {
-            const input = document.getElementById("fileData1");
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-            
-            const statusElem = document.getElementById('statusData1');
-            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
-            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
-
-            setTimeout(() => {
-                const lector = new FileReader();
-                lector.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
-                    const hoja = libro.Sheets[libro.SheetNames[0]];
-                    
-                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1, defval: "" });
-                    
-                    if (!filasMatriz || filasMatriz.length < 2) {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
-                        return;
-                    }
-
-                    let headerRowIdx = -1;
-                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
-                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
-                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo")) {
-                                headerRowIdx = i;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (headerRowIdx === -1) headerRowIdx = 0;
-
-                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                    
-                    const idxLpn = headers.findIndex(h => h.includes("lpn"));
-                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
-                    const idxDesc = headers.findIndex(h => h.includes("descripci"));
-                    const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
-                    
-                    const idxUbiStrict = 4; 
-                    let idxVencStrict = 15;  
-                    
-                    if (headers[idxVencStrict] && !headers[idxVencStrict].includes("caducidad")) {
-                        let altVenc = headers.findIndex(h => h.includes("caducidad"));
-                        if (altVenc !== -1) idxVencStrict = altVenc;
-                    }
-
-                    let datosFormateados = [];
-
-                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
-                        const row = filasMatriz[i];
-                        if (!row || row.length === 0) continue;
-
-                        let skuVal = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                        let lpnVal = idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
-                        let descVal = idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
-                        let uVal = idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
-                        
-                        let ubiVal = row[idxUbiStrict] !== undefined ? row[idxUbiStrict].toString().trim() : "";
-                        let caducidadVal = row[idxVencStrict] !== undefined ? row[idxVencStrict].toString().trim() : "";
-
-                        if (!skuVal || uVal <= 0 || !ubiVal) continue;
-
-                        let uUpper = ubiVal.toUpperCase();
-                        if (
-                            uUpper.includes("DE-PROVEEDOR") || 
-                            uUpper.includes("ST-PROVEEDOR") || 
-                            uUpper.includes("DEV-PRV-VIA-CD") || 
-                            uUpper.includes("DEV-PRV-SVT-001") || 
-                            uUpper.includes("JAU-BAT-ALM-001") || 
-                            uUpper.includes("DSCTO-") || 
-                            uUpper.includes("DAD-RECP") || 
-                            uUpper.includes("CMM-ALM") || 
-                            uUpper.includes("CD-FALTANTE") || 
-                            uUpper.includes("MM-") || 
-                            uUpper.includes("NAV-TDA") || 
-                            uUpper.includes("VCTO-") || 
-                            uUpper.includes("JAU-BAT") || 
-                            uUpper.includes("DEV-PRV") || 
-                            uUpper.includes("ST-ALM") || 
-                            uUpper.includes("CD-SOBRANTE")
-                        ) {
-                            continue;
-                        }
-
-                        datosFormateados.push({
-                            lpn: lpnVal,
-                            sku: skuVal,
-                            descripcion: descVal,
-                            unidades: uVal,
-                            vencimiento: caducidadVal,
-                            ubicacion: ubiVal
-                        });
-                    }
-
-                    let fechaHoyStr = new Date().toLocaleDateString('es-PE');
-                    fechaCargaRef.set(fechaHoyStr);
-
-                    dbRef.set(datosFormateados).then(() => {
-                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
-                    }).catch(err => {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
-                    });
-                };
-                lector.readAsArrayBuffer(file);
-            }, 30);
-        }
-
-        function procesarJ_Satelite() {
-            const input = document.getElementById("fileJSatelite");
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-            const lector = new FileReader();
-            lector.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array', dense: true });
-                const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-                
-                let tempJSatelite = {};
-                
-                if (filasMatriz && filasMatriz.length > 0) {
-                    let headerRowIdx = 0;
-                    for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
-                        let rowStr = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                        if (rowStr.includes("sku") || rowStr.includes("quantity") || rowStr.includes("articulo")) {
-                            headerRowIdx = i;
-                            break;
-                        }
-                    }
-
-                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                    let idxSkuCol3 = headers.findIndex(h => h === "sku" || h === "articulo");
-                    let idxAreaCol6 = headers.findIndex(h => h === "area" || h === "área");
-                    let idxQtyCol13 = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad"));
-
-                    if (idxSkuCol3 === -1) idxSkuCol3 = 2;   
-                    if (idxAreaCol6 === -1) idxAreaCol6 = 5;  
-                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; 
-
-                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
-                        let row = filasMatriz[i];
-                        if (!row || row.length === 0) continue;
-                        let skuVal = row[idxSkuCol3] !== undefined ? row[idxSkuCol3].toString().trim() : "";
-                        let areaVal = row[idxAreaCol6] !== undefined ? row[idxAreaCol6].toString().trim() : "GENERAL";
-                        let qtyVal = row[idxQtyCol13] !== undefined ? row[idxQtyCol13] : 0;
-
-                        if (skuVal) {
-                            let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                            
-                            if (!tempJSatelite[skuClean]) {
-                                tempJSatelite[skuClean] = {
-                                    skuOriginal: skuVal,
-                                    areaJSatelite: areaVal || "GENERAL",
-                                    cantidadSolicitada: parseInt(qtyVal, 10) || 0
-                                };
-                            } else {
-                                tempJSatelite[skuClean].cantidadSolicitada += (parseInt(qtyVal, 10) || 0);
-                            }
-                        }
-                    }
-                }
-                
-                sateliteRef.set(tempJSatelite);
-            };
-            lector.readAsArrayBuffer(file);
-        }
-
-        function procesarData2() {
-            const input = document.getElementById("fileData2");
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-            const lector = new FileReader();
-            lector.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
-                const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-                
-                if (!filas || filas.length < 2) {
-                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
-                    return;
-                }
-
-                let headerRowIdx = -1;
-                for (let i = 0; i < Math.min(10, filas.length); i++) {
-                    if (filas[i] && Array.isArray(filas[i])) {
-                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                        if (strLine.includes("pantalla") || strLine.includes("lpn") || strLine.includes("sku")) {
-                            headerRowIdx = i;
-                            break;
-                        }
-                    }
-                }
-
-                if (headerRowIdx === -1) headerRowIdx = 0;
-
-                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                
-                const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
-                const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
-                const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
-                const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
-                const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
-
-                let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
-                if (idxLpn === -1) idxLpn = 2;
-
-                let tempDetalleRepo = [];
-                let ultimoSkuVisto = "";
-
-                for (let i = headerRowIdx + 1; i < filas.length; i++) {
-                    const row = filas[i];
-                    if (!row || row.length === 0) continue;
-
-                    let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
-                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
-                    let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
-                    let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
-                    let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
-
-                    if (pSku) {
-                        ultimoSkuVisto = pSku;
-                    } else if (!pSku && ultimoSkuVisto) {
-                        pSku = ultimoSkuVisto;
-                    }
-
-                    let uDestino = pPantalla.toUpperCase();
-                    let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
-                                           uDestino.includes("RF_REPONER_PUERTA") || 
-                                           uDestino.includes("RF_DIVIDIR") || 
-                                           uDestino.includes("DIVIDIR") || 
-                                           uDestino.includes("REPONER") || 
-                                           uDestino.includes("RESERVA");
-
-                    if (pSku && pLpn && esPantallaValida) {
-                        tempDetalleRepo.push({
-                            lpn: pLpn,
-                            sku: pSku,
-                            pantalla: pPantalla,
-                            cantOriginal: pCantOrig,
-                            cantAjustada: pCantAjust,
-                            usuario: pUsuario
-                        });
-                    }
-                }
-
-                detalleRepoRef.set(tempDetalleRepo);
-            };
-            lector.readAsArrayBuffer(file);
-        }
-
-        function procesarSupplyChain() {
-            const input = document.getElementById("fileSupplyChain");
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-            const lector = new FileReader();
-            lector.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
-                const hoja = libro.Sheets[libro.SheetNames[0]];
-                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-                
-                if (!filas || filas.length < 2) {
-                    document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                    document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
-                    return;
-                }
-
-                let headerRowIdx = -1;
-                for (let i = 0; i < Math.min(10, filas.length); i++) {
-                    if (filas[i] && Array.isArray(filas[i])) {
-                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                        if (strLine.includes("pallet") || strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("cantidad enviada")) {
-                            headerRowIdx = i;
-                            break;
-                        }
-                    }
-                }
-
-                if (headerRowIdx === -1) headerRowIdx = 0;
-
-                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                
-                let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
-                let idxArea = headers.findIndex(h => h === "área" || h === "area");
-                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
-                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
-                let idxDesc = headers.findIndex(h => h.includes("descripci"));
-                let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
-
-                if (idxPallet === -1) idxPallet = 0;
-                if (idxArea === -1) idxArea = 1;
-                if (idxLpn === -1) idxLpn = 2;
-                if (idxSku === -1) idxSku = 3;
-                if (idxDesc === -1) idxDesc = 4;
-                if (idxCantEnviada === -1) idxCantEnviada = 5;
-
-                let tempSupply = [];
-
-                for (let i = headerRowIdx + 1; i < filas.length; i++) {
-                    const row = filas[i];
-                    if (!row || row.length === 0) continue;
-
-                    let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
-                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
-                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
-                    let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                    let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
-                    let pCant = row[idxCantEnviada] !== undefined ? parseInt(row[idxCantEnviada] || 0, 10) : 0;
-
-                    if (pSku || pLpn) {
-                        tempSupply.push({
-                            pallet: pPallet,
-                            area: pArea,
-                            lpn: pLpn,
-                            sku: pSku,
-                            descripcion: pDesc,
-                            cantidad: pCant
-                        });
-                    }
-                }
-
-                supplyRef.set(tempSupply);
-            };
-            lector.readAsArrayBuffer(file);
-        }
-
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN FÍSICA
-        function ejecutarCruceSupplyQuiebre() {
-            if (rolUsuarioActivo !== 'admin') return;
-
-            const tbody = document.getElementById("tablaSupplyQuiebreBody");
-            if (!tbody) return;
-
-            if (Object.keys(reqJ_Satelite).length === 0 && matrixSupplyChain.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
-                document.getElementById('boxTotalSupply').innerText = "0";
-                return;
-            }
-
-            tbody.innerHTML = "";
-            registrosHistoricosSupplyQuiebre = [];
-
-            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
-
-            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
-            if (matrixSupplyChain.length > 0) {
-                matrixSupplyChain.forEach(supItem => {
-                    let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
-                    
-                    let satItem = reqJ_Satelite[skuClean];
-
-                    // REGLA: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
-                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
-                        return;
-                    }
-
-                    let cantPedidaJSatelite = satItem.cantidadSolicitada;
-
-                    // Busca coincidencia en Cajas_Tienda respetando lista negra y que tenga stock real
-                    let cajaMatch = inventarioCajasTemporal.find(i => 
                         i && i.sku && 
                         i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
-                        (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, "")))) &&
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
-                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
+                    // REGLA 2: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
                     if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
                         return;
                     }
 
-                    let ubicacionFisica = cajaMatch.ubicacion;
-                    let descFinal = supItem.descripcion || cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
-
-                    let filaData = {
-                        pallet: supItem.pallet || "P/L",
-                        area: supItem.area || (satItem ? satItem.areaJSatelite : "GENERAL"),
-                        sku: supItem.sku || (satItem ? satItem.skuOriginal : skuClean),
-                        lpn: supItem.lpn || cajaMatch.lpn || "-",
-                        ubicacion: ubicacionFisica,
-                        descripcion: descFinal,
-                        cant: cantPedidaJSatelite
-                    };
-
-                    registrosHistoricosSupplyQuiebre.push(filaData);
-
-                    tbody.innerHTML += `
-                        <tr class="hover:bg-teal-50/40 text-xs">
-                            <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
-                            <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
-                            <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
-                            <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
-                            <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
-                            <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
-                        </tr>`;
-                });
-            } else if (Object.keys(reqJ_Satelite).length > 0) {
-                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
-                Object.keys(reqJ_Satelite).forEach(skuKey => {
-                    let satItem = reqJ_Satelite[skuKey];
-                    let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    // REGLA 3: FILTRO ESTRICTO - SOLO UBICACIÓN PUERTA / PISO DE RECEPCIÓN
+                    let uUbi = cajaMatch.ubicacion.toString().toUpperCase().trim();
+                    let esPuerta = uUbi.includes("PUERTA") || uUbi.includes("PISO-ALM") || uUbi.includes("PISO") || uUbi.includes("PTA") || uUbi.includes("REC-") || uUbi.includes("RECEPCION");
                     
-                    if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
-                        return;
-                    }
-
-                    let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
-                        parseInt(i.unidades || 0, 10) > 0
-                    );
-
-                    // REGLA: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
-                    if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
+                    if (!esPuerta) {
                         return;
                     }
 
@@ -2655,7 +2117,7 @@
             }
 
             if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No hay registros con stock físico en la reserva para mostrar...</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No hay quiebres solicitados en PUERTA para repotenciar...</td></tr>`;
             }
 
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
