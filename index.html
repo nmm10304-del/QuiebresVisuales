@@ -85,6 +85,7 @@
                     <option value="buzon">📥 Buzón de incidencias</option>
                     <option value="resetclave">🔑 Resetear contraseña</option>
                     <option value="usuarios">👤 Usuarios</option>
+                    <option value="sesiones">🚪 Cierre de sesión / Conexiones</option>
                 </select>
             </div>
 
@@ -132,6 +133,35 @@
                         Seleccionar Archivo
                     </button>
                     <p id="statusSupplyChain" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo SupplyChain...</p>
+                </div>
+            </div>
+
+            <!-- MÓDULO DE AUDITORÍA DE SESIONES -->
+            <div id="wrapperModuloAuditoriaSesiones" class="hidden bg-white p-5 rounded-lg shadow border border-indigo-200 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                        🚪 Registro de Conexiones de Usuarios
+                    </h3>
+                    <button onclick="forzarCierreSesionTodosAsistentes()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
+                        🔒 Cerrar Sesión a Todos los Asistentes
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto border rounded-lg max-h-80 overflow-y-auto">
+                    <table class="min-w-full text-xs text-left border-collapse">
+                        <thead class="bg-indigo-50 text-indigo-950 uppercase font-bold sticky top-0 border-b">
+                            <tr>
+                                <th class="px-4 py-2.5 border">Colaborador</th>
+                                <th class="px-4 py-2.5 border">Usuario</th>
+                                <th class="px-4 py-2.5 border text-center">Rol</th>
+                                <th class="px-4 py-2.5 border text-center">Última Conexión</th>
+                                <th class="px-4 py-2.5 border text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaSesionesBody" class="divide-y divide-gray-200 font-sans text-gray-700">
+                            <!-- Render dinámico -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -427,7 +457,7 @@
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
+                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                             <div id="containerResetBtn" class="hidden">
@@ -441,9 +471,10 @@
 
                     <div id="resultadoEscaneo" class="hidden"></div>
 
-                    <div class="pt-1 border-t flex flex-col gap-1">
-                        <button onclick="abrirModalReporteIncidencia()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1 px-2.5 rounded border border-red-300 text-[10px] transition tracking-wide uppercase shadow-2xs cursor-pointer block">
-                            🚨 SKU/EAN no escanea
+                    <div class="pt-1 border-t flex flex-col items-center">
+                        <button onclick="abrirModalReporteIncidencia()" class="w-full max-w-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3 rounded-lg border border-red-300 text-[11px] transition tracking-wide uppercase shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span>🚨</span>
+                            <span>SKU/EAN no escanea</span>
                         </button>
                     </div>
                 </div>
@@ -629,6 +660,7 @@
         const fechaCargaRef = db.ref("fechaCargaData");
         const passRef = db.ref("credencialesUsuariosData");
         const usersMasterRef = db.ref("usuariosRegistradosNube");
+        const sesionesRef = db.ref("registroSesionesEnVivo");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -694,10 +726,11 @@
             escucharInventarioEnTiempoReal();
             escucharLogsRepotenciacionTiempoReal();
             escucharAlertasIncidenciasGlobales();
+            escucharSesionesEnVivo();
             verificarSesionGuardada();
 
             validarPurgaMedianocheAutomática();
-            setInterval(validarPurgaMedianocheAutomática, 15000); 
+            setInterval(validarPurgaMedianocheAutomática, 60000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -735,6 +768,61 @@
                 }
 
                 actualizarCombosYTablaUsuarios();
+            });
+        }
+
+        function escucharSesionesEnVivo() {
+            sesionesRef.on("value", (snapshot) => {
+                const data = snapshot.val() || {};
+                const tbody = document.getElementById("tablaSesionesBody");
+                if (!tbody) return;
+
+                tbody.innerHTML = "";
+                const claves = Object.keys(data);
+                if (claves.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">No hay registros de conexión activos...</td></tr>`;
+                    return;
+                }
+
+                claves.forEach(u => {
+                    const s = data[u];
+                    const esAdmin = s.rol === "admin";
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-indigo-50/40">
+                            <td class="px-4 py-2.5 border font-bold text-gray-900">${s.nombre || u}</td>
+                            <td class="px-4 py-2.5 border font-mono font-semibold text-indigo-700">${u}</td>
+                            <td class="px-4 py-2.5 border text-center">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${esAdmin ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
+                                    ${esAdmin ? 'Administrador' : 'Asistente'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2.5 border text-center text-gray-600 font-mono">${s.ultimaConexion || '-'}</td>
+                            <td class="px-4 py-2.5 border text-center">
+                                <span class="inline-flex items-center gap-1 font-bold ${s.online ? 'text-green-600' : 'text-gray-400'}">
+                                    ${s.online ? '🟢 Conectado' : '⚪ Desconectado'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        function forzarCierreSesionTodosAsistentes() {
+            sesionesRef.get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    const updates = {};
+                    Object.keys(data).forEach(u => {
+                        if (data[u].rol !== "admin") {
+                            updates[`${u}/forzarLogout`] = true;
+                            updates[`${u}/online`] = false;
+                        }
+                    });
+                    sesionesRef.update(updates).then(() => {
+                        lanzarAlertaCuidadoPersonalizada("Sesiones Cerradas", "Se cerró la sesión a todos los asistentes.");
+                    });
+                }
             });
         }
 
@@ -861,35 +949,28 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y CIERRE TOTAL DE SESIÓN A LAS 00:00:00 (O CRUCE DE DÍA)
+        // PURGA AUTOMÁTICA Y CIERRE EXCLUSIVO DE ASISTENTES AL CAMBIO DE TURNO DIARIO
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
-            
             let fechaSesion = localStorage.getItem("sesion_fecha");
-            if (fechaSesion && fechaSesion !== fechaHoy) {
-                localStorage.clear();
+            let rolGuardado = localStorage.getItem("sesion_rol");
+
+            if (rolGuardado === "asistente" && fechaSesion && fechaSesion !== fechaHoy) {
+                localStorage.removeItem("sesion_usuario");
+                localStorage.removeItem("sesion_rol");
+                localStorage.removeItem("sesion_fecha");
                 window.location.reload();
                 return;
             }
 
-            fechaCargaRef.get().then((snapshot) => {
-                if (snapshot.exists()) {
-                    let fechaCargada = snapshot.val();
-                    if (fechaCargada && fechaCargada !== fechaHoy) {
-                        Promise.all([
-                            dbRef.set(null),          
-                            sateliteRef.set(null),   
-                            detalleRepoRef.set(null),
-                            supplyRef.set(null),
-                            logRef.set(null),        
-                            fechaCargaRef.set(null)
-                        ]).then(() => {
-                            localStorage.clear();
-                            window.location.reload();
-                        });
+            if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
+                sesionesRef.child(idUsuarioLogueado).child("forzarLogout").get().then((snapshot) => {
+                    if (snapshot.exists() && snapshot.val() === true) {
+                        sesionesRef.child(idUsuarioLogueado).update({ forzarLogout: false, online: false });
+                        cerrarSesion();
                     }
-                }
-            }).catch(() => {});
+                });
+            }
         }
 
         function escucharPersistenciaArchivosCloud() {
@@ -941,20 +1022,30 @@
         function verificarSesionGuardada() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             let fechaSesion = localStorage.getItem("sesion_fecha");
+            let rolGuardado = localStorage.getItem("sesion_rol");
+            let usuarioGuardado = localStorage.getItem("sesion_usuario");
 
-            if (fechaSesion && fechaSesion !== fechaHoy) {
-                localStorage.clear();
+            if (rolGuardado === "asistente" && fechaSesion && fechaSesion !== fechaHoy) {
+                localStorage.removeItem("sesion_usuario");
+                localStorage.removeItem("sesion_rol");
+                localStorage.removeItem("sesion_fecha");
                 return;
             }
 
-            const usuarioGuardado = localStorage.getItem("sesion_usuario");
-            const rolGuardado = localStorage.getItem("sesion_rol");
             if (usuarioGuardado && rolGuardado) {
                 rolUsuarioActivo = rolGuardado; 
                 idUsuarioLogueado = usuarioGuardado;
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
+                
+                sesionesRef.child(usuarioGuardado).update({
+                    nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
+                    rol: rolUsuarioActivo,
+                    online: true,
+                    ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
                 switchRole();
             }
         }
@@ -1070,6 +1161,7 @@
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
             const moduloGestionUsuarios = document.getElementById("wrapperModuloGestionUsuarios");
+            const moduloSesiones = document.getElementById("wrapperModuloAuditoriaSesiones");
 
             gridTarjetas.classList.add("hidden");
             cardCajas.classList.add("hidden");
@@ -1083,6 +1175,7 @@
             moduloBuzon.classList.add("hidden");
             moduloResetClave.classList.add("hidden");
             moduloGestionUsuarios.classList.add("hidden");
+            moduloSesiones.classList.add("hidden");
 
             if (val === "repotenciar") {
                 gridTarjetas.classList.remove("hidden");
@@ -1114,6 +1207,9 @@
 
             } else if (val === "usuarios") {
                 moduloGestionUsuarios.classList.remove("hidden");
+
+            } else if (val === "sesiones") {
+                moduloSesiones.classList.remove("hidden");
             }
         }
 
@@ -1187,7 +1283,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1599,6 +1695,15 @@
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+                
+                sesionesRef.child(user).update({
+                    nombre: usuariosDB[user].nombre,
+                    rol: rolUsuarioActivo,
+                    online: true,
+                    forzarLogout: false,
+                    ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
                 switchRole();
                 
                 if (rolUsuarioActivo === "asistente") {
@@ -1614,7 +1719,12 @@
         }
 
         function cerrarSesion() {
-            localStorage.clear();
+            if (idUsuarioLogueado) {
+                sesionesRef.child(idUsuarioLogueado).update({ online: false });
+            }
+            localStorage.removeItem("sesion_usuario");
+            localStorage.removeItem("sesion_rol");
+            localStorage.removeItem("sesion_fecha");
             window.location.reload();
         }
 
@@ -2070,8 +2180,7 @@
                     }
 
                     let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && 
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
@@ -2121,6 +2230,212 @@
             }
 
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
+        }
+
+        function ejecutarCruceMacroGlobal() {
+            const tbody = document.getElementById("tablaMacroGlobalBody");
+            const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
+            
+            if (!tbody) return;
+
+            if (Object.keys(reqJ_Satelite).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
+                document.getElementById('boxSkusStockCumplimiento').innerText = "0";
+                document.getElementById('boxPorReponerCumplimiento').innerText = "0";
+                return;
+            }
+            
+            tbody.innerHTML = "";
+            let filasGeneradasCumplimiento = [];
+            let skusValidosConStockSet = new Set();
+            let skusRepuestosSet = new Set();
+
+            let bolsaConsumosRF = [];
+            if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
+                matrixDetalleReposicion.forEach(m => {
+                    if (!m.sku || !m.lpn) return;
+                    bolsaConsumosRF.push({
+                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                        lpn: m.lpn.toString().trim().toUpperCase(),
+                        consumido: false
+                    });
+                });
+            }
+
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
+
+            Object.keys(reqJ_Satelite).forEach(skuKey => {
+                let satItem = reqJ_Satelite[skuKey];
+                let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
+
+                if (cantidadRequeridaMeta <= 0) return;
+
+                let lotesDisponibles = inventarioCajasTemporal.filter(item => {
+                    if (!item || !item.sku || !item.ubicacion) return false;
+                    let u = item.ubicacion.toString().toUpperCase().trim();
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) return false;
+                    let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
+                });
+
+                if (lotesDisponibles.length === 0) return;
+
+                skusValidosConStockSet.add(skuLimpio);
+
+                lotesDisponibles.sort((a, b) => {
+                    let fA = parsearFechaEspanol(a.vencimiento);
+                    let fB = parsearFechaEspanol(b.vencimiento);
+                    if (fA.getTime() !== fB.getTime()) {
+                        return fA - fB;
+                    }
+                    return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                });
+
+                let remanentePorCubrir = cantidadRequeridaMeta;
+
+                for (let lote of lotesDisponibles) {
+                    if (remanentePorCubrir <= 0) break;
+
+                    let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
+                    let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
+                    
+                    lote.unidades = unidadesEnEstaCaja - cantidadATomarDeEstaCaja;
+                    remanentePorCubrir -= cantidadATomarDeEstaCaja;
+
+                    let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
+                    let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
+                    let tieneFVValida = fvFila && fvFila !== "" && fvFila !== "SIN FECHA";
+
+                    let estadoFila = "Pendiente";
+                    let estadoTextoPlano = "Pendiente";
+                    let lpnConsumidoFila = "";
+
+                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
+
+                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
+
+                    if (idxMatchExacto !== -1) {
+                        bolsaConsumosRF[idxMatchExacto].consumido = true;
+                        skusRepuestosSet.add(skuLimpio);
+
+                        if (!tieneFVValida) {
+                            estadoFila = "Repuesto";
+                            estadoTextoPlano = "Repuesto";
+                        } else {
+                            estadoFila = "Realizó FIFO";
+                            estadoTextoPlano = "Realizó FIFO";
+                        }
+                    } else {
+                        let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
+
+                        if (idxOtroLpn !== -1) {
+                            let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
+                            bolsaConsumosRF[idxOtroLpn].consumido = true;
+                            skusRepuestosSet.add(skuLimpio);
+
+                            if (!tieneFVValida) {
+                                estadoFila = "Repuesto";
+                                estadoTextoPlano = "Repuesto";
+                            } else {
+                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
+                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+
+                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
+                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+
+                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                    estadoFila = "Misma FV";
+                                    estadoTextoPlano = "LPN con la misma FV";
+                                } else {
+                                    estadoFila = "No realizó FIFO";
+                                    estadoTextoPlano = "No realizó FIFO";
+                                    lpnConsumidoFila = bajadaDispo.lpn;
+                                }
+                            }
+                        }
+                    }
+
+                    filasGeneradasCumplimiento.push({
+                        sku: satItem.skuOriginal || skuKey,
+                        skuCleanRef: skuLimpio,
+                        lpn: lote.lpn,
+                        ubicacion: lote.ubicacion,
+                        descripcion: descFila,
+                        area: satItem.areaJSatelite || "GENERAL",
+                        cantidadAsignadaFila: cantidadATomarDeEstaCaja,
+                        fv: fvFila,
+                        estado: estadoFila,
+                        estadoTextoPlano: estadoTextoPlano,
+                        lpnConsumido: lpnConsumidoFila
+                    });
+                }
+            });
+
+            registrosHistoricosCumplimiento24 = [];
+
+            filasGeneradasCumplimiento.forEach(item => {
+                let esRepuestoItem = item.estado !== "Pendiente";
+
+                if (filterVal === "REPUESTO" && !esRepuestoItem) return;
+                if (filterVal === "PENDIENTE" && esRepuestoItem) return;
+
+                registrosHistoricosCumplimiento24.push(item);
+
+                let estadoHtml = "";
+                if (item.estado === "Realizó FIFO") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                } else if (item.estado === "Repuesto") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                } else if (item.estado === "Misma FV") {
+                    estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                } else if (item.estado === "No realizó FIFO") {
+                    estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                } else {
+                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
+                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
+                        <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${item.area}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${item.cantidadAsignadaFila}</td>
+                        <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
+                        <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
+                    </tr>`;
+            });
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
+            }
+
+            let totalSkusConStock = skusValidosConStockSet.size;
+            let totalRepuestosUnicos = skusRepuestosSet.size;
+            let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
+
+            document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
+            document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
         }
 
         function eliminarData(tipo, event) {
@@ -2206,6 +2521,343 @@
                 document.getElementById('passwordInput').value = "";
                 document.getElementById('passwordInput').focus();
             }
+        }
+
+        function procesarData1() {
+            const input = document.getElementById("fileData1");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            
+            const statusElem = document.getElementById('statusData1');
+            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
+            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
+
+            setTimeout(() => {
+                const lector = new FileReader();
+                lector.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: false });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    
+                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: false, header: 1, defval: "" });
+                    
+                    if (!filasMatriz || filasMatriz.length < 2) {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
+                        return;
+                    }
+
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
+                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
+                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo")) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (headerRowIdx === -1) headerRowIdx = 0;
+
+                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    
+                    const idxLpn = headers.findIndex(h => h.includes("lpn"));
+                    const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                    const idxDesc = headers.findIndex(h => h.includes("descripci"));
+                    const idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant"));
+                    
+                    const idxUbiStrict = 4; 
+                    let idxVencStrict = 15;  
+                    
+                    if (headers[idxVencStrict] && !headers[idxVencStrict].includes("caducidad")) {
+                        let altVenc = headers.findIndex(h => h.includes("caducidad"));
+                        if (altVenc !== -1) idxVencStrict = altVenc;
+                    }
+
+                    let datosFormateados = [];
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        const row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+
+                        let skuVal = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                        let lpnVal = idxLpn !== -1 && row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                        let descVal = idxDesc !== -1 && row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                        let uVal = idxUnidades !== -1 && row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
+                        
+                        let ubiVal = row[idxUbiStrict] !== undefined ? row[idxUbiStrict].toString().trim() : "";
+                        let caducidadVal = row[idxVencStrict] !== undefined ? row[idxVencStrict].toString().trim() : "";
+
+                        if (!skuVal || uVal <= 0 || !ubiVal) continue;
+
+                        let uUpper = ubiVal.toUpperCase();
+                        if (
+                            uUpper.includes("DE-PROVEEDOR") || 
+                            uUpper.includes("ST-PROVEEDOR") || 
+                            uUpper.includes("DEV-PRV-VIA-CD") || 
+                            uUpper.includes("DEV-PRV-SVT-001") || 
+                            uUpper.includes("JAU-BAT-ALM-001") || 
+                            uUpper.includes("DSCTO-") || 
+                            uUpper.includes("DAD-RECP") || 
+                            uUpper.includes("CMM-ALM") || 
+                            uUpper.includes("CD-FALTANTE") || 
+                            uUpper.includes("MM-") || 
+                            uUpper.includes("NAV-TDA") || 
+                            uUpper.includes("VCTO-") || 
+                            uUpper.includes("JAU-BAT") || 
+                            uUpper.includes("DEV-PRV") || 
+                            uUpper.includes("ST-ALM") || 
+                            uUpper.includes("CD-SOBRANTE")
+                        ) {
+                            continue;
+                        }
+
+                        datosFormateados.push({
+                            lpn: lpnVal,
+                            sku: skuVal,
+                            descripcion: descVal,
+                            unidades: uVal,
+                            vencimiento: caducidadVal,
+                            ubicacion: ubiVal
+                        });
+                    }
+
+                    let fechaHoyStr = new Date().toLocaleDateString('es-PE');
+                    fechaCargaRef.set(fechaHoyStr);
+
+                    dbRef.set(datosFormateados).then(() => {
+                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
+                    }).catch(err => {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                    });
+                };
+                lector.readAsArrayBuffer(file);
+            }, 30);
+        }
+
+        function procesarJ_Satelite() {
+            const input = document.getElementById("fileJSatelite");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                let tempJSatelite = {};
+                
+                if (filasMatriz && filasMatriz.length > 0) {
+                    let headerRowIdx = 0;
+                    for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
+                        let rowStr = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (rowStr.includes("sku") || rowStr.includes("quantity") || rowStr.includes("articulo")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+
+                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    let idxSkuCol3 = headers.findIndex(h => h === "sku" || h === "articulo");
+                    let idxAreaCol6 = headers.findIndex(h => h === "area" || h === "área");
+                    let idxQtyCol13 = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad"));
+
+                    if (idxSkuCol3 === -1) idxSkuCol3 = 2;   
+                    if (idxAreaCol6 === -1) idxAreaCol6 = 5;  
+                    if (idxQtyCol13 === -1) idxQtyCol13 = 12; 
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        let row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+                        let skuVal = row[idxSkuCol3] !== undefined ? row[idxSkuCol3].toString().trim() : "";
+                        let areaVal = row[idxAreaCol6] !== undefined ? row[idxAreaCol6].toString().trim() : "GENERAL";
+                        let qtyVal = row[idxQtyCol13] !== undefined ? row[idxQtyCol13] : 0;
+
+                        if (skuVal) {
+                            let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            
+                            if (!tempJSatelite[skuClean]) {
+                                tempJSatelite[skuClean] = {
+                                    skuOriginal: skuVal,
+                                    areaJSatelite: areaVal || "GENERAL",
+                                    cantidadSolicitada: parseInt(qtyVal, 10) || 0
+                                };
+                            } else {
+                                tempJSatelite[skuClean].cantidadSolicitada += (parseInt(qtyVal, 10) || 0);
+                            }
+                        }
+                    }
+                }
+                
+                sateliteRef.set(tempJSatelite);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarData2() {
+            const input = document.getElementById("fileData2");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pantalla") || strLine.includes("lpn") || strLine.includes("sku")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
+                const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
+                const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
+                const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
+
+                let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
+                if (idxLpn === -1) idxLpn = 2;
+
+                let tempDetalleRepo = [];
+                let ultimoSkuVisto = "";
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
+                    let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
+                    let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
+
+                    if (pSku) {
+                        ultimoSkuVisto = pSku;
+                    } else if (!pSku && ultimoSkuVisto) {
+                        pSku = ultimoSkuVisto;
+                    }
+
+                    let uDestino = pPantalla.toUpperCase();
+                    let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
+                                           uDestino.includes("RF_REPONER_PUERTA") || 
+                                           uDestino.includes("RF_DIVIDIR") || 
+                                           uDestino.includes("DIVIDIR") || 
+                                           uDestino.includes("REPONER") || 
+                                           uDestino.includes("RESERVA");
+
+                    if (pSku && pLpn && esPantallaValida) {
+                        tempDetalleRepo.push({
+                            lpn: pLpn,
+                            sku: pSku,
+                            pantalla: pPantalla,
+                            cantOriginal: pCantOrig,
+                            cantAjustada: pCantAjust,
+                            usuario: pUsuario
+                        });
+                    }
+                }
+
+                detalleRepoRef.set(tempDetalleRepo);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarSupplyChain() {
+            const input = document.getElementById("fileSupplyChain");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pallet") || strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("cantidad enviada")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
+                let idxArea = headers.findIndex(h => h === "área" || h === "area");
+                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
+                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
+                let idxDesc = headers.findIndex(h => h.includes("descripci"));
+                let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
+
+                if (idxPallet === -1) idxPallet = 0;
+                if (idxArea === -1) idxArea = 1;
+                if (idxLpn === -1) idxLpn = 2;
+                if (idxSku === -1) idxSku = 3;
+                if (idxDesc === -1) idxDesc = 4;
+                if (idxCantEnviada === -1) idxCantEnviada = 5;
+
+                let tempSupply = [];
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
+                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                    let pCant = row[idxCantEnviada] !== undefined ? parseInt(row[idxCantEnviada] || 0, 10) : 0;
+
+                    if (pSku || pLpn) {
+                        tempSupply.push({
+                            pallet: pPallet,
+                            area: pArea,
+                            lpn: pLpn,
+                            sku: pSku,
+                            descripcion: pDesc,
+                            cantidad: pCant
+                        });
+                    }
+                }
+
+                supplyRef.set(tempSupply);
+            };
+            lector.readAsArrayBuffer(file);
         }
     </script>
 </body>
