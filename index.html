@@ -42,8 +42,9 @@
 
     <div class="max-w-7xl mx-auto p-1.5 md:p-6 flex-1 w-full flex flex-col justify-start">
 
-        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-5 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-4 my-auto">
-            <div class="flex justify-center pb-1 rounded-lg p-3 shadow-inner">
+        <!-- SECCIÓN LOGIN SUBIDA MÁS ARRIBA -->
+        <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-5 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-4 mt-2 sm:mt-6 mb-auto">
+            <div class="flex justify-center pb-1 rounded-lg p-2 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
             </div>
             <h2 class="text-base font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
@@ -545,7 +546,7 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO EQUITATIVO -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (9 BOTONES ORIGINALES) -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
@@ -586,13 +587,9 @@
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Bines</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition col-span-2">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Rumas</span>
-                </label>
-                <label onclick="confirmarUbicacionYGuardar('Piso')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-                    <input type="radio" name="optUbicacion" value="Piso" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-                    <span class="truncate text-xs font-bold text-gray-800">Piso</span>
                 </label>
             </div>
             
@@ -734,7 +731,7 @@
             verificarSesionGuardada();
 
             validarPurgaMedianocheAutomática();
-            setInterval(validarPurgaMedianocheAutomática, 60000); 
+            setInterval(validarPurgaMedianocheAutomática, 15000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -953,16 +950,36 @@
             });
         }
 
-        // PURGA AUTOMÁTICA Y CIERRE EXCLUSIVO DE ASISTENTES AL CAMBIO DE TURNO DIARIO
+        // PURGA TOTAL AUTOMÁTICA Y CIERRE EXCLUSIVO DE ASISTENTES AL CAMBIO DE TURNO DIARIO (00:00:00)
         function validarPurgaMedianocheAutomática() {
             let fechaHoy = new Date().toLocaleDateString('es-PE');
             let fechaSesion = localStorage.getItem("sesion_fecha");
             let rolGuardado = localStorage.getItem("sesion_rol");
 
+            fechaCargaRef.get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    let fechaCargada = snapshot.val();
+                    if (fechaCargada && fechaCargada !== fechaHoy) {
+                        Promise.all([
+                            dbRef.set(null),
+                            sateliteRef.set(null),
+                            detalleRepoRef.set(null),
+                            supplyRef.set(null),
+                            logRef.set(null),
+                            fechaCargaRef.set(null)
+                        ]).then(() => {
+                            if (rolGuardado === "asistente") {
+                                localStorage.clear();
+                            }
+                            window.location.reload();
+                        });
+                        return;
+                    }
+                }
+            }).catch(() => {});
+
             if (rolGuardado === "asistente" && fechaSesion && fechaSesion !== fechaHoy) {
-                localStorage.removeItem("sesion_usuario");
-                localStorage.removeItem("sesion_rol");
-                localStorage.removeItem("sesion_fecha");
+                localStorage.clear();
                 window.location.reload();
                 return;
             }
@@ -1067,7 +1084,7 @@
                 input.type = "text";
                 icono.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45(0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                     </svg>`;
             } else {
                 input.type = "password";
@@ -1291,7 +1308,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1886,93 +1903,87 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // GUARDADO OPTIMIZADO 100% EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
+        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
         function guardarRegistro(zonaDestino) {
-            try {
-                const inputCantElem = document.getElementById('cantidadInput');
-                const cantidadString = inputCantElem ? inputCantElem.value : "";
-                
-                if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
-                    return; 
-                }
-
-                const cantidadNumerica = parseInt(cantidadString, 10);
-                let remanente = cantidadNumerica;
-                
-                let lpnSugerido = "LPN-MANUAL";
-                let fvSugerida = "";
-                let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
-
-                let copiaLotesFiltrados = [...lotesFiltradosTurno];
-
-                if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
-                    try {
-                        copiaLotesFiltrados.sort((a, b) => {
-                            let fA = parsearFechaEspanol(a.vencimiento);
-                            let fB = parsearFechaEspanol(b.vencimiento);
-                            if (fA.getTime() !== fB.getTime()) {
-                                return fA - fB;
-                            }
-                            return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
-                        });
-                    } catch(eSort) {}
-                    
-                    fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
-                    historialConsumosLpns = [];
-                    let lpnsConsumidosUnicos = [];
-
-                    for (let lote of copiaLotesFiltrados) {
-                        if (remanente <= 0) break;
-                        let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
-                        
-                        let loteOriginalInventario = inventarioData1.find(i => 
-                            i && i.sku && i.lpn === lote.lpn &&
-                            i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
-                        );
-                        
-                        if (loteOriginalInventario) {
-                            loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
-                        }
-                        
-                        remanente -= descontar;
-                        let lpnActual = lote.lpn || 'S/LPN';
-                        if (!lpnsConsumidosUnicos.includes(lpnActual)) {
-                            lpnsConsumidosUnicos.push(lpnActual);
-                        }
-                        historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
-                    }
-
-                    lpnSugerido = lpnsConsumidosUnicos.join(", ");
-                }
-
-                let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
-                let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
-                if (zonaDestino) {
-                    copiaDescripcion += ` [Zona: ${zonaDestino}]`;
-                }
-
-                cancelarRegistro();
-
-                const registroAPush = {
-                    idAsistente: idUsuarioLogueado,
-                    operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
-                    sku: copiaSkuTemporal,
-                    fifoLpnOptimizado: lpnSugerido, 
-                    desc: copiaDescripcion,
-                    cant: cantidadNumerica,
-                    fv: fvSugerida,
-                    purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
-                };
-
-                setTimeout(() => {
-                    logRef.push(registroAPush);
-                    dbRef.set(inventarioData1);
-                }, 5);
-
-            } catch (errGeneral) {
-                console.error("Error capturado en guardarRegistro:", errGeneral);
-                cancelarRegistro();
+            const inputCantElem = document.getElementById('cantidadInput');
+            const cantidadString = inputCantElem ? inputCantElem.value : "";
+            
+            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
+                return; 
             }
+
+            const cantidadNumerica = parseInt(cantidadString, 10);
+            let remanente = cantidadNumerica;
+            
+            let lpnSugerido = "LPN-MANUAL";
+            let fvSugerida = "";
+            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+
+            let copiaLotesFiltrados = [...lotesFiltradosTurno];
+
+            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                try {
+                    copiaLotesFiltrados.sort((a, b) => {
+                        let fA = parsearFechaEspanol(a.vencimiento);
+                        let fB = parsearFechaEspanol(b.vencimiento);
+                        if (fA.getTime() !== fB.getTime()) {
+                            return fA - fB;
+                        }
+                        return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                    });
+                } catch(eSort) {}
+                
+                fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
+                historialConsumosLpns = [];
+                let lpnsConsumidosUnicos = [];
+
+                for (let lote of copiaLotesFiltrados) {
+                    if (remanente <= 0) break;
+                    let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
+                    
+                    let loteOriginalInventario = inventarioData1.find(i => 
+                        i && i.sku && i.lpn === lote.lpn &&
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
+                    );
+                    
+                    if (loteOriginalInventario) {
+                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
+                    }
+                    
+                    remanente -= descontar;
+                    let lpnActual = lote.lpn || 'S/LPN';
+                    if (!lpnsConsumidosUnicos.includes(lpnActual)) {
+                        lpnsConsumidosUnicos.push(lpnActual);
+                    }
+                    historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
+                }
+
+                lpnSugerido = lpnsConsumidosUnicos.join(", ");
+            }
+
+            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+            if (zonaDestino) {
+                copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+            }
+
+            cancelarRegistro();
+
+            const registroAPush = {
+                idAsistente: idUsuarioLogueado,
+                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                sku: copiaSkuTemporal,
+                fifoLpnOptimizado: lpnSugerido, 
+                desc: copiaDescripcion,
+                cant: cantidadNumerica,
+                fv: fvSugerida,
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+            };
+
+            setTimeout(() => {
+                logRef.push(registroAPush);
+                dbRef.set(inventarioData1);
+            }, 0);
         }
 
         function cancelarRegistro() {
@@ -2375,7 +2386,7 @@
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
-                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
                                     estadoFila = "Misma FV";
                                     estadoTextoPlano = "LPN con la misma FV";
                                 } else {
@@ -2555,7 +2566,6 @@
                 }
             }
         }
-
         function procesarData1() {
             const input = document.getElementById("fileData1");
             const file = input.files ? input.files[0] : null;
@@ -2662,13 +2672,15 @@
                     dbRef.set(datosFormateados).then(() => {
                         statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
+                        ejecutarCruceMacroGlobal();
+                        ejecutarCruceSupplyQuiebre();
                     }).catch(err => {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
                     });
                 };
                 lector.readAsArrayBuffer(file);
-            }, 30);
+            }, 0);
         }
 
         function procesarJ_Satelite() {
