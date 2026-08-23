@@ -81,11 +81,11 @@
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
                     <option value="repotenciar">⚡ Repotenciar Tienda</option>
                     <option value="quiebres">🎯 Quiebres Visuales</option>
-                    <option value="supply">📦 Supply-Quiebre</option>
+                    <option value="supply">📦 Supply-Quiebres</option>
                     <option value="buzon">📥 Buzón de incidencias</option>
                     <option value="resetclave">🔑 Resetear contraseña</option>
                     <option value="usuarios">👤 Usuarios</option>
-                    <option value="sesiones">🚪 Cierre de sesión / Conexiones</option>
+                    <option value="sesiones">🚪 Conexiones</option>
                 </select>
             </div>
 
@@ -143,7 +143,7 @@
                         🚪 Registro de Conexiones de Usuarios
                     </h3>
                     <button onclick="forzarCierreSesionTodosAsistentes()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
-                        🔒 Cerrar Sesión a Todos los Asistentes
+                        🔒 Cerrar sesión a todos los asistentes
                     </button>
                 </div>
                 
@@ -174,11 +174,11 @@
                     <table class="min-w-full text-sm text-left border border-gray-200">
                         <thead class="bg-red-100 text-red-900 uppercase text-xs sticky top-0">
                             <tr>
-                                <th class="px-4 py-2 border">Asistente</th>
-                                <th class="px-4 py-2 border">Código Reportado</th>
-                                <th class="px-4 py-2 border">Detalle / Motivo de Alerta</th>
-                                <th class="px-4 py-2 border text-center">Fecha y Hora</th>
-                                <th class="px-4 py-2 border text-center">Acción</th>
+                                <th class="px-4 py-2.5 border">Asistente</th>
+                                <th class="px-4 py-2.5 border">Código Reportado</th>
+                                <th class="px-4 py-2.5 border">Detalle / Motivo de Alerta</th>
+                                <th class="px-4 py-2.5 border text-center">Fecha y Hora</th>
+                                <th class="px-4 py-2.5 border text-center">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="tablaMensajesBody" class="divide-y divide-gray-200 text-gray-700 text-xs bg-white">
@@ -365,11 +365,11 @@
                 </div>
             </div>
 
-            <!-- CUADRO SUPPLY-QUIEBRE (SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO) -->
+            <!-- CUADRO SUPPLY-QUIEBRES (SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO) -->
             <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                        <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRE</h3>
+                        <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRES</h3>
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>Quiebres en Puerta:</span>
@@ -380,7 +380,7 @@
                     
                     <div class="flex flex-wrap items-center gap-2">
                         <button onclick="ejecutarCruceSupplyQuiebre()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-                            Procesar Supply-Quiebre
+                            Procesar Supply-Quiebres
                         </button>
                         <button onclick="descargarExcelSupplyQuiebre()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
                             Descargar Excel
@@ -545,7 +545,7 @@
         </div>
     </div>
 
-    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO -->
+    <!-- MODAL SELECCIÓN UBICACIÓN DESTINO EQUITATIVO -->
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
@@ -586,9 +586,13 @@
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Bines</span>
                 </label>
-                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition col-span-2">
+                <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
                     <span class="truncate text-xs font-bold text-gray-800">Rumas</span>
+                </label>
+                <label onclick="confirmarUbicacionYGuardar('Piso')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
+                    <input type="radio" name="optUbicacion" value="Piso" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
+                    <span class="truncate text-xs font-bold text-gray-800">Piso</span>
                 </label>
             </div>
             
@@ -1044,6 +1048,10 @@
                     rol: rolUsuarioActivo,
                     online: true,
                     ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
+                sesionesRef.child(usuarioGuardado).onDisconnect().update({
+                    online: false
                 });
 
                 switchRole();
@@ -1519,11 +1527,11 @@
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
                                 <tr class="hover:bg-red-50/50 text-xs">
-                                    <td class="px-4 py-2 border font-bold text-gray-800">${m.remitente}</td>
-                                    <td class="px-4 py-2 border font-mono text-red-600 font-bold">${m.codigo}</td>
-                                    <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
-                                    <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
-                                    <td class="px-4 py-2 border text-center">
+                                    <td class="px-4 py-2.5 border font-bold text-gray-800">${m.remitente}</td>
+                                    <td class="px-4 py-2.5 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                    <td class="px-4 py-2.5 border italic text-gray-600">${m.motivo}</td>
+                                    <td class="px-4 py-2.5 border text-center text-gray-400">${m.timestamp}</td>
+                                    <td class="px-4 py-2.5 border text-center">
                                         <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto">✕</button>
                                     </td>
                                 </tr>`;
@@ -1702,6 +1710,10 @@
                     online: true,
                     forzarLogout: false,
                     ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
+                sesionesRef.child(user).onDisconnect().update({
+                    online: false
                 });
 
                 switchRole();
@@ -2087,11 +2099,11 @@
 
             const hoja = XLSX.utils.json_to_sheet(dataProcesada);
             const libro = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(libro, hoja, "SupplyQuiebre");
-            XLSX.writeFile(libro, "Reporte_Supply_Quiebre.xlsx");
+            XLSX.utils.book_append_sheet(libro, hoja, "SupplyQuiebres");
+            XLSX.writeFile(libro, "Reporte_Supply_Quiebres.xlsx");
         }
 
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRE: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRES: SOLO REGISTROS SOLICITADOS POR JSATÉLITE CON UBICACIÓN EN PUERTA/PISO
         function ejecutarCruceSupplyQuiebre() {
             const tbody = document.getElementById("tablaSupplyQuiebreBody");
             if (!tbody) return;
@@ -2230,297 +2242,6 @@
             }
 
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
-        }
-
-        function ejecutarCruceMacroGlobal() {
-            const tbody = document.getElementById("tablaMacroGlobalBody");
-            const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
-            
-            if (!tbody) return;
-
-            if (Object.keys(reqJ_Satelite).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
-                document.getElementById('boxSkusStockCumplimiento').innerText = "0";
-                document.getElementById('boxPorReponerCumplimiento').innerText = "0";
-                return;
-            }
-            
-            tbody.innerHTML = "";
-            let filasGeneradasCumplimiento = [];
-            let skusValidosConStockSet = new Set();
-            let skusRepuestosSet = new Set();
-
-            let bolsaConsumosRF = [];
-            if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
-                matrixDetalleReposicion.forEach(m => {
-                    if (!m.sku || !m.lpn) return;
-                    bolsaConsumosRF.push({
-                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
-                        lpn: m.lpn.toString().trim().toUpperCase(),
-                        consumido: false
-                    });
-                });
-            }
-
-            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
-
-            Object.keys(reqJ_Satelite).forEach(skuKey => {
-                let satItem = reqJ_Satelite[skuKey];
-                let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
-
-                if (cantidadRequeridaMeta <= 0) return;
-
-                let lotesDisponibles = inventarioCajasTemporal.filter(item => {
-                    if (!item || !item.sku || !item.ubicacion) return false;
-                    let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (
-                        u.includes("DE-PROVEEDOR") || 
-                        u.includes("ST-PROVEEDOR") || 
-                        u.includes("DEV-PRV-VIA-CD") || 
-                        u.includes("DEV-PRV-SVT-001") || 
-                        u.includes("JAU-BAT-ALM-001") || 
-                        u.includes("DSCTO-") || 
-                        u.includes("DAD-RECP") || 
-                        u.includes("CMM-ALM") || 
-                        u.includes("CD-FALTANTE") || 
-                        u.includes("MM-") || 
-                        u.includes("NAV-TDA") || 
-                        u.includes("VCTO-") || 
-                        u.includes("JAU-BAT") || 
-                        u.includes("DEV-PRV") || 
-                        u.includes("ST-ALM") || 
-                        u.includes("CD-SOBRANTE")
-                    ) return false;
-                    let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
-                });
-
-                if (lotesDisponibles.length === 0) return;
-
-                skusValidosConStockSet.add(skuLimpio);
-
-                lotesDisponibles.sort((a, b) => {
-                    let fA = parsearFechaEspanol(a.vencimiento);
-                    let fB = parsearFechaEspanol(b.vencimiento);
-                    if (fA.getTime() !== fB.getTime()) {
-                        return fA - fB;
-                    }
-                    return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
-                });
-
-                let remanentePorCubrir = cantidadRequeridaMeta;
-
-                for (let lote of lotesDisponibles) {
-                    if (remanentePorCubrir <= 0) break;
-
-                    let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
-                    let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
-                    
-                    lote.unidades = unidadesEnEstaCaja - cantidadATomarDeEstaCaja;
-                    remanentePorCubrir -= cantidadATomarDeEstaCaja;
-
-                    let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
-                    let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
-                    let tieneFVValida = fvFila && fvFila !== "" && fvFila !== "SIN FECHA";
-
-                    let estadoFila = "Pendiente";
-                    let estadoTextoPlano = "Pendiente";
-                    let lpnConsumidoFila = "";
-
-                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
-
-                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
-
-                    if (idxMatchExacto !== -1) {
-                        bolsaConsumosRF[idxMatchExacto].consumido = true;
-                        skusRepuestosSet.add(skuLimpio);
-
-                        if (!tieneFVValida) {
-                            estadoFila = "Repuesto";
-                            estadoTextoPlano = "Repuesto";
-                        } else {
-                            estadoFila = "Realizó FIFO";
-                            estadoTextoPlano = "Realizó FIFO";
-                        }
-                    } else {
-                        let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
-
-                        if (idxOtroLpn !== -1) {
-                            let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
-                            bolsaConsumosRF[idxOtroLpn].consumido = true;
-                            skusRepuestosSet.add(skuLimpio);
-
-                            if (!tieneFVValida) {
-                                estadoFila = "Repuesto";
-                                estadoTextoPlano = "Repuesto";
-                            } else {
-                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
-                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
-
-                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
-                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
-
-                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
-                                    estadoFila = "Misma FV";
-                                    estadoTextoPlano = "LPN con la misma FV";
-                                } else {
-                                    estadoFila = "No realizó FIFO";
-                                    estadoTextoPlano = "No realizó FIFO";
-                                    lpnConsumidoFila = bajadaDispo.lpn;
-                                }
-                            }
-                        }
-                    }
-
-                    filasGeneradasCumplimiento.push({
-                        sku: satItem.skuOriginal || skuKey,
-                        skuCleanRef: skuLimpio,
-                        lpn: lote.lpn,
-                        ubicacion: lote.ubicacion,
-                        descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL",
-                        cantidadAsignadaFila: cantidadATomarDeEstaCaja,
-                        fv: fvFila,
-                        estado: estadoFila,
-                        estadoTextoPlano: estadoTextoPlano,
-                        lpnConsumido: lpnConsumidoFila
-                    });
-                }
-            });
-
-            registrosHistoricosCumplimiento24 = [];
-
-            filasGeneradasCumplimiento.forEach(item => {
-                let esRepuestoItem = item.estado !== "Pendiente";
-
-                if (filterVal === "REPUESTO" && !esRepuestoItem) return;
-                if (filterVal === "PENDIENTE" && esRepuestoItem) return;
-
-                registrosHistoricosCumplimiento24.push(item);
-
-                let estadoHtml = "";
-                if (item.estado === "Realizó FIFO") {
-                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
-                } else if (item.estado === "Repuesto") {
-                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
-                } else if (item.estado === "Misma FV") {
-                    estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
-                } else if (item.estado === "No realizó FIFO") {
-                    estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                } else {
-                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
-                }
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
-                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
-                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
-                        <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${item.area}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${item.cantidadAsignadaFila}</td>
-                        <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
-                        <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
-                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
-                    </tr>`;
-            });
-
-            if (tbody.children.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
-            }
-
-            let totalSkusConStock = skusValidosConStockSet.size;
-            let totalRepuestosUnicos = skusRepuestosSet.size;
-            let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
-
-            document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
-            document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
-        }
-
-        function eliminarData(tipo, event) {
-            if (event) event.stopPropagation();
-            if (tipo === 'cajas') {
-                dbRef.set(null);
-                fechaCargaRef.set(null);
-            } else if (tipo === 'satelite') {
-                sateliteRef.set(null);
-                reqJ_Satelite = {};
-                ejecutarCruceMacroGlobal();
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'reposicion') {
-                matrixDetalleReposicion = [];
-                detalleRepoRef.set(null);
-                ejecutarCruceMacroGlobal();
-                forzarActualizacionTablaAdmin();
-            } else if (tipo === 'supply') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'supply_vista') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'satelite_vista') {
-                sateliteRef.set(null);
-                reqJ_Satelite = {};
-                matrixDetalleReposicion = [];
-                detalleRepoRef.set(null);
-                ejecutarCruceMacroGlobal();
-            } else if (tipo === 'repotenciacion') {
-                registrosHistoricosRepotenciar = [];
-                logRef.set(null);
-                forzarActualizacionTablaAdmin();
-            }
-        }
-
-        function abrirModalReporteIncidencia() {
-            if (document.activeElement) document.activeElement.blur();
-            document.getElementById('modalReporte').classList.remove('hidden');
-            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
-            document.getElementById('incidenciaMotivoInput').value = "";
-            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
-        }
-
-        function enviarReporteIncidencia() {
-            let cod = document.getElementById('incidenciacodigoInput').value.trim();
-            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
-            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
-
-            if(!cod || !mot) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
-                return;
-            }
-            
-            msgRef.push({
-                idAsistente: idUsuarioLogueado,
-                remitente: nombreUser,
-                codigo: cod,
-                motivo: mot,
-                estado: "Pendiente",
-                timestamp: new Date().toLocaleString()
-            }).then(() => {
-                cerrarModalReporteIncidencia();
-                cancelarRegistro();
-                
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
-            });
-        }
-
-        function cerrarModalReporteIncidencia() { 
-            document.getElementById('modalReporte').classList.add('hidden'); 
-        }
-
-        function cerrarNotificacionExitoPersonalizada() {
-            document.getElementById('modalNotificacionExito').classList.add('hidden');
-            if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
-                document.getElementById('passwordInput').value = "";
-                document.getElementById('passwordInput').focus();
-            }
         }
 
         function procesarData1() {
