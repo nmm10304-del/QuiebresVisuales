@@ -1313,7 +1313,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1549,11 +1549,11 @@
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
                                 <tr class="hover:bg-red-50/50 text-xs">
-                                    <td class="px-4 py-2 border font-bold text-gray-800">${m.remitente}</td>
-                                    <td class="px-4 py-2 border font-mono text-red-600 font-bold">${m.codigo}</td>
-                                    <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
-                                    <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
-                                    <td class="px-4 py-2 border text-center">
+                                    <td class="px-4 py-2.5 border font-bold text-gray-800">${m.remitente}</td>
+                                    <td class="px-4 py-2.5 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                    <td class="px-4 py-2.5 border italic text-gray-600">${m.motivo}</td>
+                                    <td class="px-4 py-2.5 border text-center text-gray-400">${m.timestamp}</td>
+                                    <td class="px-4 py-2.5 border text-center">
                                         <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto">✕</button>
                                     </td>
                                 </tr>`;
@@ -2209,7 +2209,8 @@
                     }
 
                     let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        i && i.sku && 
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
