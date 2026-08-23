@@ -1,1298 +1,699 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Escaneo de Quiebres - Control Operativo v29.5</title>
-
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-
     <meta http-equiv="Pragma" content="no-cache">
-
     <meta http-equiv="Expires" content="0">
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-
     <style>
-
-        .bg-promart {
-            background-color: #ff6e00;
-        }
-
-        .text-promart {
-            color: #ff6e00;
-        }
-
-        .border-promart {
-            border-color: #ff6e00;
-        }
-
-        .focus-promart:focus {
-            border-color: #ff6e00;
-            --tw-ring-color: #ff6e00;
-        }
-
-        .drop-zone--over {
-            border-color: #ff6e00;
-            background-color: #fff7ed;
-        }
-
-        .drop-zone-blue--over {
-            border-color: #2563eb;
-            background-color: #eff6ff;
-        }
-
-        .drop-zone-purple--over {
-            border-color: #9333ea;
-            background-color: #faf5ff;
-        }
-
-        .drop-zone-teal--over {
-            border-color: #0d9488;
-            background-color: #f0fdfa;
-        }
-
+        .bg-promart { background-color: #ff6e00; }
+        .text-promart { color: #ff6e00; }
+        .border-promart { border-color: #ff6e00; }
+        .focus-promart:focus { border-color: #ff6e00; --tw-ring-color: #ff6e00; }
+        .drop-zone--over { border-color: #ff6e00; background-color: #fff7ed; }
+        .drop-zone-blue--over { border-color: #2563eb; background-color: #eff6ff; }
+        .drop-zone-purple--over { border-color: #9333ea; background-color: #faf5ff; }
+        .drop-zone-teal--over { border-color: #0d9488; background-color: #f0fdfa; }
     </style>
-
 </head>
-
 <body class="bg-white font-sans min-h-screen flex flex-col relative">
 
     <nav class="bg-promart p-2.5 text-white flex justify-between items-center shadow-md">
-
         <div class="flex items-center gap-2">
-
             <h1 class="text-base font-bold font-mono tracking-wide">Escaneo de Quiebres</h1>
-
         </div>
-
         <div id="navUsuario" class="hidden text-xs font-semibold flex items-center gap-2">
-
             <div class="flex flex-col text-right">
-
                 <span class="text-[9px] opacity-90">Colaborador</span>
-
                 <span id="nombreUsuarioActivo" class="font-bold font-mono text-[11px] bg-black text-white px-1.5 py-0.5 rounded shadow-sm"></span>
-
             </div>
-
             <button onclick="cerrarSesion()" class="bg-black hover:bg-gray-900 text-white font-bold py-1 px-2 rounded text-[10px] transition shadow-sm border border-gray-800 cursor-pointer">
-
                 Salir
-
             </button>
-
         </div>
-
     </nav>
 
     <div class="max-w-7xl mx-auto p-1.5 md:p-6 flex-1 w-full flex flex-col justify-start">
 
         <!-- SECCIÓN LOGIN -->
-
         <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-5 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-4 mt-2 sm:mt-6 mb-auto">
-
             <div class="flex justify-center pb-1 rounded-lg p-2 shadow-inner">
-
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
-
             </div>
-
             <h2 class="text-base font-bold text-center text-gray-800 uppercase tracking-wide">Control de Acceso</h2>
-
             <div class="space-y-3">
-
                 <div>
-
                     <label class="block text-xs font-medium text-gray-700 mb-1">Usuario</label>
-
                     <input type="text" id="userInput" onkeydown="handleLoginKey(event)" placeholder="Ingresa tu usuario" class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus-promart uppercase focus:outline-none font-mono text-sm">
-
                 </div>
-
                 <div>
-
                     <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
-
                     <div class="relative">
-
                         <input type="password" id="passwordInput" onkeydown="handleLoginKey(event)" placeholder="••••••••" class="w-full p-2 pr-10 border border-gray-300 rounded focus:ring-2 focus-promart focus:outline-none text-sm">
-
                         <button type="button" onclick="alternarVisibilidadPassword('passwordInput', 'iconoOjoLogin')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-orange-500">
-
                             <svg id="iconoOjoLogin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-
                             </svg>
-
                         </button>
-
                     </div>
-
                 </div>
-
                 <button onclick="autenticarUsuario()" class="w-full bg-promart hover:opacity-95 text-white font-bold py-2 rounded shadow transition uppercase text-xs tracking-wider cursor-pointer">
-
                     Ingresar al Sistema
-
                 </button>
-
             </div>
-
         </div>
-
+        
         <!-- PANEL ADMIN -->
-
         <div id="panelAdmin" class="hidden space-y-6 w-full">
-
             <div class="flex justify-between items-center">
-
                 <h2 class="text-xl font-bold text-purple-700 border-l-4 border-purple-600 pl-2">⚙️ Panel de Control del Administrador</h2>
-
             </div>
-
+            
             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-3 border shadow-inner">
-
                 <label class="text-xs font-bold text-gray-700 uppercase tracking-wide">SELECCIONAR MÓDULO DE VISUALIZACIÓN:</label>
-
                 <select id="selectVistaModuloAdmin" onchange="alternarModuloAdminView()" class="p-2 border rounded text-xs bg-white focus:outline-none font-semibold text-purple-900 shadow-sm cursor-pointer">
-
                     <option value="repotenciar">⚡ Repotenciar Tienda</option>
-
                     <option value="quiebres">🎯 Quiebres Visuales</option>
-
                     <option value="supply">📦 Supply-Quiebres</option>
-
                     <option value="dashboard">📊 Dashboard</option>
-
                     <option value="buzon">📥 Buzón de incidencias</option>
-
                     <option value="resetclave">🔑 Resetear contraseña</option>
-
                     <option value="usuarios">👤 Usuarios</option>
-
                     <option value="sesiones">🚪 Conexiones</option>
-
                 </select>
-
             </div>
 
             <!-- CONTENEDOR DE TARJETAS DE CARGA DE EXCEL -->
-
             <div id="gridTarjetasExcel" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-
                 <div id="cardCajasTienda" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-promart text-center cursor-pointer relative group">
-
                     <button type="button" onclick="eliminarData('cajas', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-30">✕</button>
-
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Cajas_Tienda</h3>
-
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para inyectar stock de reserva.</p>
-
                     <input type="file" id="fileData1" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData1()"/>
-
                     <button id="btnClickData1" type="button" class="bg-orange-50 text-promart border border-promart hover:bg-orange-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-
                         Seleccionar e Inyectar Stock
-
                     </button>
-
                     <p id="statusData1" class="text-[11px] text-red-500 mt-2 font-semibold pointer-events-none">⚠️ Conectando base de datos...</p>
-
                 </div>
 
                 <div id="cardJSatelite" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-blue-500 text-center cursor-pointer relative group">
-
                     <button type="button" onclick="eliminarData('satelite', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-30">✕</button>
-
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">JSatélite</h3>
-
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic aquí para la ruta solicitada.</p>
-
                     <input type="file" id="fileJSatelite" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarJ_Satelite()"/>
-
                     <button id="btnClickJSatelite" type="button" class="bg-blue-50 text-blue-600 border border-blue-500 hover:bg-blue-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-
                         Seleccionar Archivo
-
                     </button>
-
                     <p id="statusJSatelite" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo Jsatélite...</p>
-
                 </div>
 
                 <div id="cardDetalleReposicion" class="bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-purple-500 text-center cursor-pointer relative group">
-
                     <button type="button" onclick="eliminarData('reposicion', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-30">✕</button>
-
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">Detalle_Reposición</h3>
-
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para informe final.</p>
-
                     <input type="file" id="fileData2" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarData2()"/>
-
                     <button id="btnClickData2" type="button" class="bg-purple-50 text-purple-700 border border-purple-500 hover:bg-purple-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-
                         Seleccionar Archivo
-
                     </button>
-
                     <p id="statusData2" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Waiting...</p>
-
                 </div>
 
                 <div id="cardSupplyChain" class="hidden bg-white p-4 rounded-lg shadow border-2 border-dashed border-gray-300 border-t-4 border-t-teal-600 text-center cursor-pointer relative group">
-
                     <button type="button" onclick="eliminarData('supply', event)" class="absolute top-2 right-2 bg-red-500 hover:bg-red-700 text-white font-bold rounded-full w-6 h-6 flex items-center justify-center text-xs transition shadow-md z-30">✕</button>
-
                     <h3 class="font-bold text-gray-700 text-sm mb-1 uppercase tracking-wider pr-6 pointer-events-none">SupplyChain</h3>
-
                     <p class="text-[11px] text-gray-500 mb-3 pointer-events-none">Arrastra o haz clic para cargar datos de Supply.</p>
-
                     <input type="file" id="fileSupplyChain" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarSupplyChain()"/>
-
                     <button id="btnClickSupplyChain" type="button" class="bg-teal-50 text-teal-700 border border-teal-600 hover:bg-teal-100 font-bold py-1.5 px-3 rounded text-xs transition mb-2 pointer-events-none">
-
                         Seleccionar Archivo
-
                     </button>
-
                     <p id="statusSupplyChain" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo SupplyChain...</p>
-
                 </div>
-
             </div>
 
             <!-- MÓDULO DASHBOARD TIPO POWER BI -->
-
             <div id="wrapperModuloDashboardAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-orange-200 space-y-5">
-
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
-
                     <h3 class="text-sm font-bold text-orange-950 flex items-center gap-2">
-
                         📊 DASHBOARD DE SEGUIMIENTO SEMANAL
-
                     </h3>
-
+                    
                     <!-- SELECTOR DE SEMANAS CON CHECKBOXES -->
-
                     <div class="relative inline-block text-left w-64">
-
                         <button type="button" onclick="alternarMenuDropdownSemanas()" class="w-full bg-white border border-gray-300 rounded-lg shadow-xs px-3 py-2 text-xs font-bold text-gray-800 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
-
                             <span id="lblSemanaSeleccionadaDashboard">Semana Actual</span>
-
                             <svg class="w-4 h-4 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-
                             </svg>
-
                         </button>
 
                         <div id="dropdownListaSemanas" class="hidden absolute right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto py-1">
-
                             <div id="contenedorCheckboxesSemanas" class="space-y-1 p-1 text-xs">
-
                                 <!-- Render dinámico de semanas -->
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
 
                 <!-- 2 TARJETAS KPI -->
-
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                     <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl shadow-xs flex items-center justify-between">
-
                         <div>
-
                             <span class="text-[11px] font-bold text-orange-800 uppercase tracking-wider block">📦 Total Escaneado</span>
-
                             <span id="kpiDashboardTotalEscaneado" class="text-3xl font-extrabold font-mono text-orange-600">0</span>
-
                         </div>
-
                         <div class="w-12 h-12 bg-orange-200/60 text-orange-700 rounded-xl flex items-center justify-center text-xl font-bold">📦</div>
-
                     </div>
-
                     <div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-xs flex items-center justify-between">
-
                         <div>
-
                             <span class="text-[11px] font-bold text-green-800 uppercase tracking-wider block">🟢 Con Stock (Reserva)</span>
-
                             <span id="kpiDashboardConStock" class="text-3xl font-extrabold font-mono text-green-600">0</span>
-
                         </div>
-
                         <div class="w-12 h-12 bg-green-200/60 text-green-700 rounded-xl flex items-center justify-center text-xl font-bold">🟢</div>
-
                     </div>
-
                 </div>
 
                 <!-- GRÁFICO DE 7 DÍAS -->
-
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 relative min-h-[320px]">
-
                     <canvas id="canvasChartDashboard" class="w-full h-72"></canvas>
-
                 </div>
-
             </div>
 
             <!-- MÓDULO DE AUDITORÍA DE SESIONES -->
-
             <div id="wrapperModuloAuditoriaSesiones" class="hidden bg-white p-5 rounded-lg shadow border border-indigo-200 space-y-4">
-
                 <div class="flex justify-between items-center border-b pb-3">
-
                     <h3 class="text-sm font-bold text-indigo-900 flex items-center gap-2">
-
                         🚪 Registro de Conexiones de Usuarios
-
                     </h3>
-
                     <button onclick="forzarCierreSesionTodosAsistentes()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
-
                         🔒 Cerrar sesión a todos los asistentes
-
                     </button>
-
                 </div>
-
+                
                 <div class="overflow-x-auto border rounded-lg max-h-80 overflow-y-auto">
-
                     <table class="min-w-full text-xs text-left border-collapse">
-
                         <thead class="bg-indigo-50 text-indigo-950 uppercase font-bold sticky top-0 border-b">
-
                             <tr>
-
                                 <th class="px-4 py-2.5 border">Colaborador</th>
-
                                 <th class="px-4 py-2.5 border">Usuario</th>
-
                                 <th class="px-4 py-2.5 border text-center">Rol</th>
-
                                 <th class="px-4 py-2.5 border text-center">Última Conexión</th>
-
                                 <th class="px-4 py-2.5 border text-center">Estado</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaSesionesBody" class="divide-y divide-gray-200 font-sans text-gray-700">
-
                             <!-- Render dinámico -->
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
 
             <!-- BUZÓN DE INCIDENCIAS -->
-
             <div id="wrapperModuloBuzonAdmin" class="hidden bg-white p-4 rounded-lg shadow border border-red-200 bg-red-50/20 space-y-3">
-
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-red-100 pb-2">
-
                     <h3 class="text-sm font-bold text-red-700 flex items-center gap-2">📥 Buzón de incidencias pendientes</h3>
-
                 </div>
-
                 <div class="overflow-x-auto max-h-96 overflow-y-auto">
-
                     <table class="min-w-full text-sm text-left border border-gray-200">
-
                         <thead class="bg-red-100 text-red-900 uppercase text-xs sticky top-0">
-
                             <tr>
-
                                 <th class="px-4 py-2 border">Asistente</th>
-
                                 <th class="px-4 py-2 border">Código Reportado</th>
-
                                 <th class="px-4 py-2 border">Detalle / Motivo de Alerta</th>
-
                                 <th class="px-4 py-2 border text-center">Fecha y Hora</th>
-
                                 <th class="px-4 py-2 border text-center">Acción</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaMensajesBody" class="divide-y divide-gray-200 text-gray-700 text-xs bg-white">
-
                             <tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
 
             <!-- RESETEAR CONTRASEÑA -->
-
             <div id="wrapperModuloResetClaveAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-purple-200 space-y-4 max-w-md">
-
                 <h3 class="text-sm font-bold text-purple-800 flex items-center gap-2 border-b pb-2">
-
                     🔑 Resetear contraseña
-
                 </h3>
-
                 <div class="space-y-3">
-
                     <div>
-
                         <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar colaborador</label>
-
                         <select id="selectUsuarioResetAdmin" class="w-full p-2.5 border rounded text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white">
-
                             <option value="" disabled selected>Seleccionar</option>
-
                         </select>
-
                     </div>
-
                     <div>
-
                         <label class="block text-xs font-bold text-gray-700 mb-1">Nueva contraseña</label>
-
                         <input type="password" id="txtNuevaClavePorAdmin" placeholder="Escribe la nueva clave..." class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-purple-500">
-
                     </div>
-
                     <button onclick="procesarResetClavePorAdmin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded text-xs transition tracking-wide shadow-sm cursor-pointer">
-
                         Actualizar
-
                     </button>
-
                 </div>
-
             </div>
 
             <!-- MÓDULO GESTIÓN DE USUARIOS -->
-
             <div id="wrapperModuloGestionUsuarios" class="hidden bg-white p-5 rounded-lg shadow border border-blue-200 space-y-4">
-
                 <div class="flex justify-between items-center border-b pb-3">
-
                     <h3 class="text-sm font-bold text-blue-900 flex items-center gap-2">
-
                         👤 Lista de Asistentes Activos
-
                     </h3>
-
                     <button onclick="abrirModalAgregarUsuario()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded text-xs transition shadow flex items-center gap-1.5 cursor-pointer">
-
                         ➕ Agregar Usuario
-
                     </button>
-
                 </div>
-
+                
                 <div class="overflow-x-auto border rounded-lg max-h-80 overflow-y-auto">
-
                     <table class="min-w-full text-xs text-left border-collapse">
-
                         <thead class="bg-blue-50 text-blue-950 uppercase font-bold sticky top-0 border-b">
-
                             <tr>
-
                                 <th class="px-4 py-2.5 border">Colaborador</th>
-
                                 <th class="px-4 py-2.5 border">Credencial / Usuario</th>
-
                                 <th class="px-4 py-2.5 border text-center">Contraseña</th>
-
                                 <th class="px-4 py-2.5 border text-center">Acciones</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaUsuariosBody" class="divide-y divide-gray-200 font-sans text-gray-700">
-
                             <!-- Render dinámico -->
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
 
             <!-- CUADRO REPOTENCIAR TIENDA -->
-
             <div id="containerCuadroRepotenciar" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
-
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
-
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-
                         <h3 class="text-sm font-bold text-orange-600 uppercase">⚡ Repotenciar Tienda</h3>
-
+                        
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
-
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
-
                             <select id="filterEstadoRepo" onchange="forzarActualizacionTablaAdmin()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
-
                                 <option value="TODOS">Todos</option>
-
                                 <option value="REPUESTO">Repuesto</option>
-
                                 <option value="PENDIENTE">Pendiente</option>
-
                             </select>
-
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-
                             <div class="flex items-center gap-1.5">
-
                                 <span>SKUs con Stock:</span>
-
                                 <span id="boxSkusStockRepo" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
-
                             </div>
-
                             <div class="flex items-center gap-1.5">
-
                                 <span>Por reponer:</span>
-
-                                <span id="boxPorReponerRepo" class="bg-red-500 text-white font-mono font-bold px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
-
+                                <span id="boxPorReponerRepo" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
-
                         </div>
-
                     </div>
-
+                    
                     <div class="flex items-center gap-3">
-
                         <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-3 py-1 rounded-lg shadow-xs">
-
                             <span class="text-xs font-bold text-purple-900 uppercase">AVANCE:</span>
-
                             <span id="boxPorcentajeAvanceRepo" class="bg-purple-700 text-white font-bold font-mono px-2 py-0.5 rounded text-xs shadow-sm">0%</span>
-
                         </div>
 
                         <button onclick="descargarExcelGenerico(prepararDataExcelRepotenciar(), 'Reporte_Repotenciacion_Tienda.xlsx', 'Repotenciacion')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-
                             Descargar Excel
-
                         </button>
-
                         <button onclick="eliminarData('repotenciacion', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-4 rounded text-xs transition shadow cursor-pointer">
-
                             Eliminar data
-
                         </button>
-
                     </div>
-
                 </div>
-
+                
                 <div class="overflow-x-auto max-h-[440px] overflow-y-auto w-full border rounded-lg shadow-inner">
-
                     <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
-
                         <thead class="bg-orange-100 text-orange-950 uppercase text-xs sticky top-0 z-10 shadow-xs">
-
                             <tr>
-
                                 <th class="px-3 py-2 border font-bold">ASISTENTE</th>
-
                                 <th class="px-3 py-2 border font-bold">REPONER</th>
-
                                 <th class="px-3 py-2 border font-bold">SKU</th>
-
                                 <th class="px-3 py-2 border font-bold">LPN</th>
-
                                 <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
-
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">FV</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaRepotenciarBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-
                             <tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
 
             <!-- CUADRO CUMPLIMIENTO 24 (QUIEBRES VISUALES) -->
-
             <div id="containerCuadroCruceMacropurga" class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
-
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
-
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-
                         <h3 class="text-sm font-bold text-purple-700 uppercase">📊 CUMPLIMIENTO 24</h3>
-
+                        
                         <div class="flex items-center gap-1.5 bg-gray-50 border px-2 py-1 rounded shadow-xs">
-
                             <span class="text-xs font-bold text-gray-700">Filtrar:</span>
-
                             <select id="filterEstadoCumplimiento24" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-1 focus:outline-none cursor-pointer">
-
                                 <option value="TODOS">Todos</option>
-
                                 <option value="REPUESTO">Repuesto</option>
-
                                 <option value="PENDIENTE">Pendiente</option>
-
                             </select>
-
                         </div>
 
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-
                             <div class="flex items-center gap-1.5">
-
                                 <span>SKUs con Stock:</span>
-
                                 <span id="boxSkusStockCumplimiento" class="bg-blue-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
-
                             </div>
-
                             <div class="flex items-center gap-1.5">
-
                                 <span>Por reponer:</span>
-
-                                <span id="boxPorReponerCumplimiento" class="bg-red-500 text-white font-mono font-bold px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
-
+                                <span id="boxPorReponerCumplimiento" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
-
                         </div>
-
                     </div>
-
+                    
                     <div class="flex flex-wrap items-center gap-2">
-
                         <button onclick="ejecutarCruceMacroGlobal()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Procesar y Cruzar Archivos
-
                         </button>
-
                         <button onclick="descargarExcelGenerico(prepararDataExcelCumplimiento24(), 'Reporte_Cumplimiento_24.xlsx', 'Cumplimiento24')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Descargar Excel
-
                         </button>
-
                         <button onclick="eliminarData('satelite_vista', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Eliminar data
-
                         </button>
-
                     </div>
-
                 </div>
 
                 <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
-
                     <table class="min-w-[1250px] w-full text-sm text-left border-collapse">
-
                         <thead class="bg-purple-50 text-purple-900 uppercase text-xs sticky top-0 z-10 shadow-xs">
-
                             <tr>
-
                                 <th class="px-3 py-2 border font-bold">SKU</th>
-
                                 <th class="px-3 py-2 border font-bold">LPN</th>
-
                                 <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
-
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
-
                                 <th class="px-3 py-2 border font-bold">ÁREA</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">FV</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">ESTADO</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">LPN CONSUMIDO</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaMacroGlobalBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap">
-
                             <tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Presione "Procesar y Cruzar Archivos" para ejecutar la trazabilidad de puestas...</td></tr>
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
 
             <!-- CUADRO SUPPLY-QUIEBRES -->
-
             <div id="containerCuadroSupplyQuiebre" class="hidden bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
-
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
-
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-
                         <h3 class="text-sm font-bold text-teal-700 uppercase">📦 SUPPLY-QUIEBRES</h3>
-
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-
                             <div class="flex items-center gap-1.5">
-
                                 <span>Quiebres en Puerta:</span>
-
                                 <span id="boxTotalSupply" class="bg-teal-600 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
-
                             </div>
-
                         </div>
-
                     </div>
-
+                    
                     <div class="flex flex-wrap items-center gap-2">
-
                         <button onclick="ejecutarCruceSupplyQuiebre()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Procesar Supply-Quiebres
-
                         </button>
-
                         <button onclick="descargarExcelGenerico(prepararDataExcelSupplyQuiebre(), 'Reporte_Supply_Quiebres.xlsx', 'SupplyQuiebres')" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Descargar Excel
-
                         </button>
-
                         <button onclick="eliminarData('supply_vista', event)" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 px-3 rounded text-xs transition shadow cursor-pointer">
-
                             Eliminar data
-
                         </button>
-
                     </div>
-
                 </div>
 
                 <div class="overflow-x-auto max-h-96 overflow-y-auto border rounded-lg">
-
                     <table class="min-w-[1000px] w-full text-sm text-left border-collapse">
-
                         <thead class="bg-orange-100 text-orange-950 uppercase text-xs sticky top-0 z-10 shadow-xs">
-
                             <tr>
-
                                 <th class="px-3 py-2 border font-bold">PL</th>
-
                                 <th class="px-3 py-2 border font-bold">ÁREA</th>
-
                                 <th class="px-3 py-2 border font-bold">SKU</th>
-
                                 <th class="px-3 py-2 border font-bold">LPN</th>
-
                                 <th class="px-3 py-2 border font-bold">UBICACIÓN</th>
-
                                 <th class="px-3 py-2 border font-bold">DESCRIPCIÓN</th>
-
                                 <th class="px-3 py-2 border text-center font-bold">CANT</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody id="tablaSupplyQuiebreBody" class="divide-y divide-gray-200 text-gray-600 text-xs whitespace-nowrap font-mono">
-
                             <tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>
-
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
-
         </div>
 
         <!-- ================= PANEL DEL ASISTENTE ================= -->
-
         <div id="panelAsistente" class="hidden max-w-lg mx-auto w-full bg-white rounded-lg shadow border border-gray-200 relative overflow-hidden pb-2 mt-1 mb-auto">
-
             <div class="w-full bg-promart border-b py-1 flex justify-center items-center px-2 shadow-2xs">
-
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-7 w-auto object-contain mx-auto">
-
             </div>
 
             <div class="px-2.5 mt-1.5 space-y-1.5">
-
                 <div class="bg-gray-50 p-1 border rounded flex items-center gap-1.5 shadow-inner">
-
                     <label class="text-[10px] font-bold text-gray-600 uppercase tracking-wide">Módulo:</label>
-
                     <select id="selectVistaAsistente" onchange="alternarModuloVistaAsistente()" class="p-1 border rounded text-xs bg-white focus:outline-none font-bold text-orange-600 shadow-2xs cursor-pointer flex-1">
-
                         <option value="escaneo">🔍 Escaneo de reposición</option>
-
                         <option value="buzonalerta">📥 Buzón de alertas recientes</option>
-
                         <option value="cambiarclave">🔑 Cambiar contraseña</option>
-
                     </select>
-
                 </div>
 
                 <div id="submoduloAsistenteEscaneo" class="space-y-1.5">
-
                     <div id="avisoAdvertenciaStock" class="hidden bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs">
-
                         <span class="text-xl">⚠️</span>
-
                         <div id="txtMensajeAdvertenciaStock" class="leading-tight text-[11px]">Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo</div>
-
                     </div>
 
                     <div id="cardDetalleProductoAsistente" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-2.5 space-y-0.5">
-
                         <div class="flex justify-between items-center border-b border-orange-200/50 pb-0.5 mb-0.5">
-
                             <div class="text-[10px] uppercase font-bold text-orange-800 tracking-wider">📦 Producto Identificado</div>
-
                             <span id="badgeStockDisponibleReserva" class="bg-orange-500 text-white font-mono text-[10px] font-bold px-1.5 py-0.5 rounded shadow-2xs">Reserva: 0 Uds</span>
-
                         </div>
-
                         <div id="asistenteInfoDescripcion" class="text-sm font-bold text-gray-900 leading-tight tracking-wide"></div>
-
                         <div class="pt-0.5 flex items-center justify-between">
-
                             <span class="text-[11px] text-gray-600 font-medium">SKU: <b id="lblSkuConvertido" class="font-mono text-sm text-gray-900 font-bold"></b></span>
-
                         </div>
-
                     </div>
 
                     <form id="formEscaneoAsistente" onsubmit="event.preventDefault(); solicitarUbicacionOEnviar();" class="p-1.5 border border-gray-300 rounded bg-gray-50/50">
-
                         <div class="grid grid-cols-3 gap-1.5 items-end">
-
                             <div class="col-span-2 space-y-0.5">
-
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide">Pistolea el SKU/EAN</label>
-
                                 <input type="text" id="barcodeInput" inputmode="numeric" pattern="[0-9]*" placeholder="ESCANEA AQUÍ..." 
                                        class="w-full p-1.5 border border-gray-300 rounded focus:ring-2 focus-promart font-mono text-sm font-semibold uppercase focus:outline-none"
                                        oninput="alCambiarTextoBarcode()"
                                        onkeydown="handleBarcode(event)">
-
                             </div>
-
                             <div id="containerInputLpn" class="hidden">
-
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Cantidad</label>
-
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
+                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
-
                             </div>
-
                             <div id="containerResetBtn" class="hidden">
-
                                 <button type="button" onclick="cancelarRegistro()" class="w-full p-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-xs transition shadow-2xs cursor-pointer flex justify-center items-center gap-1">
-
                                     🔄 Reset
-
                                 </button>
-
                             </div>
-
                         </div>
-
                         <button type="submit" class="hidden"></button>
-
                     </form>
 
                     <div id="resultadoEscaneo" class="hidden"></div>
 
                     <div class="pt-1 border-t flex flex-col items-center">
-
                         <button onclick="abrirModalReporteIncidencia()" class="w-full max-w-xs bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3 rounded-lg border border-red-300 text-[11px] transition tracking-wide uppercase shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
-
                             <span>🚨</span>
-
                             <span>SKU/EAN no escanea</span>
-
                         </button>
-
                     </div>
-
                 </div>
 
                 <div id="submoduloAsistenteBuzonAlertas" class="hidden space-y-2">
-
                     <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-red-500 pl-2">📥 Buzón de alertas recientes</h2>
-
                     <p class="text-[10px] text-gray-500 italic">Estado en tiempo real de tus incidencias enviadas.</p>
-
                     <div id="contenedorNotificacionesAsistente" class="space-y-1.5 max-h-64 overflow-y-auto pt-0.5">
-
                         <p class="text-xs text-gray-400 text-center italic py-3">No has registrado reportes en este turno...</p>
-
                     </div>
-
                 </div>
 
                 <div id="submoduloAsistenteCambiarClave" class="hidden space-y-2">
-
                     <h2 class="text-sm font-bold text-gray-800 flex items-center gap-1.5 border-l-4 border-orange-500 pl-2">🔑 Cambiar contraseña</h2>
-
                     <p class="text-[10px] text-gray-500 italic">Modifica tu clave de acceso al sistema.</p>
-
                     <div class="p-2.5 border border-gray-200 rounded-lg bg-gray-50/50 space-y-2 max-w-sm">
-
                         <div>
-
                             <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Nueva Contraseña</label>
-
                             <input type="password" id="txtNuevaClaveAsistente" placeholder="Escribe tu nueva contraseña" class="w-full p-1.5 border rounded focus:outline-none focus:ring-2 focus:ring-orange-500 font-sans text-xs">
-
                         </div>
-
                         <button onclick="procesarCambioClaveAsistente()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs transition tracking-wide uppercase shadow-2xs cursor-pointer">
-
                             Actualizar Contraseña
-
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
     <!-- MODAL CONFIRMACIÓN -->
-
     <div id="modalConfirmarEliminacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[110]">
-
         <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
-
             <div id="iconoConfirmarEliminar" class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">⚠️</div>
-
             <div class="space-y-1">
-
                 <h4 class="text-sm font-bold text-gray-900">Atención</h4>
-
                 <p id="txtMensajeConfirmarEliminar" class="text-xs text-gray-600 leading-relaxed font-sans"></p>
-
             </div>
-
             <div class="flex gap-2 pt-1">
-
                 <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
-
-                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
-
+                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
             </div>
-
         </div>
-
     </div>
 
     <div id="modalAgregarUsuario" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-3 z-[95]">
-
         <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-gray-800">
-
             <h3 class="font-bold text-xs border-b pb-1.5 text-blue-700 uppercase flex items-center gap-1.5">
-
                 👤 Agregar Nuevo Asistente
-
             </h3>
-
             <div class="space-y-2">
-
                 <div>
-
                     <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Nombre Colaborador</label>
-
                     <input type="text" id="txtNuevoNombreColaborador" placeholder="" class="w-full p-1.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-
                 </div>
-
                 <div>
-
                     <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Credencial</label>
-
                     <input type="text" id="txtNuevoUserHP" placeholder="" class="w-full p-1.5 border rounded text-xs uppercase font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">
-
                 </div>
-
                 <div>
-
                     <label class="block text-[10px] font-bold text-gray-700 mb-0.5">Contraseña Inicial</label>
-
                     <input type="password" id="txtNuevaClaveCreacion" placeholder="••••••••" class="w-full p-1.5 border rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-
                 </div>
-
             </div>
-
             <div class="flex gap-2 pt-1">
-
                 <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
-
-                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
-
+                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
             </div>
-
         </div>
-
     </div>
 
     <!-- MODAL SELECCIÓN UBICACIÓN DESTINO (9 BOTONES EXACTOS) -->
-
     <div id="modalSeleccionUbicacion" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[90]">
-
         <div class="bg-white rounded-2xl shadow-xl p-3.5 max-w-xs w-full space-y-2.5 border text-gray-800">
-
             <h3 class="font-bold text-xs border-b pb-1 text-orange-600 uppercase flex items-center gap-1.5">
-
                 📍 Selección de Ubicación
-
             </h3>
-
             <p class="text-[10px] text-gray-500 font-semibold">Selecciona la zona donde colocarás la mercadería:</p>
-
+            
             <div class="grid grid-cols-2 gap-1.5 py-0.5 font-sans text-xs">
-
                 <label onclick="confirmarUbicacionYGuardar('Home')" class="flex items-center gap-1.5 p-2 rounded-lg border border-orange-200 bg-orange-50/50 hover:bg-orange-100 cursor-pointer font-bold text-orange-950 transition shadow-2xs">
-
                     <input type="radio" name="optUbicacion" value="Home" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-orange-950">Home</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Cabeceras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Cabeceras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Cabeceras</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Gancheras')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Gancheras" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Gancheras</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Pre-altillo')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Pre-altillo" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Pre-altillo</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Lineal de cajas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Lineal de cajas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Lineal de cajas</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Tendencias')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Tendencias" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Tendencias</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Showroom')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Showroom" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Showroom</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Bines')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition">
-
                     <input type="radio" name="optUbicacion" value="Bines" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Bines</span>
-
                 </label>
-
                 <label onclick="confirmarUbicacionYGuardar('Rumas')" class="flex items-center gap-1.5 p-2 rounded-lg border border-gray-200 hover:bg-gray-100 cursor-pointer transition col-span-2">
-
                     <input type="radio" name="optUbicacion" value="Rumas" class="w-3.5 h-3.5 text-orange-600 accent-orange-600">
-
                     <span class="truncate text-xs font-bold text-gray-800">Rumas</span>
-
                 </label>
-
             </div>
-
+            
             <button onclick="cerrarModalUbicacion()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase mt-1 cursor-pointer">
-
                 Cancelar
-
             </button>
-
         </div>
-
     </div>
 
     <!-- MODAL DINÁMICO NOTIFICACIONES -->
-
     <div id="modalNotificacionExito" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[100]">
-
         <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
-
             <div id="iconoNotificacionDinamico" class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">✔</div>
-
             <div class="space-y-0.5">
-
                 <h4 id="txtNotificacionDinamicoTitulo" class="text-xs font-bold text-gray-900">Estimado Usuario</h4>
-
                 <p id="txtNotificacionExitoDetalle" class="text-[11px] text-gray-600 leading-relaxed">Alerta enviada correctamente al Panel del Administrador.</p>
-
             </div>
-
             <button type="button" onclick="cerrarNotificacionExitoPersonalizada()" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 rounded-xl shadow transition uppercase tracking-wider cursor-pointer">Aceptar</button>
-
         </div>
-
     </div>
 
     <!-- MODAL REPORTE -->
-
     <div id="modalReporte" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-3 z-50">
-
         <div class="bg-white rounded-lg shadow-lg p-3.5 max-w-xs w-full space-y-2.5 relative">
-
             <h3 class="font-bold text-red-700 text-xs flex items-center gap-1.5 border-b pb-1">🚨 SKU/EAN no escanea</h3>
-
+            
             <div id="graficoAlertaDuplicado" class="hidden bg-red-100 border border-red-400 text-red-900 p-2 rounded-lg flex items-start gap-1.5 shadow-2xs text-[11px] font-semibold animate-pulse">
-
                 <span class="text-base">🛡️</span>
-
                 <div id="txtAlertaDuplicado" class="leading-tight"></div>
-
             </div>
 
             <div class="space-y-2">
-
                 <div>
-
                     <label class="block text-[10px] font-bold text-gray-600 mb-0.5">Código observado (EAN/SKU):</label>
-
                     <input type="text" id="incidenciacodigoInput" inputmode="numeric" pattern="[0-9]*"
                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                            placeholder="" class="w-full p-1.5 border rounded focus:outline-none font-mono text-xs uppercase">
-
                 </div>
-
                 <div>
-
                     <label class="block text-[10px] font-bold text-gray-600 mb-0.5">¿Cuál es el problema detectado?:</label>
-
                     <textarea id="incidenciaMotivoInput" rows="2" 
                               oninput="this.value = this.value.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); evaluarBloqueoDuplicadosEnVivo();" 
                               placeholder="Escribe el motivo..." class="w-full p-1.5 border rounded text-xs focus:outline-none"></textarea>
-
                 </div>
-
             </div>
-
             <div class="flex gap-2 pt-1">
-
                 <button id="btnEnviarAlertaIncidencia" onclick="enviarReporteIncidencia()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded text-xs transition shadow-2xs border border-orange-600 cursor-pointer block">Enviar Alerta</button>
-
                 <button onclick="cerrarModalReporteIncidencia()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded text-xs transition cursor-pointer">Cerrar</button>
-
             </div>
-
         </div>
-
     </div>
 
     <script>
-
         window.addEventListener("dragover", function(e) { e.preventDefault(); }, false);
         window.addEventListener("drop", function(e) { e.preventDefault(); }, false);
 
@@ -1300,9 +701,7 @@
             projectId: "quiebresvisuales",
             databaseURL: "https://quiebresvisuales-default-rtdb.firebaseio.com"
         };
-
         firebase.initializeApp(firebaseConfig);
-
         const db = firebase.database();
         const dbRef = db.ref("inventarioMaestro");
         const logRef = db.ref("logsRepotenciacion");
@@ -1332,7 +731,7 @@
         let skuEscaneadoTemporal = "";
         let usuarioAEliminarTemporal = "";
         let guardandoLocalmente = false;
-
+        
         let chartDashboardInstance = null;
         let semanaDashboardSeleccionada = "";
         let cacheHistoricoSemanasDashboard = {};
@@ -1342,7 +741,7 @@
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
             if (guardadas) alertasOcultadasAsistente = JSON.parse(guardadas);
         } catch(e) { alertasOcultadasAsistente = []; }
-
+        
         let lotesFiltradosTurno = [];
 
         let usuariosIniciales = {
@@ -1372,12 +771,11 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
             setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
             setupDragAndDrop("cardSupplyChain", "fileSupplyChain", procesarSupplyChain, "drop-zone-teal--over");
-
+            
             inicializarUsuariosNubeSiEstaVacio();
             escucharCredencialesNube();
             escucharUsuariosRegistradosNube();
@@ -1392,21 +790,17 @@
 
             validarPurgaMedianocheAutomática();
             setInterval(validarPurgaMedianocheAutomática, 60000); 
-
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
-
             usersMasterRef.once("value", (snapshot) => {
                 if (!snapshot.exists()) {
                     usersMasterRef.set(usuariosIniciales);
                 }
             });
-
         }
 
         function escucharCredencialesNube() {
-
             passRef.on("value", (snapshot) => {
                 const dataCloud = snapshot.val();
                 if (dataCloud) {
@@ -1417,21 +811,17 @@
                     });
                 }
             });
-
         }
 
         function escucharUsuariosRegistradosNube() {
-
             usersMasterRef.on("value", (snapshot) => {
                 const cloudUsers = snapshot.val() || {};
                 usuariosDB = { ...usuariosIniciales, ...cloudUsers };
                 actualizarCombosYTablaUsuarios();
             });
-
         }
 
         function escucharSesionesEnVivo() {
-
             sesionesRef.on("value", (snapshot) => {
                 const data = snapshot.val() || {};
                 const tbody = document.getElementById("tablaSesionesBody");
@@ -1466,11 +856,9 @@
                     `;
                 });
             });
-
         }
 
         function forzarCierreSesionTodosAsistentes() {
-
             sesionesRef.get().then((snapshot) => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
@@ -1486,11 +874,9 @@
                     });
                 }
             });
-
         }
 
         function actualizarCombosYTablaUsuarios() {
-
             const selectReset = document.getElementById("selectUsuarioResetAdmin");
             if (selectReset) {
                 let valPrev = selectReset.value;
@@ -1522,27 +908,21 @@
                     }
                 });
             }
-
         }
 
         function solicitarEliminarUsuarioAsistente(uKey) {
-
             usuarioAEliminarTemporal = uKey;
             const nom = usuariosDB[uKey] ? usuariosDB[uKey].nombre : uKey;
             document.getElementById('txtMensajeConfirmarEliminar').innerText = `¿Estás seguro de dar de baja a ${nom} (${uKey})?`;
             document.getElementById('modalConfirmarEliminacion').classList.remove('hidden');
-
         }
 
         function cerrarModalConfirmarEliminar() {
-
             usuarioAEliminarTemporal = "";
             document.getElementById('modalConfirmarEliminacion').classList.add('hidden');
-
         }
 
         function ejecutarEliminacionConfirmada() {
-
             if (usuarioAEliminarTemporal && usuariosDB[usuarioAEliminarTemporal]) {
                 const uKey = usuarioAEliminarTemporal;
                 delete usuariosDB[uKey];
@@ -1552,26 +932,20 @@
                     actualizarCombosYTablaUsuarios();
                 });
             }
-
         }
 
         function abrirModalAgregarUsuario() {
-
             document.getElementById('txtNuevoNombreColaborador').value = "";
             document.getElementById('txtNuevoUserHP').value = "";
             document.getElementById('txtNuevaClaveCreacion').value = "";
             document.getElementById('modalAgregarUsuario').classList.remove('hidden');
-
         }
 
         function cerrarModalAgregarUsuario() {
-
             document.getElementById('modalAgregarUsuario').classList.add('hidden');
-
         }
 
         function confirmarGuardarNuevoUsuario() {
-
             const nom = document.getElementById('txtNuevoNombreColaborador').value.trim();
             const userHP = document.getElementById('txtNuevoUserHP').value.trim().toUpperCase();
             const clave = document.getElementById('txtNuevaClaveCreacion').value.trim();
@@ -1587,26 +961,24 @@
             }
 
             usuariosDB[userHP] = { nombre: nom, clave: clave };
-
+            
             usersMasterRef.child(userHP).set({ nombre: nom, clave: clave }).then(() => {
                 passRef.child(userHP).set(clave);
                 cerrarModalAgregarUsuario();
-
+                
                 document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                 document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                 document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Usuario Registrado";
                 document.getElementById('txtNotificacionExitoDetalle').innerText = `Se ha agregado exitosamente a ${nom} (${userHP}).`;
                 document.getElementById('modalNotificacionExito').classList.remove('hidden');
             });
-
         }
 
         function setupDragAndDrop(zoneId, inputId, callback, overClass) {
-
             const dropZone = document.getElementById(zoneId);
             const input = document.getElementById(inputId);
             if (!dropZone || !input) return;
-
+            
             dropZone.addEventListener("click", (e) => {
                 if (e.target.tagName === 'BUTTON') return;
                 input.value = ""; 
@@ -1625,11 +997,10 @@
                     callback(); 
                 }
             });
-
         }
 
+        // PURGA AUTOMÁTICA DE DATOS A MEDIANOCHE (ADMIN NUNCA SE DESLOGUEA)
         function validarPurgaMedianocheAutomática() {
-
             let fechaHoy = new Date().toISOString().slice(0, 10);
             let rolGuardado = localStorage.getItem("sesion_rol");
 
@@ -1655,11 +1026,9 @@
                     }
                 }
             }).catch(() => {});
-
         }
 
         function escucharPersistenciaArchivosCloud() {
-
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -1703,11 +1072,9 @@
                 }
                 ejecutarCruceSupplyQuiebre();
             });
-
         }
 
         function verificarSesionGuardada() {
-
             let usuarioGuardado = localStorage.getItem("sesion_usuario");
             let rolGuardado = localStorage.getItem("sesion_rol");
 
@@ -1717,7 +1084,7 @@
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
                 document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
-
+                
                 sesionesRef.child(usuarioGuardado).update({
                     nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
                     rol: rolUsuarioActivo,
@@ -1729,6 +1096,7 @@
                     online: false
                 });
 
+                // Escucha instantánea (0s) de cierre forzoso solo para asistentes
                 if (rolUsuarioActivo === "asistente") {
                     sesionesRef.child(usuarioGuardado).on("value", (snap) => {
                         const val = snap.val();
@@ -1741,11 +1109,9 @@
 
                 switchRole();
             }
-
         }
 
         function alternarVisibilidadPassword(idInput, idIcono) {
-
             const input = document.getElementById(idInput);
             const icono = document.getElementById(idIcono);
             if (!input || !icono) return;
@@ -1764,16 +1130,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>`;
             }
-
         }
 
         function alternarModuloVistaAsistente() {
-
             const val = document.getElementById("selectVistaAsistente").value;
             const moduleEscaneo = document.getElementById("submoduloAsistenteEscaneo");
             const moduloBuzon = document.getElementById("submoduloAsistenteBuzonAlertas");
             const moduloClave = document.getElementById("submoduloAsistenteCambiarClave");
-
+            
             moduleEscaneo.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
             moduloClave.classList.add("hidden");
@@ -1787,11 +1151,9 @@
                 moduloClave.classList.remove("hidden");
                 setTimeout(() => document.getElementById('txtNuevaClaveAsistente').focus(), 50);
             }
-
         }
 
         function procesarCambioClaveAsistente() {
-
             const nuevaClave = document.getElementById('txtNuevaClaveAsistente').value.trim();
             if (!nuevaClave) {
                 lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una contraseña válida.");
@@ -1808,11 +1170,9 @@
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
                 });
             }
-
         }
 
         function procesarResetClavePorAdmin() {
-
             const userTarget = document.getElementById('selectUsuarioResetAdmin').value;
             const nuevaClave = document.getElementById('txtNuevaClavePorAdmin').value.trim();
             if (!userTarget) {
@@ -1828,7 +1188,7 @@
                 passRef.child(userTarget).set(nuevaClave).then(() => {
                     document.getElementById('txtNuevaClavePorAdmin').value = "";
                     document.getElementById('selectUsuarioResetAdmin').value = "";
-
+                    
                     document.getElementById('iconoNotificacionDinamico').innerText = "✔";
                     document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
                     document.getElementById('txtNotificacionDinamicoTitulo').innerText = "Clave Actualizada";
@@ -1836,30 +1196,26 @@
                     document.getElementById('modalNotificacionExito').classList.remove('hidden');
                 });
             }
-
         }
 
         function lanzarAlertaCuidadoPersonalizada(titulo, mensaje) {
-
             if (document.activeElement) document.activeElement.blur(); 
             document.getElementById('iconoNotificacionDinamico').innerText = "⚠️";
             document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
             document.getElementById('txtNotificacionDinamicoTitulo').innerText = titulo;
             document.getElementById('txtNotificacionExitoDetalle').innerText = mensaje;
             document.getElementById('modalNotificacionExito').classList.remove('hidden');
-
         }
 
         function alternarModuloAdminView() {
-
             const val = document.getElementById("selectVistaModuloAdmin").value;
-
+            
             const gridTarjetas = document.getElementById("gridTarjetasExcel");
             const cardCajas = document.getElementById("cardCajasTienda");
             const cardSatelite = document.getElementById("cardJSatelite");
             const cardRepo = document.getElementById("cardDetalleReposicion");
             const cardSupply = document.getElementById("cardSupplyChain");
-
+            
             const cuadroRepo = document.getElementById("containerCuadroRepotenciar");
             const cuadroCruce = document.getElementById("containerCuadroCruceMacropurga");
             const cuadroSupply = document.getElementById("containerCuadroSupplyQuiebre");
@@ -1874,7 +1230,7 @@
             cardSatelite.classList.add("hidden");
             cardRepo.classList.add("hidden");
             cardSupply.classList.add("hidden");
-
+            
             cuadroRepo.classList.add("hidden");
             cuadroCruce.classList.add("hidden");
             cuadroSupply.classList.add("hidden");
@@ -1922,24 +1278,19 @@
             } else if (val === "sesiones") {
                 moduloSesiones.classList.remove("hidden");
             }
-
         }
 
-        // ================= LÓGICA DEL DASHBOARD SEMANAL (ORIGEN: QUIEBRES VISUALES) =================
-
+        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI =================
         function obtenerClaveSemana(fechaObj) {
-
             let fecha = new Date(Date.UTC(fechaObj.getFullYear(), fechaObj.getMonth(), fechaObj.getDate()));
             let diaNum = fecha.getUTCDay() || 7;
             fecha.setUTCDate(fecha.getUTCDate() + 4 - diaNum);
             let anioInicio = new Date(Date.UTC(fecha.getUTCFullYear(), 0, 1));
             let numSemana = Math.ceil((((fecha - anioInicio) / 86400000) + 1) / 7);
             return `Semana_${numSemana}_${fecha.getUTCFullYear()}`;
-
         }
 
         function obtenerRangoSemanaTexto(numSemana, anio) {
-
             let inicio = new Date(anio, 0, 1 + (numSemana - 1) * 7);
             let dia = inicio.getDay();
             let lunes = new Date(inicio);
@@ -1947,14 +1298,12 @@
             else lunes.setDate(inicio.getDate() + 8 - inicio.getDay());
             let domingo = new Date(lunes);
             domingo.setDate(lunes.getDate() + 6);
-
+            
             const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"];
             return `${lunes.getDate()} de ${meses[lunes.getMonth()]} - ${domingo.getDate()} de ${meses[domingo.getMonth()]}`;
-
         }
 
         function escucharHistoricoDashboardNube() {
-
             dashboardHistoryRef.on("value", (snapshot) => {
                 cacheHistoricoSemanasDashboard = snapshot.val() || {};
                 actualizarListaDesplegableSemanasDashboard();
@@ -1962,28 +1311,22 @@
                     renderizarDashboardSemanal();
                 }
             });
-
         }
 
         function alternarMenuDropdownSemanas() {
-
             const dropdown = document.getElementById("dropdownListaSemanas");
             if (dropdown) dropdown.classList.toggle("hidden");
-
         }
 
         document.addEventListener("click", (e) => {
-
             const dropdown = document.getElementById("dropdownListaSemanas");
             const btn = document.getElementById("lblSemanaSeleccionadaDashboard");
             if (dropdown && !dropdown.contains(e.target) && btn && !btn.contains(e.target) && !e.target.closest("button[onclick*='alternarMenuDropdownSemanas']")) {
                 dropdown.classList.add("hidden");
             }
-
         });
 
         function actualizarListaDesplegableSemanasDashboard() {
-
             const contCheckboxes = document.getElementById("contenedorCheckboxesSemanas");
             if (!contCheckboxes) return;
 
@@ -2006,7 +1349,7 @@
 
                 contCheckboxes.innerHTML += `
                     <label class="flex items-center gap-2 p-1.5 hover:bg-orange-50 rounded cursor-pointer transition">
-                        <input type="radio" name="radioSemanaDash" value="${sKey}" ${isChecked ? 'checked' : ''} onchange="seleccionarSemanaDashboard('${sKey}', 'Semana ${numSem}')" class="text-orange-600 accent-orange-600 cursor-pointer">
+                        <input type="radio" name="radioSemanaDash" value="${sKey}" ${isChecked ? 'checked' : ''} onchange="seleccionarSemanaDashboard('${sKey}', 'Semana ${numSem}')" class="text-orange-600 accent-orange-600">
                         <span class="font-bold text-gray-800">Semana ${numSem} (${rangoTexto})</span>
                     </label>
                 `;
@@ -2014,22 +1357,19 @@
 
             let partesAct = semanaDashboardSeleccionada.split("_");
             document.getElementById("lblSemanaSeleccionadaDashboard").innerText = `Semana ${partesAct[1] || '34'}`;
-
         }
 
         function seleccionarSemanaDashboard(sKey, textoVisible) {
-
             semanaDashboardSeleccionada = sKey;
             document.getElementById("lblSemanaSeleccionadaDashboard").innerText = textoVisible;
             document.getElementById("dropdownListaSemanas").classList.add("hidden");
             renderizarDashboardSemanal();
-
         }
 
         function renderizarDashboardSemanal() {
-
             let dataSemana = cacheHistoricoSemanasDashboard[semanaDashboardSeleccionada] || {};
-
+            
+            // Días fijos Lunes (1) a Domingo (7)
             const nombresDias = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
             let escaneadosPorDia = [0, 0, 0, 0, 0, 0, 0];
             let stockPorDia = [0, 0, 0, 0, 0, 0, 0];
@@ -2041,12 +1381,24 @@
                 }
             }
 
+            // Si es la semana actual, sumamos los escaneos en vivo
+            let claveActual = obtenerClaveSemana(new Date());
+            if (semanaDashboardSeleccionada === claveActual && Array.isArray(registrosHistoricosRepotenciar)) {
+                let diaHoyNum = new Date().getDay() || 7;
+                let escaneosHoy = registrosHistoricosRepotenciar.length;
+                let conStockHoy = registrosHistoricosRepotenciar.filter(r => r.cant > 0).length;
+                
+                escaneadosPorDia[diaHoyNum - 1] = Math.max(escaneadosPorDia[diaHoyNum - 1], escaneosHoy);
+                stockPorDia[diaHoyNum - 1] = Math.max(stockPorDia[diaHoyNum - 1], conStockHoy);
+            }
+
             let sumaTotalEscaneado = escaneadosPorDia.reduce((a, b) => a + b, 0);
             let sumaConStock = stockPorDia.reduce((a, b) => a + b, 0);
 
             document.getElementById("kpiDashboardTotalEscaneado").innerText = sumaTotalEscaneado;
             document.getElementById("kpiDashboardConStock").innerText = sumaConStock;
 
+            // Renderizado del Gráfico Chart.js
             const ctx = document.getElementById("canvasChartDashboard");
             if (!ctx) return;
 
@@ -2088,18 +1440,24 @@
                         tooltip: {
                             enabled: true,
                             backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                            bodyFont: { size: 12, weight: 'bold' },
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 11 },
                             padding: 10,
                             displayColors: false,
                             callbacks: {
-                                title: () => '',
+                                title: (context) => `📅 DÍA: ${context[0].label}`,
                                 label: (context) => {
                                     let idx = context.dataIndex;
                                     let total = escaneadosPorDia[idx];
                                     let stock = stockPorDia[idx];
+                                    let porReponer = Math.max(0, total - stock);
+                                    let porcentaje = total > 0 ? Math.round((stock / total) * 100) : 0;
+
                                     return [
                                         `📦 Total escaneado: ${total}`,
-                                        `🟢 Con stock:       ${stock}`
+                                        `🟢 Con stock:       ${stock}`,
+                                        `🔴 Por reponer:     ${porReponer}`,
+                                        `📊 % Cobertura:     ${porcentaje}%`
                                     ];
                                 }
                             }
@@ -2118,15 +1476,1357 @@
                     }
                 }
             });
+        }
 
+        function escucharInventarioEnTiempoReal() {
+            dbRef.on("value", (snapshot) => {
+                if (guardandoLocalmente) {
+                    guardandoLocalmente = false;
+                    return;
+                }
+                const data = snapshot.val();
+                if (data && Object.keys(data).length > 0) {
+                    inventarioData1 = Object.values(data);
+                    data1Cargada = true;
+                    if(document.getElementById('statusData1') && !document.getElementById('statusData1').innerText.includes("⏳")) {
+                        document.getElementById('statusData1').className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
+                        document.getElementById('statusData1').innerText = `✅ Base Cloud activa (${inventarioData1.length} registros).`;
+                    }
+                    document.getElementById('avisoAdvertenciaStock').classList.add('hidden');
+                } else {
+                    inventarioData1 = []; 
+                    data1Cargada = false;
+                    if(document.getElementById('statusData1')) {
+                        document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+                    }
+                    
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "hidden";
+                }
+                forzarActualizacionTablaAdmin();
+                ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
+            });
+        }
+
+        function formatearAFechaDDMMYYYY(valFecha) {
+            if (valFecha === null || valFecha === undefined) return "";
+            let str = valFecha.toString().trim();
+            if (str === "" || str === "SIN FECHA" || str === "2999-12-31") return "";
+            
+            let num = Number(str);
+            if (!isNaN(num) && num > 10000) {
+                let fechaJS = new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
+                let dia = fechaJS.getDate().toString().padStart(2, '0');
+                let mes = (fechaJS.getMonth() + 1).toString().padStart(2, '0');
+                let anio = fechaJS.getFullYear();
+                return `${dia}/${mes}/${anio}`;
+            }
+
+            return str;
+        }
+
+        function parsearFechaEspanol(strFecha) {
+            if (!strFecha || strFecha === "SIN FECHA" || strFecha.toString().trim() === "") return new Date(2999, 11, 31);
+            let str = strFecha.toString().trim();
+            
+            let num = Number(str);
+            if (!isNaN(num) && num > 10000) {
+                return new Date(Math.round((num - (25567 + 2)) * 86400 * 1000));
+            }
+
+            if (str.includes('/')) {
+                let partes = str.split('/');
+                if (partes.length === 3) {
+                    let d = parseInt(partes[0], 10);
+                    let m = parseInt(partes[1], 10) - 1;
+                    let a = parseInt(partes[2], 10);
+                    if (a < 100) a += 2000;
+                    return new Date(a, m, d);
+                }
+            } else if (str.includes('-')) {
+                let partes = str.split('-');
+                if (partes.length === 3) {
+                    if (partes[0].length === 4) {
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                    } else {
+                        return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                    }
+                }
+            }
+            return new Date(2999, 11, 31);
+        }
+
+        function parsearFechaHoraTimestamp(str) {
+            if (!str) return 0;
+            let s = str.toString().trim();
+            let partesGeneral = s.split(/[\s,]+/);
+            if (partesGeneral.length >= 2) {
+                let fechaParte = partesGeneral[0];
+                let horaParte = partesGeneral[1];
+                let d = 1, m = 0, y = 2026;
+                if (fechaParte.includes('/')) {
+                    let fArr = fechaParte.split('/');
+                    d = parseInt(fArr[0], 10);
+                    m = parseInt(fArr[1], 10) - 1;
+                    y = parseInt(fArr[2], 10);
+                }
+                let h = 0, min = 0, sec = 0;
+                if (horaParte.includes(':')) {
+                    let hArr = horaParte.split(':');
+                    h = parseInt(hArr[0], 10) || 0;
+                    min = parseInt(hArr[1], 10) || 0;
+                    sec = parseInt(hArr[2], 10) || 0;
+                }
+                return new Date(y, m, d, h, min, sec).getTime();
+            }
+            return 0;
+        }
+
+        function escucharLogsRepotenciacionTiempoReal() {
+            logRef.on("value", (snapshot) => {
+                const data = snapshot.val();
+                renderizarTablaRepotenciar(data);
+                
+                // Consolidar automáticamente en el histórico semanal de Dashboard
+                if (data && Object.keys(data).length > 0) {
+                    let logsArr = Object.values(data);
+                    let fechaHoy = new Date();
+                    let claveSemana = obtenerClaveSemana(fechaHoy);
+                    let diaNum = fechaHoy.getDay() || 7;
+                    
+                    let totalEsc = logsArr.length;
+                    let conStock = logsArr.filter(r => r.cant > 0).length;
+
+                    dashboardHistoryRef.child(claveSemana).child(diaNum).update({
+                        totalEscaneado: totalEsc,
+                        conStock: conStock,
+                        fechaTexto: fechaHoy.toLocaleDateString('es-PE')
+                    });
+                }
+            });
+        }
+
+        function forzarActualizacionTablaAdmin() {
+            renderizarTablaRepotenciar(registrosHistoricosRepotenciar);
+        }
+
+        function renderizarTablaRepotenciar(data) {
+            if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+                registrosHistoricosRepotenciar = Array.isArray(data) ? data : Object.values(data);
+            } else {
+                registrosHistoricosRepotenciar = [];
+            }
+
+            if (rolUsuarioActivo !== 'admin') return;
+
+            const tbody = document.getElementById('tablaRepotenciarBody');
+            if (!tbody) return;
+
+            const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
+
+            if (registrosHistoricosRepotenciar.length > 0) {
+                let copiaRegistros = [...registrosHistoricosRepotenciar];
+                copiaRegistros.reverse(); 
+
+                tbody.innerHTML = "";
+                
+                let contadorTotalFilasLpn = 0;
+                let contadorLpnsProcesadosRF = 0;
+                let skusValidosConStockSetRepo = new Set();
+                let skusRepuestosSetRepo = new Set();
+
+                let bolsaConsumosRF = [];
+                if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
+                    matrixDetalleReposicion.forEach(m => {
+                        if (!m.sku || !m.lpn) return;
+                        bolsaConsumosRF.push({
+                            sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                            lpn: m.lpn.toString().trim().toUpperCase(),
+                            consumido: false
+                        });
+                    });
+                }
+
+                copiaRegistros.forEach(item => {
+                    if (item.sku) {
+                        let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                        skusValidosConStockSetRepo.add(skuLogLimpio);
+                    }
+                    
+                    let rawDesc = item.desc || "";
+                    let zonaExtraida = "General";
+                    let descLimpia = rawDesc;
+
+                    if (rawDesc.includes("[Zona:")) {
+                        let partes = rawDesc.split("[Zona:");
+                        descLimpia = partes[0].trim();
+                        zonaExtraida = partes[1].replace("]", "").trim();
+                    }
+
+                    let idUsuarioCredencial = item.idAsistente || item.operador || "HP00000000";
+
+                    let purgaStr = item.purgaCompletaRuta || "";
+                    let desglosesLpn = [];
+
+                    if (purgaStr && purgaStr.includes("(-")) {
+                        let partes = purgaStr.split("➔");
+                        partes.forEach(p => {
+                            let matchLpn = p.match(/([^\s]+)\s*\(-(\d+)\s*Uds\)/i);
+                            if (matchLpn) {
+                                desglosesLpn.push({ lpn: matchLpn[1].trim(), cant: parseInt(matchLpn[2], 10) });
+                            }
+                        });
+                    }
+
+                    if (desglosesLpn.length === 0) {
+                        let rawLpn = (item.fifoLpnOptimizado || "N/A").toString().trim();
+                        let arrayLpns = rawLpn.split(",").map(x => x.trim()).filter(x => x);
+                        if (arrayLpns.length > 0) {
+                            arrayLpns.forEach(l => desglosesLpn.push({ lpn: l, cant: Math.max(1, Math.floor(item.cant / arrayLpns.length)) }));
+                        } else {
+                            desglosesLpn.push({ lpn: rawLpn, cant: item.cant });
+                        }
+                    }
+
+                    desglosesLpn.forEach(subItem => {
+                        contadorTotalFilasLpn++;
+                        let lpnFila = subItem.lpn;
+                        let cantFila = desglosesLpn.length === 1 ? item.cant : subItem.cant;
+
+                        let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === lpnFila.toString().replace(/\s+/g, "").toUpperCase());
+                        
+                        let ubicacionFisicaLpn = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
+                        
+                        let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
+                        let fvFormateada = formatearAFechaDDMMYYYY(fvLpnFila);
+                        let tieneFVValida = fvFormateada && fvFormateada !== "" && fvFormateada !== "SIN FECHA";
+
+                        let badgeFifoHtml = ""; 
+                        let lpnConsumidoAnomalia = ""; 
+                        let esRepuesto = false;
+                        let textoEstadoExport = "Pendiente";
+
+                        if (item.sku) {
+                            let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            let lpnSugeridoLimpio = lpnFila.toUpperCase();
+
+                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
+
+                            if (idxMatchExacto !== -1) {
+                                bolsaConsumosRF[idxMatchExacto].consumido = true;
+                                contadorLpnsProcesadosRF++;
+                                esRepuesto = true;
+                                skusRepuestosSetRepo.add(skuLogLimpio);
+
+                                if (!tieneFVValida) {
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                    textoEstadoExport = "Repuesto";
+                                } else {
+                                    badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                                    textoEstadoExport = "Realizó FIFO";
+                                }
+                            } else {
+                                let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio);
+
+                                if (idxOtroLpn !== -1) {
+                                    let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
+                                    bolsaConsumosRF[idxOtroLpn].consumido = true;
+                                    contadorLpnsProcesadosRF++;
+                                    esRepuesto = true;
+                                    skusRepuestosSetRepo.add(skuLogLimpio);
+
+                                    if (!tieneFVValida) {
+                                        badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                        textoEstadoExport = "Repuesto";
+                                    } else {
+                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
+                                        let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+
+                                        let fechaOriginalSugerida = parsearFechaEspanol(fvLpnFila);
+                                        let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+
+                                        if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                            badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                                            textoEstadoExport = "LPN con la misma FV";
+                                        } else {
+                                            badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                            lpnConsumidoAnomalia = bajadaDispo.lpn;
+                                            textoEstadoExport = "No realizó FIFO";
+                                        }
+                                    }
+                                } else {
+                                    badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                                    textoEstadoExport = "Pendiente";
+                                }
+                            }
+                        } else {
+                            badgeFifoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                            textoEstadoExport = "Pendiente";
+                        }
+
+                        subItem.estadoExport = textoEstadoExport;
+                        subItem.lpnConsumidoExport = lpnConsumidoAnomalia;
+                        subItem.esRepuestoFlag = esRepuesto;
+                        subItem.asistente = idUsuarioCredencial;
+                        subItem.reponer = zonaExtraida;
+                        subItem.sku = item.sku || "";
+                        subItem.ubicacionFisica = ubicacionFisicaLpn;
+                        subItem.descripcionLimpia = descLimpia;
+                        subItem.fvFormateada = fvFormateada;
+
+                        if (filtroVistaVal === "REPUESTO" && !esRepuesto) return;
+                        if (filtroVistaVal === "PENDIENTE" && esRepuesto) return;
+
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-gray-50 font-mono text-xs">
+                                <td class="px-3 py-2 border font-sans text-gray-800 font-bold">${idUsuarioCredencial}</td>
+                                <td class="px-3 py-2 border font-sans font-bold text-orange-700 bg-orange-50/50 uppercase">${zonaExtraida}</td>
+                                <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                                <td class="px-3 py-2 border text-purple-700 font-bold bg-purple-50/40">${lpnFila}</td>
+                                <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${ubicacionFisicaLpn}</td>
+                                <td class="px-3 py-2 border font-sans text-xs">${descLimpia}</td>
+                                <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${cantFila}</td>
+                                <td class="px-3 py-2 border text-center font-bold">${fvFormateada}</td>
+                                <td class="px-3 py-2 border font-sans text-center">${badgeFifoHtml}</td>
+                                <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${lpnConsumidoAnomalia}</td>
+                            </tr>`;
+                    });
+                });
+
+                let totalSkusConStockRepo = skusValidosConStockSetRepo.size;
+                let totalRepuestosRepo = skusRepuestosSetRepo.size;
+                let porReponerRepo = Math.max(0, totalSkusConStockRepo - totalRepuestosRepo);
+
+                document.getElementById('boxSkusStockRepo').innerText = totalSkusConStockRepo;
+                document.getElementById('boxPorReponerRepo').innerText = porReponerRepo;
+
+                let porcAvance = contadorTotalFilasLpn > 0 ? Math.round((contadorLpnsProcesadosRF / contadorTotalFilasLpn) * 100) : 0;
+                document.getElementById('boxPorcentajeAvanceRepo').innerText = `${porcAvance}%`;
+
+            } else {
+                tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-4 text-center italic text-gray-400">Ningún asistente ha realizado escaneos en este turno...</td></tr>`;
+                document.getElementById('boxSkusStockRepo').innerText = "0";
+                document.getElementById('boxPorReponerRepo').innerText = "0";
+                document.getElementById('boxPorcentajeAvanceRepo').innerText = "0%";
+            }
+        }
+
+        function escucharAlertasIncidenciasGlobales() {
+            msgRef.on("value", (snapshot) => {
+                const data = snapshot.val() || {};
+                cacheAlertasGlobales = data; 
+                
+                const tbodyAdmin = document.getElementById('tablaMensajesBody');
+                if (tbodyAdmin) {
+                    tbodyAdmin.innerHTML = "";
+                    let contadorPendientes = 0;
+                    Object.keys(data).forEach(key => {
+                        let m = data[key];
+                        if (m.estado === "Pendiente") {
+                            contadorPendientes++;
+                            tbodyAdmin.innerHTML += `
+                                <tr class="hover:bg-red-50/50 text-xs">
+                                    <td class="px-4 py-2.5 border font-bold text-gray-800">${m.remitente}</td>
+                                    <td class="px-4 py-2.5 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                    <td class="px-4 py-2.5 border italic text-gray-600">${m.motivo}</td>
+                                    <td class="px-4 py-2.5 border text-center text-gray-400">${m.timestamp}</td>
+                                    <td class="px-4 py-2.5 border text-center">
+                                        <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto cursor-pointer">✕</button>
+                                    </td>
+                                </tr>`;
+                        }
+                    });
+                    if (contadorPendientes === 0) {
+                        tbodyAdmin.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center italic text-gray-400">Sin reportes pendientes por revisar...</td></tr>`;
+                    }
+                }
+
+                const contenedorNotifAsistente = document.getElementById('contenedorNotificacionesAsistente');
+                if (contenedorNotifAsistente && rolUsuarioActivo === "asistente") {
+                    contenedorNotifAsistente.innerHTML = "";
+                    let contadorAlertasAsistente = 0;
+
+                    Object.keys(data).forEach(key => {
+                        let m = data[key];
+                        if (m.idAsistente === idUsuarioLogueado && !alertasOcultadasAsistente.includes(key)) {
+                            contadorAlertasAsistente++;
+                            if (m.estado === "Pendiente") {
+                                contenedorNotifAsistente.innerHTML += `
+                                    <div class="bg-orange-50/60 border border-orange-200 text-orange-950 p-2 rounded shadow-xs text-xs font-mono flex items-start gap-2 animate-pulse">
+                                        <span class="text-lg">⏳</span>
+                                        <div>
+                                            <span class="font-bold text-gray-900">Reportado: ${m.codigo}</span>
+                                            <p class="text-[10px] text-gray-600 font-sans mt-0.5">Motivo: ${m.motivo}</p>
+                                            <div class="mt-1 inline-block text-[9px] bg-orange-500 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-2xs">Estado: Pendiente por el Admin</div>
+                                        </div>
+                                    </div>`;
+                            } else if (m.estado === "Completado") {
+                                contenedorNotifAsistente.innerHTML += `
+                                    <div class="bg-green-50 border border-green-200 text-green-950 p-2.5 rounded shadow-xs text-xs font-mono flex justify-between items-start gap-2 transition duration-500">
+                                        <div class="flex items-start gap-2">
+                                            <span class="text-base text-green-600 font-bold">✔</span>
+                                            <div>
+                                                <span class="font-bold text-gray-900">Completado: ${m.codigo}</span>
+                                                <p class="text-[10px] text-gray-600 font-sans mt-0.5">¡La base de datos ya fue corregida!</p>
+                                                <div class="mt-1 inline-block text-[9px] bg-green-600 text-white font-sans font-bold px-1.5 py-0.5 rounded shadow-2xs">Estado: Completado</div>
+                                            </div>
+                                        </div>
+                                        <button onclick="removerNotificacionCompletadaLocal('${key}')" class="text-gray-400 hover:text-gray-700 font-sans font-bold text-xs px-1 cursor-pointer">✕</button>
+                                    </div>`;
+                            }
+                        }
+                    });
+                    if (contadorAlertasAsistente === 0) {
+                        contenedorNotifAsistente.innerHTML = `<p class="text-xs text-gray-400 text-center italic py-3">No has registrado reportes en este turno...</p>`;
+                    }
+                }
+
+                evaluarBloqueoDuplicadosEnVivo();
+            });
+        }
+
+        function removerNotificacionCompletadaLocal(key) {
+            alertasOcultadasAsistente.push(key);
+            try {
+                localStorage.setItem("alertas_ocultas_cache", JSON.stringify(alertasOcultadasAsistente));
+            } catch(e) {}
+            msgRef.child(key).remove();
+        }
+
+        function subsanarIncidenciaAdmin(key) {
+            msgRef.child(key).update({ estado: "Completado" });
+        }
+
+        function evaluarBloqueoDuplicadosEnVivo() {
+            const inputCod = document.getElementById('incidenciacodigoInput');
+            if (!inputCod) return;
+            let codIngresado = inputCod.value.trim().replace(/[^0-9A-Z-]/g, "").toUpperCase();
+            const wrapperGrafico = document.getElementById('graficoAlertaDuplicado');
+            const txtAlerta = document.getElementById('txtAlertaDuplicado');
+
+            if (!codIngresado) {
+                wrapperGrafico.classList.add('hidden');
+                return;
+            }
+
+            let coincidenciaDuplicada = Object.values(cacheAlertasGlobales).find(m => 
+                m.codigo.replace(/[^0-9A-Z-]/g, "").toUpperCase() === codIngresado && 
+                m.estado === "Pendiente" && 
+                m.idAsistente !== idUsuarioLogueado
+            );
+
+            if (coincidenciaDuplicada) {
+                txtAlerta.innerHTML = `El usuario <b class="underline font-mono">${coincidenciaDuplicada.remitente}</b> acaba de mandar este sku para que puedan solucionar. No es necesario enviar otro.`;
+                wrapperGrafico.classList.remove('hidden');
+            } else {
+                wrapperGrafico.classList.add('hidden');
+            }
+        }
+
+        function descargarCatalogoAutomaticoRemoto() {
+            const ráfagaParalela = 15;
+            let baseIndex = 1;
+
+            function lanzarBloqueDescargas() {
+                let promesasBloque = [];
+
+                for (let i = 0; i < ráfagaParalela; i++) {
+                    let indexFila = baseIndex + i;
+                    let numeroFormateado = indexFila.toString().padStart(2, '0');
+                    
+                    let promesa = fetch(`${pathBaseGitHub}${numeroFormateado}.json`, { cache: 'no-store' })
+                        .then(r => {
+                            if (!r.ok) return null;
+                            return r.json();
+                        })
+                        .then(datos => {
+                            if (datos && Array.isArray(datos)) {
+                                datos.forEach(item => {
+                                    if (!item) return;
+                                    
+                                    let rawSku = "", rawEan = "", rawDesc = "";
+                                    
+                                    Object.keys(item).forEach(k => {
+                                        let keyLimpia = k.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+                                        let val = item[k] !== null && item[k] !== undefined ? item[k].toString() : "";
+                                        
+                                        if (keyLimpia === "sku") rawSku = val;
+                                        else if (keyLimpia === "ean") rawEan = val;
+                                        else if (keyLimpia.includes("descripcion") || keyLimpia.includes("desc")) rawDesc = val;
+                                    });
+
+                                    if (rawSku) {
+                                        let skuLimpio = rawSku.trim().toUpperCase();
+                                        let descLimpia = rawDesc ? rawDesc.trim().toUpperCase() : "PRODUCTO IDENTIFICADO";
+                                        databaseCat_Ean[skuLimpio] = { sku: skuLimpio, desc: descLimpia };
+
+                                        if (rawEan) {
+                                            let eanLimpio = rawEan.trim().toUpperCase();
+                                            databaseCat_Ean[eanLimpio] = { sku: skuLimpio, desc: descLimpia };
+                                        }
+                                    }
+                                });
+                            }
+                        }).catch(() => {});
+                    promesasBloque.push(promesa);
+                }
+
+                Promise.all(promesasBloque).then(() => {
+                    if (baseIndex < 150) { 
+                        baseIndex += ráfagaParalela;
+                        lanzarBloqueDescargas();
+                    }
+                });
+            }
+
+            lanzarBloqueDescargas();
+        }
+
+        function handleLoginKey(event) { 
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) { 
+                event.preventDefault(); autenticarUsuario(); 
+            } 
+        }
+
+        function autenticarUsuario() {
+            const user = document.getElementById('userInput').value.trim().toUpperCase();
+            const pass = document.getElementById('passwordInput').value;
+            
+            if (usuariosDB[user] && usuariosDB[user].clave === pass) {
+                rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
+                idUsuarioLogueado = user;
+                let fechaHoy = new Date().toISOString().slice(0, 10);
+                localStorage.setItem("sesion_usuario", user);
+                localStorage.setItem("sesion_rol", rolUsuarioActivo);
+                localStorage.setItem("sesion_fecha", fechaHoy);
+                document.getElementById('seccionLogin').classList.add('hidden');
+                document.getElementById('navUsuario').classList.remove('hidden');
+                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+                
+                sesionesRef.child(user).update({
+                    nombre: usuariosDB[user].nombre,
+                    rol: rolUsuarioActivo,
+                    online: true,
+                    forzarLogout: false,
+                    ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
+                sesionesRef.child(user).onDisconnect().update({
+                    online: false
+                });
+
+                // Si es asistente, activar escucha en tiempo real de logout forzado
+                if (rolUsuarioActivo === "asistente") {
+                    sesionesRef.child(user).on("value", (snap) => {
+                        const val = snap.val();
+                        if (val && val.forzarLogout === true) {
+                            sesionesRef.child(user).update({ forzarLogout: false, online: false });
+                            cerrarSesion();
+                        }
+                    });
+                }
+
+                switchRole();
+                
+                if (rolUsuarioActivo === "asistente") {
+                    document.getElementById("selectVistaAsistente").value = "escaneo";
+                    alternarModuloVistaAsistente();
+                } else {
+                    document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                    alternarModuloAdminView();
+                }
+            } else { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
+            }
+        }
+
+        function cerrarSesion() {
+            if (idUsuarioLogueado) {
+                sesionesRef.child(idUsuarioLogueado).update({ online: false });
+            }
+            localStorage.removeItem("sesion_usuario");
+            localStorage.removeItem("sesion_rol");
+            localStorage.removeItem("sesion_fecha");
+            window.location.reload();
+        }
+
+        function switchRole() {
+            document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
+            document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
+            if (rolUsuarioActivo === 'asistente') {
+                setTimeout(() => document.getElementById('barcodeInput').focus(), 50);
+            } else if (rolUsuarioActivo === 'admin') {
+                document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                alternarModuloAdminView();
+            }
+        }
+
+        function alCambiarTextoBarcode() {
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
+        }
+
+        function handleBarcode(event) {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
+                event.preventDefault();
+                
+                let inputElem = document.getElementById('barcodeInput');
+                let entradaOriginal = inputElem ? inputElem.value.trim().toUpperCase() : "";
+                if (!entradaOriginal) return;
+
+                if (!inventarioData1 || inventarioData1.length === 0) {
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "hidden";
+                    return;
+                }
+
+                let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
+                let skuTraducido = ""; 
+                let descripcionTraducida = "";
+                let existeEnCatalogo = false;
+
+                if (databaseCat_Ean[entradaOriginal]) {
+                    skuTraducido = databaseCat_Ean[entradaOriginal].sku;
+                    descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
+                    existeEnCatalogo = true;
+                } else if (databaseCat_Ean[entradaSinCeros]) {
+                    skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
+                    descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
+                    existeEnCatalogo = true;
+                }
+
+                skuEscaneadoTemporal = skuTraducido || entradaOriginal;
+                let numeroSkuLimpioExcel = (skuTraducido || entradaOriginal).replace(/[^0-9]/g, "").trim();
+                let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
+
+                lotesFiltradosTurno = inventarioData1.filter(item => {
+                    if (!item || !item.sku) return false;
+                    
+                    if (!item.ubicacion || item.ubicacion.toString().trim() === "") {
+                        return false;
+                    }
+
+                    let u = item.ubicacion.toString().toUpperCase().trim();
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) {
+                        return false;
+                    }
+
+                    let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let tieneUnidadesValidas = parseInt(item.unidades || 0, 10) > 0;
+                    
+                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
+                });
+
+                let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
+
+                if (lotesFiltradosTurno.length > 0) {
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    document.getElementById('avisoAdvertenciaStock').className = "hidden";
+                    document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                    document.getElementById('containerInputLpn').className = "block";
+                    document.getElementById('containerResetBtn').className = "hidden";
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 50);
+                } else {
+                    if (existeEnCatalogo) {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    } else {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el SKU no se encuentra en la data. Por favor repórtalo en el botón de abajo.";
+                    }
+
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "block";
+                }
+
+                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
+            }
+        }
+
+        function handleCantidadKey(event) {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
+                event.preventDefault();
+                solicitarUbicacionOEnviar(); 
+            }
+        }
+
+        function solicitarUbicacionOEnviar() {
+            const cantVal = document.getElementById('cantidadInput').value;
+            if(!cantVal || parseInt(cantVal, 10) <= 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                return; 
+            }
+            if (document.activeElement) document.activeElement.blur(); 
+            const radios = document.getElementsByName('optUbicacion');
+            radios.forEach(r => r.checked = false);
+            
+            document.getElementById('modalSeleccionUbicacion').classList.remove('hidden');
+        }
+
+        function cerrarModalUbicacion() {
+            document.getElementById('modalSeleccionUbicacion').classList.add('hidden');
+        }
+
+        function confirmarUbicacionYGuardar(ubicacionElegida) {
+            cerrarModalUbicacion();
+            guardarRegistro(ubicacionElegida);
+        }
+
+        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
+        function guardarRegistro(zonaDestino) {
+            const inputCantElem = document.getElementById('cantidadInput');
+            const cantidadString = inputCantElem ? inputCantElem.value : "";
+            
+            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
+                return; 
+            }
+
+            const cantidadNumerica = parseInt(cantidadString, 10);
+            let remanente = cantidadNumerica;
+            
+            let lpnSugerido = "LPN-MANUAL";
+            let fvSugerida = "";
+            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+
+            let copiaLotesFiltrados = [...lotesFiltradosTurno];
+
+            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                try {
+                    copiaLotesFiltrados.sort((a, b) => {
+                        let fA = parsearFechaEspanol(a.vencimiento);
+                        let fB = parsearFechaEspanol(b.vencimiento);
+                        if (fA.getTime() !== fB.getTime()) {
+                            return fA - fB;
+                        }
+                        return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                    });
+                } catch(eSort) {}
+                
+                fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
+                historialConsumosLpns = [];
+                let lpnsConsumidosUnicos = [];
+
+                for (let lote of copiaLotesFiltrados) {
+                    if (remanente <= 0) break;
+                    let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
+                    
+                    let loteOriginalInventario = inventarioData1.find(i => 
+                        i && i.sku && i.lpn === lote.lpn &&
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
+                    );
+                    
+                    if (loteOriginalInventario) {
+                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
+                    }
+                    
+                    remanente -= descontar;
+                    let lpnActual = lote.lpn || 'S/LPN';
+                    if (!lpnsConsumidosUnicos.includes(lpnActual)) {
+                        lpnsConsumidosUnicos.push(lpnActual);
+                    }
+                    historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
+                }
+
+                lpnSugerido = lpnsConsumidosUnicos.join(", ");
+            }
+
+            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+            if (zonaDestino) {
+                copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+            }
+
+            cancelarRegistro();
+
+            const registroAPush = {
+                idAsistente: idUsuarioLogueado,
+                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                sku: copiaSkuTemporal,
+                fifoLpnOptimizado: lpnSugerido, 
+                desc: copiaDescripcion,
+                cant: cantidadNumerica,
+                fv: fvSugerida,
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+            };
+
+            guardandoLocalmente = true;
+            setTimeout(() => {
+                logRef.push(registroAPush);
+                dbRef.set(inventarioData1);
+            }, 0);
+        }
+
+        function cancelarRegistro() {
+            if (document.activeElement) document.activeElement.blur();
+            document.getElementById('barcodeInput').value = "";
+            document.getElementById('cantidadInput').value = "";
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
+            lotesFiltradosTurno = [];
+            requestAnimationFrame(() => {
+                const bInput = document.getElementById('barcodeInput');
+                if (bInput) bInput.focus();
+            });
+        }
+
+        // PREPARACIÓN DE DATOS PARA EXCEL CON FUENTE 10.5pt
+        function prepararDataExcelRepotenciar() {
+            if (registrosHistoricosRepotenciar.length === 0) return [];
+            const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
+            let dataProcesada = [];
+
+            registrosHistoricosRepotenciar.forEach(item => {
+                let rawDesc = item.desc || "";
+                let zonaExtraida = "General";
+                let descLimpia = rawDesc;
+                if (rawDesc.includes("[Zona:")) {
+                    let partes = rawDesc.split("[Zona:");
+                    descLimpia = partes[0].trim();
+                    zonaExtraida = partes[1].replace("]", "").trim();
+                }
+
+                let idUsuarioCredencial = item.idAsistente || item.operador || "HP00000000";
+                let purgaStr = item.purgaCompletaRuta || "";
+                let desglosesLpn = [];
+
+                if (purgaStr && purgaStr.includes("(-")) {
+                    let partes = purgaStr.split("➔");
+                    partes.forEach(p => {
+                        let matchLpn = p.match(/([^\s]+)\s*\(-(\d+)\s*Uds\)/i);
+                        if (matchLpn) {
+                            desglosesLpn.push({ lpn: matchLpn[1].trim(), cant: parseInt(matchLpn[2], 10) });
+                        }
+                    });
+                }
+
+                if (desglosesLpn.length === 0) {
+                    let rawLpn = (item.fifoLpnOptimizado || "N/A").toString().trim();
+                    let arrayLpns = rawLpn.split(",").map(x => x.trim()).filter(x => x);
+                    if (arrayLpns.length > 0) {
+                        arrayLpns.forEach(l => desglosesLpn.push({ lpn: l, cant: Math.max(1, Math.floor(item.cant / arrayLpns.length)) }));
+                    } else {
+                        desglosesLpn.push({ lpn: rawLpn, cant: item.cant });
+                    }
+                }
+
+                desglosesLpn.forEach(subItem => {
+                    let lpnMatchCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().replace(/\s+/g, "").toUpperCase() === subItem.lpn.toString().replace(/\s+/g, "").toUpperCase());
+                    let ubiFisica = lpnMatchCajas && lpnMatchCajas.ubicacion ? lpnMatchCajas.ubicacion : "RESERVA";
+                    let fvLpnFila = lpnMatchCajas ? (lpnMatchCajas.vencimiento || "") : "";
+
+                    let esRepuestoItem = subItem.esRepuestoFlag || false;
+
+                    if (filtroVistaVal === "REPUESTO" && !esRepuestoItem) return;
+                    if (filtroVistaVal === "PENDIENTE" && esRepuestoItem) return;
+
+                    dataProcesada.push({
+                        "Asistente": idUsuarioCredencial,
+                        "Reponer": zonaExtraida,
+                        "SKU": item.sku || "",
+                        "LPN": subItem.lpn,
+                        "Ubicación": ubiFisica,
+                        "Descripción": descLimpia,
+                        "Cant": subItem.cant,
+                        "FV": formatearAFechaDDMMYYYY(fvLpnFila),
+                        "Estado": subItem.estadoExport || "Pendiente",
+                        "LPN Consumido": subItem.lpnConsumidoExport || ""
+                    });
+                });
+            });
+
+            return dataProcesada;
+        }
+
+        function prepararDataExcelCumplimiento24() {
+            if (!registrosHistoricosCumplimiento24 || registrosHistoricosCumplimiento24.length === 0) return [];
+            return registrosHistoricosCumplimiento24.map(i => ({
+                "SKU": i.sku,
+                "LPN": i.lpn,
+                "Ubicación": i.ubicacion,
+                "Descripción": i.descripcion,
+                "Área": i.area,
+                "Cant": i.cantidadAsignadaFila,
+                "FV": i.fv,
+                "Estado": i.estadoTextoPlano || "Pendiente",
+                "LPN Consumido": i.lpnConsumido || ""
+            }));
+        }
+
+        function prepararDataExcelSupplyQuiebre() {
+            if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return [];
+            return registrosHistoricosSupplyQuiebre.map(i => ({
+                "PL": i.pallet,
+                "ÁREA": i.area,
+                "SKU": i.sku,
+                "LPN": i.lpn,
+                "UBICACIÓN": i.ubicacion,
+                "DESCRIPCIÓN": i.descripcion,
+                "CANT": i.cant
+            }));
+        }
+
+        function descargarExcelGenerico(dataArray, nombreArchivo, nombreHoja) {
+            if (!dataArray || dataArray.length === 0) return;
+
+            const hoja = XLSX.utils.json_to_sheet(dataArray);
+
+            const rango = XLSX.utils.decode_range(hoja['!ref'] || "A1:A1");
+            for (let R = rango.s.r; R <= rango.e.r; ++R) {
+                for (let C = rango.s.c; C <= rango.e.c; ++C) {
+                    const celdaRef = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!hoja[celdaRef]) continue;
+                    if (!hoja[celdaRef].s) hoja[celdaRef].s = {};
+                    hoja[celdaRef].s.font = { sz: 10.5, name: "Calibri" };
+                }
+            }
+
+            const libro = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(libro, hoja, nombreHoja);
+            XLSX.writeFile(libro, nombreArchivo);
+        }
+
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRES
+        function ejecutarCruceSupplyQuiebre() {
+            const tbody = document.getElementById("tablaSupplyQuiebreBody");
+            if (!tbody) return;
+
+            if (Object.keys(reqJ_Satelite).length === 0 || matrixSupplyChain.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">Cargue Cajas_Tienda, JSatélite y SupplyChain para procesar...</td></tr>`;
+                document.getElementById('boxTotalSupply').innerText = "0";
+                return;
+            }
+
+            tbody.innerHTML = "";
+            registrosHistoricosSupplyQuiebre = [];
+
+            // Encontrar la fecha y hora más reciente en SupplyChain
+            let maxTimestamp = 0;
+            matrixSupplyChain.forEach(item => {
+                let ts = parsearFechaHoraTimestamp(item.fechaProceso);
+                if (ts > maxTimestamp) maxTimestamp = ts;
+            });
+
+            let supplyLoteReciente = matrixSupplyChain;
+            if (maxTimestamp > 0) {
+                supplyLoteReciente = matrixSupplyChain.filter(item => {
+                    let ts = parsearFechaHoraTimestamp(item.fechaProceso);
+                    return ts === maxTimestamp;
+                });
+            }
+
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1 || []));
+
+            supplyLoteReciente.forEach(supItem => {
+                let skuClean = supItem.sku ? supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") : "";
+                let lpnClean = supItem.lpn ? supItem.lpn.toString().trim().toUpperCase() : "";
+                
+                if (!skuClean) return;
+
+                let satItem = reqJ_Satelite[skuClean];
+
+                // REGLA 1: Solo SKUs con Stock_PMM = 0 en JSatélite y que tengan necesidad en Quantity
+                if (!satItem || satItem.stockPMM !== 0 || satItem.cantidadSolicitada <= 0) {
+                    return;
+                }
+
+                let cantSolicitadaJSatelite = satItem.cantidadSolicitada;
+
+                // REGLA 2: Buscar en Cajas_Tienda en ubicaciones exactas PISO-ALM-528-000 o PUERTA-528-001-001
+                let cajaMatch = inventarioCajasTemporal.find(i => {
+                    if (!i || !i.sku || !i.ubicacion) return false;
+                    let iSku = i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let iUbi = i.ubicacion.toString().toUpperCase().trim();
+                    let esUbiExactaPuerta = (iUbi === "PISO-ALM-528-000" || iUbi === "PUERTA-528-001-001");
+                    let tieneUnidades = parseInt(i.unidades || 0, 10) > 0;
+                    
+                    return (iSku === skuClean) && esUbiExactaPuerta && tieneUnidades &&
+                           (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, ""))));
+                });
+
+                if (!cajaMatch) {
+                    return;
+                }
+
+                let ubicacionFisica = cajaMatch.ubicacion;
+                let descFinal = supItem.descripcion || cajaMatch.descripcion || (databaseCat_Ean[skuClean] ? databaseCat_Ean[skuClean].desc : "PRODUCTO MAPEADO");
+
+                let filaData = {
+                    pallet: supItem.pallet || "P/L",
+                    area: supItem.area || satItem.areaJSatelite || "GENERAL",
+                    sku: supItem.sku || satItem.skuOriginal || skuClean,
+                    lpn: supItem.lpn || cajaMatch.lpn || "-",
+                    ubicacion: ubicacionFisica,
+                    descripcion: descFinal,
+                    cant: cantSolicitadaJSatelite
+                };
+
+                registrosHistoricosSupplyQuiebre.push(filaData);
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-teal-50/40 text-xs font-mono">
+                        <td class="px-3 py-2 border font-bold text-teal-800">${filaData.pallet}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${filaData.area}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${filaData.sku}</td>
+                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${filaData.lpn}</td>
+                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${filaData.ubicacion}</td>
+                        <td class="px-3 py-2 border font-sans text-xs">${filaData.descripcion}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${filaData.cant}</td>
+                    </tr>`;
+            });
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-4 text-center italic text-gray-400 font-sans">No se encontraron quiebres con Stock_PMM = 0 descargados en PUERTA/PISO...</td></tr>`;
+            }
+
+            document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
+        }
+
+        function ejecutarCruceMacroGlobal() {
+            const tbody = document.getElementById("tablaMacroGlobalBody");
+            const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
+            
+            if (!tbody) return;
+
+            if (!reqJ_Satelite || Object.keys(reqJ_Satelite).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
+                document.getElementById('boxSkusStockCumplimiento').innerText = "0";
+                document.getElementById('boxPorReponerCumplimiento').innerText = "0";
+                return;
+            }
+            
+            tbody.innerHTML = "";
+            let filasGeneradasCumplimiento = [];
+            let skusValidosConStockSet = new Set();
+            let skusRepuestosSet = new Set();
+
+            let bolsaConsumosRF = [];
+            if (matrixDetalleReposicion && matrixDetalleReposicion.length > 0) {
+                matrixDetalleReposicion.forEach(m => {
+                    if (!m.sku || !m.lpn) return;
+                    bolsaConsumosRF.push({
+                        sku: m.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, ""),
+                        lpn: m.lpn.toString().trim().toUpperCase(),
+                        consumido: false
+                    });
+                });
+            }
+
+            let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1 || []));
+
+            Object.keys(reqJ_Satelite).forEach(skuKey => {
+                let satItem = reqJ_Satelite[skuKey];
+                if (!satItem) return;
+                let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
+
+                if (cantidadRequeridaMeta <= 0) return;
+
+                let lotesDisponibles = inventarioCajasTemporal.filter(item => {
+                    if (!item || !item.sku) return false;
+                    let u = item.ubicacion ? item.ubicacion.toString().toUpperCase().trim() : "";
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) return false;
+                    let skuMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    return skuMat === skuLimpio && parseInt(item.unidades || 0, 10) > 0;
+                });
+
+                if (lotesDisponibles.length === 0) return;
+
+                skusValidosConStockSet.add(skuLimpio);
+
+                lotesDisponibles.sort((a, b) => {
+                    let fA = parsearFechaEspanol(a.vencimiento);
+                    let fB = parsearFechaEspanol(b.vencimiento);
+                    if (fA.getTime() !== fB.getTime()) {
+                        return fA - fB;
+                    }
+                    return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                });
+
+                let remanentePorCubrir = cantidadRequeridaMeta;
+
+                for (let lote of lotesDisponibles) {
+                    if (remanentePorCubrir <= 0) break;
+
+                    let unidadesEnEstaCaja = parseInt(lote.unidades, 10) || 0;
+                    let cantidadATomarDeEstaCaja = Math.min(unidadesEnEstaCaja, remanentePorCubrir);
+                    
+                    lote.unidades = unidadesEnEstaCaja - cantidadATomarDeEstaCaja;
+                    remanentePorCubrir -= cantidadATomarDeEstaCaja;
+
+                    let descFila = lote.descripcion || (databaseCat_Ean[skuLimpio] ? databaseCat_Ean[skuLimpio].desc : "PRODUCTO MAPEADO");
+                    let fvFila = formatearAFechaDDMMYYYY(lote.vencimiento);
+                    let tieneFVValida = fvFila && fvFila !== "" && fvFila !== "SIN FECHA";
+
+                    let estadoFila = "Pendiente";
+                    let estadoTextoPlano = "Pendiente";
+                    let lpnConsumidoFila = "";
+
+                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
+
+                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
+
+                    if (idxMatchExacto !== -1) {
+                        bolsaConsumosRF[idxMatchExacto].consumido = true;
+                        skusRepuestosSet.add(skuLimpio);
+
+                        if (!tieneFVValida) {
+                            estadoFila = "Repuesto";
+                            estadoTextoPlano = "Repuesto";
+                        } else {
+                            estadoFila = "Realizó FIFO";
+                            estadoTextoPlano = "Realizó FIFO";
+                        }
+                    } else {
+                        let idxOtroLpn = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio);
+
+                        if (idxOtroLpn !== -1) {
+                            let bajadaDispo = bolsaConsumosRF[idxOtroLpn];
+                            bolsaConsumosRF[idxOtroLpn].consumido = true;
+                            skusRepuestosSet.add(skuLimpio);
+
+                            if (!tieneFVValida) {
+                                estadoFila = "Repuesto";
+                                estadoTextoPlano = "Repuesto";
+                            } else {
+                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
+                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+
+                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
+                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+
+                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                    estadoFila = "Misma FV";
+                                    estadoTextoPlano = "LPN con la misma FV";
+                                } else {
+                                    estadoFila = "No realizó FIFO";
+                                    estadoTextoPlano = "No realizó FIFO";
+                                    lpnConsumidoFila = bajadaDispo.lpn;
+                                }
+                            }
+                        }
+                    }
+
+                    filasGeneradasCumplimiento.push({
+                        sku: satItem.skuOriginal || skuKey,
+                        skuCleanRef: skuLimpio,
+                        lpn: lote.lpn || "-",
+                        ubicacion: lote.ubicacion || "RESERVA",
+                        descripcion: descFila,
+                        area: satItem.areaJSatelite || "GENERAL",
+                        cantidadAsignadaFila: cantidadATomarDeEstaCaja,
+                        fv: fvFila,
+                        estado: estadoFila,
+                        estadoTextoPlano: estadoTextoPlano,
+                        lpnConsumido: lpnConsumidoFila
+                    });
+                }
+            });
+
+            registrosHistoricosCumplimiento24 = [];
+
+            filasGeneradasCumplimiento.forEach(item => {
+                let esRepuestoItem = item.estado !== "Pendiente";
+
+                if (filterVal === "REPUESTO" && !esRepuestoItem) return;
+                if (filterVal === "PENDIENTE" && esRepuestoItem) return;
+
+                registrosHistoricosCumplimiento24.push(item);
+
+                let estadoHtml = "";
+                if (item.estado === "Realizó FIFO") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Realizó FIFO</span>`;
+                } else if (item.estado === "Repuesto") {
+                    estadoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                } else if (item.estado === "Misma FV") {
+                    estadoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                } else if (item.estado === "No realizó FIFO") {
+                    estadoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                } else {
+                    estadoHtml = `<span class="bg-gray-100 text-gray-700 font-bold px-2 py-0.5 rounded shadow-xs">⚪ Pendiente</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-purple-50/40 font-mono text-xs">
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-900">${item.sku}</td>
+                        <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
+                        <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
+                        <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${item.area}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${item.cantidadAsignadaFila}</td>
+                        <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
+                        <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
+                        <td class="px-3 py-2 border text-center font-bold text-red-600 bg-red-50/40">${item.lpnConsumido}</td>
+                    </tr>`;
+            });
+
+            if (tbody.children.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">No hay registros que coincidan con el filtro seleccionado...</td></tr>`;
+            }
+
+            let totalSkusConStock = skusValidosConStockSet.size;
+            let totalRepuestosUnicos = skusRepuestosSet.size;
+            let porReponer = Math.max(0, totalSkusConStock - totalRepuestosUnicos);
+
+            document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
+            document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
+        }
+
+        function eliminarData(tipo, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (tipo === 'cajas') {
+                inventarioData1 = [];
+                data1Cargada = false;
+                dbRef.set(null);
+                fechaCargaRef.set(null);
+                document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
+            } else if (tipo === 'satelite') {
+                reqJ_Satelite = {};
+                sateliteRef.set(null);
+                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+                ejecutarCruceMacroGlobal();
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'reposicion') {
+                matrixDetalleReposicion = [];
+                detalleRepoRef.set(null);
+                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusData2').innerText = "Waiting...";
+                ejecutarCruceMacroGlobal();
+                forzarActualizacionTablaAdmin();
+            } else if (tipo === 'supply') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                document.getElementById('statusSupplyChain').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusSupplyChain').innerText = "Esperando archivo SupplyChain...";
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'supply_vista') {
+                matrixSupplyChain = [];
+                supplyRef.set(null);
+                document.getElementById('statusSupplyChain').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusSupplyChain').innerText = "Esperando archivo SupplyChain...";
+                ejecutarCruceSupplyQuiebre();
+            } else if (tipo === 'satelite_vista') {
+                reqJ_Satelite = {};
+                sateliteRef.set(null);
+                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
+                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
+                ejecutarCruceMacroGlobal();
+            } else if (tipo === 'repotenciacion') {
+                registrosHistoricosRepotenciar = [];
+                logRef.set(null);
+                forzarActualizacionTablaAdmin();
+            }
+        }
+
+        function abrirModalReporteIncidencia() {
+            if (document.activeElement) document.activeElement.blur();
+            document.getElementById('modalReporte').classList.remove('hidden');
+            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
+            document.getElementById('incidenciaMotivoInput').value = "";
+            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
+        }
+
+        function enviarReporteIncidencia() {
+            let cod = document.getElementById('incidenciacodigoInput').value.trim();
+            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
+            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+
+            if(!cod || !mot) {
+                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
+                return;
+            }
+            
+            msgRef.push({
+                idAsistente: idUsuarioLogueado,
+                remitente: nombreUser,
+                codigo: cod,
+                motivo: mot,
+                estado: "Pendiente",
+                timestamp: new Date().toLocaleString()
+            }).then(() => {
+                cerrarModalReporteIncidencia();
+                cancelarRegistro();
+                
+                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
+                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
+                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
+                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
+                document.getElementById('modalNotificacionExito').classList.remove('hidden');
+            });
+        }
+
+        function cerrarModalReporteIncidencia() { 
+            document.getElementById('modalReporte').classList.add('hidden'); 
+        }
+
+        function cerrarNotificacionExitoPersonalizada() {
+            const modal = document.getElementById('modalNotificacionExito');
+            if (modal) modal.classList.add('hidden');
+            if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
+                const passInput = document.getElementById('passwordInput');
+                if (passInput) {
+                    passInput.value = "";
+                    passInput.focus();
+                }
+            }
         }
 
         function procesarData1() {
-
             const input = document.getElementById("fileData1");
             const file = input.files ? input.files[0] : null;
             if (!file) return;
-
+            
             const statusElem = document.getElementById('statusData1');
             statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
             statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
@@ -2137,9 +2837,9 @@
                     const data = new Uint8Array(e.target.result);
                     const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
                     const hoja = libro.Sheets[libro.SheetNames[0]];
-
+                    
                     const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1, defval: "" });
-
+                    
                     if (!filasMatriz || filasMatriz.length < 2) {
                         statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                         statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
@@ -2160,7 +2860,7 @@
                     if (headerRowIdx === -1) headerRowIdx = 0;
 
                     const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-
+                    
                     let idxLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
                     let idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo") || h.includes("material"));
                     let idxDesc = headers.findIndex(h => h.includes("descripci") || h.includes("denominacion"));
@@ -2237,11 +2937,9 @@
                 };
                 lector.readAsArrayBuffer(file);
             }, 0);
-
         }
 
         function procesarJ_Satelite() {
-
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
             if (!file) return;
@@ -2251,9 +2949,9 @@
                 const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-
+                
                 let tempJSatelite = {};
-
+                
                 if (filasMatriz && filasMatriz.length > 0) {
                     let headerRowIdx = 0;
                     for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
@@ -2284,7 +2982,7 @@
 
                         if (skuVal) {
                             let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-
+                            
                             if (!tempJSatelite[skuClean]) {
                                 tempJSatelite[skuClean] = {
                                     skuOriginal: skuVal,
@@ -2298,15 +2996,13 @@
                         }
                     }
                 }
-
+                
                 sateliteRef.set(tempJSatelite);
             };
             lector.readAsArrayBuffer(file);
-
         }
 
         function procesarData2() {
-
             const input = document.getElementById("fileData2");
             const file = input.files ? input.files[0] : null;
             if (!file) return;
@@ -2316,7 +3012,7 @@
                 const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-
+                
                 if (!filas || filas.length < 2) {
                     document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
@@ -2337,7 +3033,7 @@
                 if (headerRowIdx === -1) headerRowIdx = 0;
 
                 const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-
+                
                 const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
                 const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
                 const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
@@ -2390,11 +3086,9 @@
                 detalleRepoRef.set(tempDetalleRepo);
             };
             lector.readAsArrayBuffer(file);
-
         }
 
         function procesarSupplyChain() {
-
             const input = document.getElementById("fileSupplyChain");
             const file = input.files ? input.files[0] : null;
             if (!file) return;
@@ -2404,7 +3098,7 @@
                 const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
-
+                
                 if (!filas || filas.length < 2) {
                     document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
                     document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
@@ -2425,7 +3119,7 @@
                 if (headerRowIdx === -1) headerRowIdx = 0;
 
                 const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-
+                
                 let idxFecha = headers.findIndex(h => h.includes("fecha proceso") || h.includes("fecha") || h.includes("proceso"));
                 let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
                 let idxArea = headers.findIndex(h => h === "área" || h === "area");
@@ -2472,11 +3166,7 @@
                 supplyRef.set(tempSupply);
             };
             lector.readAsArrayBuffer(file);
-
         }
-
     </script>
-
 </body>
-
 </html>
