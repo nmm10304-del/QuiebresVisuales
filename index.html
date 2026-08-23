@@ -458,7 +458,7 @@
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
+                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                             <div id="containerResetBtn" class="hidden">
@@ -732,7 +732,7 @@
             verificarSesionGuardada();
 
             validarPurgaMedianocheAutomática();
-            setInterval(validarPurgaMedianocheAutomática, 15000); 
+            setInterval(validarPurgaMedianocheAutomática, 60000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -759,16 +759,7 @@
         function escucharUsuariosRegistradosNube() {
             usersMasterRef.on("value", (snapshot) => {
                 const cloudUsers = snapshot.val() || {};
-                usuariosDB = { "ADMIN": usuariosIniciales["ADMIN"], ...cloudUsers };
-
-                if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
-                    if (!usuariosDB[idUsuarioLogueado]) {
-                        localStorage.clear();
-                        window.location.reload();
-                        return;
-                    }
-                }
-
+                usuariosDB = { ...usuariosIniciales, ...cloudUsers };
                 actualizarCombosYTablaUsuarios();
             });
         }
@@ -951,10 +942,9 @@
             });
         }
 
-        // PURGA TOTAL AUTOMÁTICA Y CIERRE EXCLUSIVO DE ASISTENTES AL CAMBIO DE TURNO DIARIO (00:00:00)
+        // PURGA AUTOMÁTICA DE DATOS A MEDIANOCHE (ADMIN NUNCA SE DESLOGUEA)
         function validarPurgaMedianocheAutomática() {
-            let fechaHoy = new Date().toLocaleDateString('es-PE');
-            let fechaSesion = localStorage.getItem("sesion_fecha");
+            let fechaHoy = new Date().toISOString().slice(0, 10);
             let rolGuardado = localStorage.getItem("sesion_rol");
 
             fechaCargaRef.get().then((snapshot) => {
@@ -967,23 +957,18 @@
                             detalleRepoRef.set(null),
                             supplyRef.set(null),
                             logRef.set(null),
-                            fechaCargaRef.set(null)
+                            fechaCargaRef.set(fechaHoy)
                         ]).then(() => {
                             if (rolGuardado === "asistente") {
-                                localStorage.clear();
+                                localStorage.removeItem("sesion_usuario");
+                                localStorage.removeItem("sesion_rol");
+                                localStorage.removeItem("sesion_fecha");
+                                window.location.reload();
                             }
-                            window.location.reload();
                         });
-                        return;
                     }
                 }
             }).catch(() => {});
-
-            if (rolGuardado === "asistente" && fechaSesion && fechaSesion !== fechaHoy) {
-                localStorage.clear();
-                window.location.reload();
-                return;
-            }
 
             if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
                 sesionesRef.child(idUsuarioLogueado).child("forzarLogout").get().then((snapshot) => {
@@ -1042,17 +1027,8 @@
         }
 
         function verificarSesionGuardada() {
-            let fechaHoy = new Date().toLocaleDateString('es-PE');
-            let fechaSesion = localStorage.getItem("sesion_fecha");
-            let rolGuardado = localStorage.getItem("sesion_rol");
             let usuarioGuardado = localStorage.getItem("sesion_usuario");
-
-            if (rolGuardado === "asistente" && fechaSesion && fechaSesion !== fechaHoy) {
-                localStorage.removeItem("sesion_usuario");
-                localStorage.removeItem("sesion_rol");
-                localStorage.removeItem("sesion_fecha");
-                return;
-            }
+            let rolGuardado = localStorage.getItem("sesion_rol");
 
             if (usuarioGuardado && rolGuardado) {
                 rolUsuarioActivo = rolGuardado; 
@@ -1718,7 +1694,7 @@
             if (usuariosDB[user] && usuariosDB[user].clave === pass) {
                 rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
                 idUsuarioLogueado = user;
-                let fechaHoy = new Date().toLocaleDateString('es-PE');
+                let fechaHoy = new Date().toISOString().slice(0, 10);
                 localStorage.setItem("sesion_usuario", user);
                 localStorage.setItem("sesion_rol", rolUsuarioActivo);
                 localStorage.setItem("sesion_fecha", fechaHoy);
@@ -1822,7 +1798,6 @@
                         return false;
                     }
 
-                    // LISTA NEGRA DE UBICACIONES OMITIDAS
                     let u = item.ubicacion.toString().toUpperCase().trim();
                     if (
                         u.includes("DE-PROVEEDOR") || 
@@ -2136,7 +2111,6 @@
 
             let inventarioCajasTemporal = JSON.parse(JSON.stringify(inventarioData1));
 
-            // Si hay archivo SupplyChain cargado, cruzamos con JSatélite y Cajas_Tienda
             if (matrixSupplyChain.length > 0) {
                 matrixSupplyChain.forEach(supItem => {
                     let skuClean = supItem.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -2144,14 +2118,12 @@
                     
                     let satItem = reqJ_Satelite[skuClean];
 
-                    // REGLA 1: Solo se incluyen los SKUs solicitados en JSatélite y con cantidad > 0
                     if (!satItem || !satItem.cantidadSolicitada || satItem.cantidadSolicitada <= 0) {
                         return;
                     }
 
                     let cantPedidaJSatelite = satItem.cantidadSolicitada;
 
-                    // Busca coincidencia en Cajas_Tienda respetando lista negra y que tenga stock real
                     let cajaMatch = inventarioCajasTemporal.find(i => 
                         i && i.sku && 
                         i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
@@ -2159,12 +2131,10 @@
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
-                    // REGLA 2: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
                     if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
                         return;
                     }
 
-                    // REGLA 3: FILTRO ESTRICTO - SOLO UBICACIÓN PUERTA / PISO DE RECEPCIÓN
                     let uUbi = cajaMatch.ubicacion.toString().toUpperCase().trim();
                     let esPuerta = uUbi.includes("PUERTA") || uUbi.includes("PISO-ALM") || uUbi.includes("PISO") || uUbi.includes("PTA") || uUbi.includes("REC-") || uUbi.includes("RECEPCION");
                     
@@ -2199,7 +2169,6 @@
                         </tr>`;
                 });
             } else if (Object.keys(reqJ_Satelite).length > 0) {
-                // Si no hay supplyChain pero sí JSatélite y Cajas_Tienda
                 Object.keys(reqJ_Satelite).forEach(skuKey => {
                     let satItem = reqJ_Satelite[skuKey];
                     let skuClean = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -2209,17 +2178,14 @@
                     }
 
                     let cajaMatch = inventarioCajasTemporal.find(i => 
-                        i && i.sku && 
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
+                        i && i.sku && i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === skuClean &&
                         parseInt(i.unidades || 0, 10) > 0
                     );
 
-                    // REGLA 2: Si no tiene stock o ubicación física válida en Cajas_Tienda, NO SE AGREGA
                     if (!cajaMatch || !cajaMatch.ubicacion || cajaMatch.ubicacion.toString().trim() === "" || cajaMatch.ubicacion.toString().toUpperCase() === "RESERVA") {
                         return;
                     }
 
-                    // REGLA 3: FILTRO ESTRICTO - SOLO UBICACIÓN PUERTA / PISO DE RECEPCIÓN
                     let uUbi = cajaMatch.ubicacion.toString().toUpperCase().trim();
                     let esPuerta = uUbi.includes("PUERTA") || uUbi.includes("PISO-ALM") || uUbi.includes("PISO") || uUbi.includes("PTA") || uUbi.includes("REC-") || uUbi.includes("RECEPCION");
                     
@@ -2272,6 +2238,7 @@
                 tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-4 text-center italic text-gray-400">Cargue el archivo JSatélite para generar la lista de quiebres...</td></tr>`;
                 document.getElementById('boxSkusStockCumplimiento').innerText = "0";
                 document.getElementById('boxPorReponerCumplimiento').innerText = "0";
+                document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = "0%";
                 return;
             }
             
@@ -2467,6 +2434,9 @@
 
             document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
             document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
+
+            let porcAvance = totalSkusConStock > 0 ? Math.round((totalRepuestosUnicos / totalSkusConStock) * 100) : 0;
+            document.getElementById('boxPorcentajeAvanceCumplimiento').innerText = `${porcAvance}%`;
         }
 
         function eliminarData(tipo, event) {
@@ -2571,6 +2541,345 @@
                     passInput.focus();
                 }
             }
+        }
+
+        function procesarData1() {
+            const input = document.getElementById("fileData1");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            
+            const statusElem = document.getElementById('statusData1');
+            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
+            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
+
+            setTimeout(() => {
+                const lector = new FileReader();
+                lector.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    
+                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1, defval: "" });
+                    
+                    if (!filasMatriz || filasMatriz.length < 2) {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
+                        return;
+                    }
+
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
+                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
+                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo") || strLine.includes("ubicacion") || strLine.includes("ubicación")) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (headerRowIdx === -1) headerRowIdx = 0;
+
+                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    
+                    let idxLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
+                    let idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo") || h.includes("material"));
+                    let idxDesc = headers.findIndex(h => h.includes("descripci") || h.includes("denominacion"));
+                    let idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant") || h.includes("stock") || h.includes("qty"));
+                    let idxUbi = headers.findIndex(h => h.includes("ubicaci") || h.includes("posici") || h.includes("locaci") || h.includes("ubi"));
+                    let idxVenc = headers.findIndex(h => h.includes("vencimiento") || h.includes("caducidad") || h.includes("fv"));
+
+                    if (idxLpn === -1) idxLpn = 0;
+                    if (idxSku === -1) idxSku = 1;
+                    if (idxDesc === -1) idxDesc = 2;
+                    if (idxUnidades === -1) idxUnidades = 3;
+                    if (idxUbi === -1) idxUbi = 4;
+                    if (idxVenc === -1) idxVenc = 15;
+
+                    let datosFormateados = [];
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        const row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+
+                        let skuVal = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                        let lpnVal = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                        let descVal = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                        let uVal = row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
+                        let ubiVal = row[idxUbi] !== undefined ? row[idxUbi].toString().trim() : "";
+                        let caducidadVal = row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "";
+
+                        if (!skuVal || uVal <= 0) continue;
+
+                        let uUpper = ubiVal.toUpperCase();
+                        if (
+                            uUpper.includes("DE-PROVEEDOR") || 
+                            uUpper.includes("ST-PROVEEDOR") || 
+                            uUpper.includes("DEV-PRV-VIA-CD") || 
+                            uUpper.includes("DEV-PRV-SVT-001") || 
+                            uUpper.includes("JAU-BAT-ALM-001") || 
+                            uUpper.includes("DSCTO-") || 
+                            uUpper.includes("DAD-RECP") || 
+                            uUpper.includes("CMM-ALM") || 
+                            uUpper.includes("CD-FALTANTE") || 
+                            uUpper.includes("MM-") || 
+                            uUpper.includes("NAV-TDA") || 
+                            uUpper.includes("VCTO-") || 
+                            uUpper.includes("JAU-BAT") || 
+                            uUpper.includes("DEV-PRV") || 
+                            uUpper.includes("ST-ALM") || 
+                            uUpper.includes("CD-SOBRANTE")
+                        ) {
+                            continue;
+                        }
+
+                        datosFormateados.push({
+                            lpn: lpnVal,
+                            sku: skuVal,
+                            descripcion: descVal,
+                            unidades: uVal,
+                            vencimiento: caducidadVal,
+                            ubicacion: ubiVal
+                        });
+                    }
+
+                    let fechaHoyStr = new Date().toISOString().slice(0, 10);
+                    fechaCargaRef.set(fechaHoyStr);
+
+                    dbRef.set(datosFormateados).then(() => {
+                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
+                        ejecutarCruceMacroGlobal();
+                        ejecutarCruceSupplyQuiebre();
+                    }).catch(err => {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                    });
+                };
+                lector.readAsArrayBuffer(file);
+            }, 0);
+        }
+
+        function procesarJ_Satelite() {
+            const input = document.getElementById("fileJSatelite");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                let tempJSatelite = {};
+                
+                if (filasMatriz && filasMatriz.length > 0) {
+                    let headerRowIdx = 0;
+                    for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
+                        let rowStr = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (rowStr.includes("sku") || rowStr.includes("quantity") || rowStr.includes("articulo")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+
+                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    let idxSkuCol = headers.findIndex(h => h === "sku" || h.includes("sku") || h.includes("articulo"));
+                    let idxAreaCol = headers.findIndex(h => h === "area" || h.includes("área") || h.includes("area"));
+                    let idxQtyCol = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad") || h.includes("solicitad"));
+
+                    if (idxSkuCol === -1) idxSkuCol = 2;   
+                    if (idxAreaCol === -1) idxAreaCol = 5;  
+                    if (idxQtyCol === -1) idxQtyCol = 12; 
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        let row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+                        let skuVal = row[idxSkuCol] !== undefined ? row[idxSkuCol].toString().trim() : "";
+                        let areaVal = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "GENERAL";
+                        let qtyVal = row[idxQtyCol] !== undefined ? row[idxQtyCol] : 0;
+
+                        if (skuVal) {
+                            let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            
+                            if (!tempJSatelite[skuClean]) {
+                                tempJSatelite[skuClean] = {
+                                    skuOriginal: skuVal,
+                                    areaJSatelite: areaVal || "GENERAL",
+                                    cantidadSolicitada: parseInt(qtyVal, 10) || 0
+                                };
+                            } else {
+                                tempJSatelite[skuClean].cantidadSolicitada += (parseInt(qtyVal, 10) || 0);
+                            }
+                        }
+                    }
+                }
+                
+                sateliteRef.set(tempJSatelite);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarData2() {
+            const input = document.getElementById("fileData2");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pantalla") || strLine.includes("lpn") || strLine.includes("sku")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
+                const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
+                const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
+                const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
+
+                let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
+                if (idxLpn === -1) idxLpn = 2;
+
+                let tempDetalleRepo = [];
+                let ultimoSkuVisto = "";
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
+                    let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
+                    let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
+
+                    if (pSku) {
+                        ultimoSkuVisto = pSku;
+                    } else if (!pSku && ultimoSkuVisto) {
+                        pSku = ultimoSkuVisto;
+                    }
+
+                    let uDestino = pPantalla.toUpperCase();
+                    let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
+                                           uDestino.includes("RF_REPONER_PUERTA") || 
+                                           uDestino.includes("RF_DIVIDIR") || 
+                                           uDestino.includes("DIVIDIR") || 
+                                           uDestino.includes("REPONER") || 
+                                           uDestino.includes("RESERVA");
+
+                    if (pSku && pLpn && esPantallaValida) {
+                        tempDetalleRepo.push({
+                            lpn: pLpn,
+                            sku: pSku,
+                            pantalla: pPantalla,
+                            cantOriginal: pCantOrig,
+                            cantAjustada: pCantAjust,
+                            usuario: pUsuario
+                        });
+                    }
+                }
+
+                detalleRepoRef.set(tempDetalleRepo);
+            };
+            lector.readAsArrayBuffer(file);
+        }
+
+        function procesarSupplyChain() {
+            const input = document.getElementById("fileSupplyChain");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pallet") || strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("cantidad enviada")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
+                let idxArea = headers.findIndex(h => h === "área" || h === "area");
+                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
+                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
+                let idxDesc = headers.findIndex(h => h.includes("descripci"));
+                let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
+
+                if (idxPallet === -1) idxPallet = 0;
+                if (idxArea === -1) idxArea = 1;
+                if (idxLpn === -1) idxLpn = 2;
+                if (idxSku === -1) idxSku = 3;
+                if (idxDesc === -1) idxDesc = 4;
+                if (idxCantEnviada === -1) idxCantEnviada = 5;
+
+                let tempSupply = [];
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
+                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                    let pCant = row[idxCantEnviada] !== undefined ? parseInt(row[idxCantEnviada] || 0, 10) : 0;
+
+                    if (pSku || pLpn) {
+                        tempSupply.push({
+                            pallet: pPallet,
+                            area: pArea,
+                            lpn: pLpn,
+                            sku: pSku,
+                            descripcion: pDesc,
+                            cantidad: pCant
+                        });
+                    }
+                }
+
+                supplyRef.set(tempSupply);
+            };
+            lector.readAsArrayBuffer(file);
         }
     </script>
 </body>
