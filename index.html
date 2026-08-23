@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
         .bg-promart { background-color: #ff6e00; }
         .text-promart { color: #ff6e00; }
@@ -42,7 +44,7 @@
 
     <div class="max-w-7xl mx-auto p-1.5 md:p-6 flex-1 w-full flex flex-col justify-start">
 
-        <!-- SECCIÓN LOGIN COMPACTO ARRIBA -->
+        <!-- SECCIÓN LOGIN -->
         <div id="seccionLogin" class="max-w-md mx-auto w-full bg-white p-5 rounded-lg shadow-md border border-gray-200 border-t-4 border-promart space-y-4 mt-2 sm:mt-6 mb-auto">
             <div class="flex justify-center pb-1 rounded-lg p-2 shadow-inner">
                 <img src="Promart_logo_2019.png" alt="Promart Logo" class="h-12 w-auto object-contain mx-auto">
@@ -83,6 +85,7 @@
                     <option value="repotenciar">⚡ Repotenciar Tienda</option>
                     <option value="quiebres">🎯 Quiebres Visuales</option>
                     <option value="supply">📦 Supply-Quiebres</option>
+                    <option value="dashboard">📊 Dashboard</option>
                     <option value="buzon">📥 Buzón de incidencias</option>
                     <option value="resetclave">🔑 Resetear contraseña</option>
                     <option value="usuarios">👤 Usuarios</option>
@@ -134,6 +137,54 @@
                         Seleccionar Archivo
                     </button>
                     <p id="statusSupplyChain" class="text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none">Esperando archivo SupplyChain...</p>
+                </div>
+            </div>
+
+            <!-- MÓDULO DASHBOARD TIPO POWER BI -->
+            <div id="wrapperModuloDashboardAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-orange-200 space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+                    <h3 class="text-sm font-bold text-orange-950 flex items-center gap-2">
+                        📊 DASHBOARD DE SEGUIMIENTO SEMANAL
+                    </h3>
+                    
+                    <!-- SELECTOR DE SEMANAS CON CHECKBOXES -->
+                    <div class="relative inline-block text-left w-64">
+                        <button type="button" onclick="alternarMenuDropdownSemanas()" class="w-full bg-white border border-gray-300 rounded-lg shadow-xs px-3 py-2 text-xs font-bold text-gray-800 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
+                            <span id="lblSemanaSeleccionadaDashboard">Semana Actual</span>
+                            <svg class="w-4 h-4 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+
+                        <div id="dropdownListaSemanas" class="hidden absolute right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto py-1">
+                            <div id="contenedorCheckboxesSemanas" class="space-y-1 p-1 text-xs">
+                                <!-- Render dinámico de semanas -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2 TARJETAS KPI -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-orange-800 uppercase tracking-wider block">📦 Total Escaneado</span>
+                            <span id="kpiDashboardTotalEscaneado" class="text-3xl font-extrabold font-mono text-orange-600">0</span>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-200/60 text-orange-700 rounded-xl flex items-center justify-center text-xl font-bold">📦</div>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 p-4 rounded-xl shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-green-800 uppercase tracking-wider block">🟢 Con Stock (Reserva)</span>
+                            <span id="kpiDashboardConStock" class="text-3xl font-extrabold font-mono text-green-600">0</span>
+                        </div>
+                        <div class="w-12 h-12 bg-green-200/60 text-green-700 rounded-xl flex items-center justify-center text-xl font-bold">🟢</div>
+                    </div>
+                </div>
+
+                <!-- GRÁFICO DE 7 DÍAS -->
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 relative min-h-[320px]">
+                    <canvas id="canvasChartDashboard" class="w-full h-72"></canvas>
                 </div>
             </div>
 
@@ -662,6 +713,7 @@
         const passRef = db.ref("credencialesUsuariosData");
         const usersMasterRef = db.ref("usuariosRegistradosNube");
         const sesionesRef = db.ref("registroSesionesEnVivo");
+        const dashboardHistoryRef = db.ref("historicoDashboardSemanal");
 
         let data1Cargada = false;
         let inventarioData1 = [];     
@@ -680,6 +732,10 @@
         let usuarioAEliminarTemporal = "";
         let guardandoLocalmente = false;
         
+        let chartDashboardInstance = null;
+        let semanaDashboardSeleccionada = "";
+        let cacheHistoricoSemanasDashboard = {};
+
         let alertasOcultadasAsistente = [];
         try {
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
@@ -729,6 +785,7 @@
             escucharLogsRepotenciacionTiempoReal();
             escucharAlertasIncidenciasGlobales();
             escucharSesionesEnVivo();
+            escucharHistoricoDashboardNube();
             verificarSesionGuardada();
 
             validarPurgaMedianocheAutomática();
@@ -969,15 +1026,6 @@
                     }
                 }
             }).catch(() => {});
-
-            if (idUsuarioLogueado && rolUsuarioActivo === "asistente") {
-                sesionesRef.child(idUsuarioLogueado).child("forzarLogout").get().then((snapshot) => {
-                    if (snapshot.exists() && snapshot.val() === true) {
-                        sesionesRef.child(idUsuarioLogueado).update({ forzarLogout: false, online: false });
-                        cerrarSesion();
-                    }
-                });
-            }
         }
 
         function escucharPersistenciaArchivosCloud() {
@@ -1048,6 +1096,17 @@
                     online: false
                 });
 
+                // Escucha instantánea (0s) de cierre forzoso solo para asistentes
+                if (rolUsuarioActivo === "asistente") {
+                    sesionesRef.child(usuarioGuardado).on("value", (snap) => {
+                        const val = snap.val();
+                        if (val && val.forzarLogout === true) {
+                            sesionesRef.child(usuarioGuardado).update({ forzarLogout: false, online: false });
+                            cerrarSesion();
+                        }
+                    });
+                }
+
                 switchRole();
             }
         }
@@ -1061,7 +1120,7 @@
                 input.type = "text";
                 icono.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45(0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.477 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
                     </svg>`;
             } else {
                 input.type = "password";
@@ -1160,6 +1219,7 @@
             const cuadroRepo = document.getElementById("containerCuadroRepotenciar");
             const cuadroCruce = document.getElementById("containerCuadroCruceMacropurga");
             const cuadroSupply = document.getElementById("containerCuadroSupplyQuiebre");
+            const moduloDashboard = document.getElementById("wrapperModuloDashboardAdmin");
             const moduloBuzon = document.getElementById("wrapperModuloBuzonAdmin");
             const moduloResetClave = document.getElementById("wrapperModuloResetClaveAdmin");
             const moduloGestionUsuarios = document.getElementById("wrapperModuloGestionUsuarios");
@@ -1174,6 +1234,7 @@
             cuadroRepo.classList.add("hidden");
             cuadroCruce.classList.add("hidden");
             cuadroSupply.classList.add("hidden");
+            moduloDashboard.classList.add("hidden");
             moduloBuzon.classList.add("hidden");
             moduloResetClave.classList.add("hidden");
             moduloGestionUsuarios.classList.add("hidden");
@@ -1201,6 +1262,10 @@
                 cuadroSupply.classList.remove("hidden");
                 ejecutarCruceSupplyQuiebre();
 
+            } else if (val === "dashboard") {
+                moduloDashboard.classList.remove("hidden");
+                renderizarDashboardSemanal();
+
             } else if (val === "buzon") {
                 moduloBuzon.classList.remove("hidden");
 
@@ -1213,6 +1278,204 @@
             } else if (val === "sesiones") {
                 moduloSesiones.classList.remove("hidden");
             }
+        }
+
+        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI =================
+        function obtenerClaveSemana(fechaObj) {
+            let fecha = new Date(Date.UTC(fechaObj.getFullYear(), fechaObj.getMonth(), fechaObj.getDate()));
+            let diaNum = fecha.getUTCDay() || 7;
+            fecha.setUTCDate(fecha.getUTCDate() + 4 - diaNum);
+            let anioInicio = new Date(Date.UTC(fecha.getUTCFullYear(), 0, 1));
+            let numSemana = Math.ceil((((fecha - anioInicio) / 86400000) + 1) / 7);
+            return `Semana_${numSemana}_${fecha.getUTCFullYear()}`;
+        }
+
+        function obtenerRangoSemanaTexto(numSemana, anio) {
+            let inicio = new Date(anio, 0, 1 + (numSemana - 1) * 7);
+            let dia = inicio.getDay();
+            let lunes = new Date(inicio);
+            if (dia <= 4) lunes.setDate(inicio.getDate() - inicio.getDay() + 1);
+            else lunes.setDate(inicio.getDate() + 8 - inicio.getDay());
+            let domingo = new Date(lunes);
+            domingo.setDate(lunes.getDate() + 6);
+            
+            const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"];
+            return `${lunes.getDate()} de ${meses[lunes.getMonth()]} - ${domingo.getDate()} de ${meses[domingo.getMonth()]}`;
+        }
+
+        function escucharHistoricoDashboardNube() {
+            dashboardHistoryRef.on("value", (snapshot) => {
+                cacheHistoricoSemanasDashboard = snapshot.val() || {};
+                actualizarListaDesplegableSemanasDashboard();
+                if (document.getElementById("selectVistaModuloAdmin").value === "dashboard") {
+                    renderizarDashboardSemanal();
+                }
+            });
+        }
+
+        function alternarMenuDropdownSemanas() {
+            const dropdown = document.getElementById("dropdownListaSemanas");
+            if (dropdown) dropdown.classList.toggle("hidden");
+        }
+
+        document.addEventListener("click", (e) => {
+            const dropdown = document.getElementById("dropdownListaSemanas");
+            const btn = document.getElementById("lblSemanaSeleccionadaDashboard");
+            if (dropdown && !dropdown.contains(e.target) && btn && !btn.contains(e.target) && !e.target.closest("button[onclick*='alternarMenuDropdownSemanas']")) {
+                dropdown.classList.add("hidden");
+            }
+        });
+
+        function actualizarListaDesplegableSemanasDashboard() {
+            const contCheckboxes = document.getElementById("contenedorCheckboxesSemanas");
+            if (!contCheckboxes) return;
+
+            let fechaHoy = new Date();
+            let claveActual = obtenerClaveSemana(fechaHoy);
+            if (!semanaDashboardSeleccionada) semanaDashboardSeleccionada = claveActual;
+
+            let semanasUnicas = new Set(Object.keys(cacheHistoricoSemanasDashboard));
+            semanasUnicas.add(claveActual);
+
+            let arraySemanas = Array.from(semanasUnicas).sort().reverse();
+            contCheckboxes.innerHTML = "";
+
+            arraySemanas.forEach(sKey => {
+                let partes = sKey.split("_");
+                let numSem = partes[1] || "34";
+                let anioSem = partes[2] || "2026";
+                let rangoTexto = obtenerRangoSemanaTexto(parseInt(numSem, 10), parseInt(anioSem, 10));
+                let isChecked = (sKey === semanaDashboardSeleccionada);
+
+                contCheckboxes.innerHTML += `
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-orange-50 rounded cursor-pointer transition">
+                        <input type="radio" name="radioSemanaDash" value="${sKey}" ${isChecked ? 'checked' : ''} onchange="seleccionarSemanaDashboard('${sKey}', 'Semana ${numSem}')" class="text-orange-600 accent-orange-600">
+                        <span class="font-bold text-gray-800">Semana ${numSem} (${rangoTexto})</span>
+                    </label>
+                `;
+            });
+
+            let partesAct = semanaDashboardSeleccionada.split("_");
+            document.getElementById("lblSemanaSeleccionadaDashboard").innerText = `Semana ${partesAct[1] || '34'}`;
+        }
+
+        function seleccionarSemanaDashboard(sKey, textoVisible) {
+            semanaDashboardSeleccionada = sKey;
+            document.getElementById("lblSemanaSeleccionadaDashboard").innerText = textoVisible;
+            document.getElementById("dropdownListaSemanas").classList.add("hidden");
+            renderizarDashboardSemanal();
+        }
+
+        function renderizarDashboardSemanal() {
+            let dataSemana = cacheHistoricoSemanasDashboard[semanaDashboardSeleccionada] || {};
+            
+            // Días fijos Lunes (1) a Domingo (7)
+            const nombresDias = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
+            let escaneadosPorDia = [0, 0, 0, 0, 0, 0, 0];
+            let stockPorDia = [0, 0, 0, 0, 0, 0, 0];
+
+            for (let d = 1; d <= 7; d++) {
+                if (dataSemana[d]) {
+                    escaneadosPorDia[d - 1] = dataSemana[d].totalEscaneado || 0;
+                    stockPorDia[d - 1] = dataSemana[d].conStock || 0;
+                }
+            }
+
+            // Si es la semana actual, sumamos los escaneos en vivo
+            let claveActual = obtenerClaveSemana(new Date());
+            if (semanaDashboardSeleccionada === claveActual && Array.isArray(registrosHistoricosRepotenciar)) {
+                let diaHoyNum = new Date().getDay() || 7;
+                let escaneosHoy = registrosHistoricosRepotenciar.length;
+                let conStockHoy = registrosHistoricosRepotenciar.filter(r => r.cant > 0).length;
+                
+                escaneadosPorDia[diaHoyNum - 1] = Math.max(escaneadosPorDia[diaHoyNum - 1], escaneosHoy);
+                stockPorDia[diaHoyNum - 1] = Math.max(stockPorDia[diaHoyNum - 1], conStockHoy);
+            }
+
+            let sumaTotalEscaneado = escaneadosPorDia.reduce((a, b) => a + b, 0);
+            let sumaConStock = stockPorDia.reduce((a, b) => a + b, 0);
+
+            document.getElementById("kpiDashboardTotalEscaneado").innerText = sumaTotalEscaneado;
+            document.getElementById("kpiDashboardConStock").innerText = sumaConStock;
+
+            // Renderizado del Gráfico Chart.js
+            const ctx = document.getElementById("canvasChartDashboard");
+            if (!ctx) return;
+
+            if (chartDashboardInstance) {
+                chartDashboardInstance.destroy();
+            }
+
+            Chart.register(ChartDataLabels);
+
+            chartDashboardInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nombresDias,
+                    datasets: [{
+                        label: 'Total Escaneado',
+                        data: escaneadosPorDia,
+                        backgroundColor: '#ff6e00',
+                        hoverBackgroundColor: '#e05d00',
+                        borderRadius: 6,
+                        barPercentage: 0.55
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#1f2937',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value) => value > 0 ? `[ ${value} ]` : ''
+                        },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 11 },
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                title: (context) => `📅 DÍA: ${context[0].label}`,
+                                label: (context) => {
+                                    let idx = context.dataIndex;
+                                    let total = escaneadosPorDia[idx];
+                                    let stock = stockPorDia[idx];
+                                    let porReponer = Math.max(0, total - stock);
+                                    let porcentaje = total > 0 ? Math.round((stock / total) * 100) : 0;
+
+                                    return [
+                                        `📦 Total escaneado: ${total}`,
+                                        `🟢 Con stock:       ${stock}`,
+                                        `🔴 Por reponer:     ${porReponer}`,
+                                        `📊 % Cobertura:     ${porcentaje}%`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f3f4f6' },
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { weight: 'bold', size: 11 }, color: '#374151' }
+                        }
+                    }
+                }
+            });
         }
 
         function escucharInventarioEnTiempoReal() {
@@ -1301,7 +1564,6 @@
         function parsearFechaHoraTimestamp(str) {
             if (!str) return 0;
             let s = str.toString().trim();
-            // Soporta formatos: "20/8/2026, 13:18:11" o "20/08/2026 13:18:11"
             let partesGeneral = s.split(/[\s,]+/);
             if (partesGeneral.length >= 2) {
                 let fechaParte = partesGeneral[0];
@@ -1329,6 +1591,23 @@
             logRef.on("value", (snapshot) => {
                 const data = snapshot.val();
                 renderizarTablaRepotenciar(data);
+                
+                // Consolidar automáticamente en el histórico semanal de Dashboard
+                if (data && Object.keys(data).length > 0) {
+                    let logsArr = Object.values(data);
+                    let fechaHoy = new Date();
+                    let claveSemana = obtenerClaveSemana(fechaHoy);
+                    let diaNum = fechaHoy.getDay() || 7;
+                    
+                    let totalEsc = logsArr.length;
+                    let conStock = logsArr.filter(r => r.cant > 0).length;
+
+                    dashboardHistoryRef.child(claveSemana).child(diaNum).update({
+                        totalEscaneado: totalEsc,
+                        conStock: conStock,
+                        fechaTexto: fechaHoy.toLocaleDateString('es-PE')
+                    });
+                }
             });
         }
 
@@ -1552,11 +1831,11 @@
                             contadorPendientes++;
                             tbodyAdmin.innerHTML += `
                                 <tr class="hover:bg-red-50/50 text-xs">
-                                    <td class="px-4 py-2 border font-bold text-gray-800">${m.remitente}</td>
-                                    <td class="px-4 py-2 border font-mono text-red-600 font-bold">${m.codigo}</td>
-                                    <td class="px-4 py-2 border italic text-gray-600">${m.motivo}</td>
-                                    <td class="px-4 py-2 border text-center text-gray-400">${m.timestamp}</td>
-                                    <td class="px-4 py-2 border text-center">
+                                    <td class="px-4 py-2.5 border font-bold text-gray-800">${m.remitente}</td>
+                                    <td class="px-4 py-2.5 border font-mono text-red-600 font-bold">${m.codigo}</td>
+                                    <td class="px-4 py-2.5 border italic text-gray-600">${m.motivo}</td>
+                                    <td class="px-4 py-2.5 border text-center text-gray-400">${m.timestamp}</td>
+                                    <td class="px-4 py-2.5 border text-center">
                                         <button onclick="subsanarIncidenciaAdmin('${key}')" class="bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 font-bold transition shadow-sm flex items-center justify-center mx-auto cursor-pointer">✕</button>
                                     </td>
                                 </tr>`;
@@ -1740,6 +2019,17 @@
                 sesionesRef.child(user).onDisconnect().update({
                     online: false
                 });
+
+                // Si es asistente, activar escucha en tiempo real de logout forzado
+                if (rolUsuarioActivo === "asistente") {
+                    sesionesRef.child(user).on("value", (snap) => {
+                        const val = snap.val();
+                        if (val && val.forzarLogout === true) {
+                            sesionesRef.child(user).update({ forzarLogout: false, online: false });
+                            cerrarSesion();
+                        }
+                    });
+                }
 
                 switchRole();
                 
@@ -2009,7 +2299,7 @@
             });
         }
 
-        // PREPARACIÓN DE DATOS PARA EXCEL
+        // PREPARACIÓN DE DATOS PARA EXCEL CON FUENTE 10.5pt
         function prepararDataExcelRepotenciar() {
             if (registrosHistoricosRepotenciar.length === 0) return [];
             const filtroVistaVal = document.getElementById('filterEstadoRepo') ? document.getElementById('filterEstadoRepo').value : "TODOS";
@@ -2105,13 +2395,11 @@
             }));
         }
 
-        // DESCARGA DE EXCEL CON FUENTE 10.5pt
         function descargarExcelGenerico(dataArray, nombreArchivo, nombreHoja) {
             if (!dataArray || dataArray.length === 0) return;
 
             const hoja = XLSX.utils.json_to_sheet(dataArray);
 
-            // Aplicar tamaño de letra 10.5 a todas las celdas
             const rango = XLSX.utils.decode_range(hoja['!ref'] || "A1:A1");
             for (let R = rango.s.r; R <= rango.e.r; ++R) {
                 for (let C = rango.s.c; C <= rango.e.c; ++C) {
@@ -2141,14 +2429,13 @@
             tbody.innerHTML = "";
             registrosHistoricosSupplyQuiebre = [];
 
-            // 1. Encontrar la fecha y hora más reciente en SupplyChain
+            // Encontrar la fecha y hora más reciente en SupplyChain
             let maxTimestamp = 0;
             matrixSupplyChain.forEach(item => {
                 let ts = parsearFechaHoraTimestamp(item.fechaProceso);
                 if (ts > maxTimestamp) maxTimestamp = ts;
             });
 
-            // Si se detectaron fechas, filtramos por el bloque más reciente; de lo contrario se procesa todo
             let supplyLoteReciente = matrixSupplyChain;
             if (maxTimestamp > 0) {
                 supplyLoteReciente = matrixSupplyChain.filter(item => {
@@ -2172,7 +2459,6 @@
                     return;
                 }
 
-                // Cantidad solicitada tomada de Quantity de JSatélite
                 let cantSolicitadaJSatelite = satItem.cantidadSolicitada;
 
                 // REGLA 2: Buscar en Cajas_Tienda en ubicaciones exactas PISO-ALM-528-000 o PUERTA-528-001-001
@@ -2187,7 +2473,6 @@
                            (!lpnClean || (i.lpn && i.lpn.toString().toUpperCase().includes(lpnClean.replace(/^TLPN/, ""))));
                 });
 
-                // Si no se encuentra físicamente en dichas ubicaciones con stock, no se añade
                 if (!cajaMatch) {
                     return;
                 }
@@ -2356,7 +2641,7 @@
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
-                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
                                     estadoFila = "Misma FV";
                                     estadoTextoPlano = "LPN con la misma FV";
                                 } else {
