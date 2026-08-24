@@ -140,7 +140,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO DASHBOARD TIPO POWER BI (EXCLUSIVO PARA QUIEBRES VISUALES) -->
+            <!-- MÓDULO DASHBOARD TIPO POWER BI (100% QUIEBRES VISUALES) -->
             <div id="wrapperModuloDashboardAdmin" class="hidden bg-white p-5 rounded-lg shadow border border-orange-200 space-y-5">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
                     <h3 class="text-sm font-bold text-orange-950 flex items-center gap-2">
@@ -148,7 +148,6 @@
                     </h3>
                     
                     <div class="flex flex-wrap items-center gap-2">
-                        <!-- SELECTOR DE SEMANAS CON CHECKBOXES -->
                         <div class="relative inline-block text-left w-60">
                             <button type="button" onclick="alternarMenuDropdownSemanas()" class="w-full bg-white border border-gray-300 rounded-lg shadow-xs px-3 py-2 text-xs font-bold text-gray-800 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
                                 <span id="lblSemanaSeleccionadaDashboard">Semana Actual</span>
@@ -162,7 +161,6 @@
                             </div>
                         </div>
 
-                        <!-- BOTONES DE GESTIÓN / ELIMINACIÓN DE HISTORIAL -->
                         <button type="button" onclick="abrirModalEliminarDiaDashboard()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-bold px-2.5 py-1.5 rounded-lg text-xs transition shadow-2xs cursor-pointer flex items-center gap-1">
                             🗑️ Limpiar Día
                         </button>
@@ -2478,7 +2476,6 @@
             tbody.innerHTML = "";
             registrosHistoricosSupplyQuiebre = [];
 
-            // Encontrar la fecha y hora más reciente en SupplyChain
             let maxTimestamp = 0;
             matrixSupplyChain.forEach(item => {
                 let ts = parsearFechaHoraTimestamp(item.fechaProceso);
@@ -3015,7 +3012,6 @@
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                 
-                // Mantenemos los SKUs existentes si es una carga acumulada o creamos la base
                 let tempJSatelite = { ...(reqJ_Satelite || {}) };
                 
                 if (filasMatriz && filasMatriz.length > 0) {
@@ -3057,7 +3053,6 @@
                                     stockPMM: pmmVal || 0
                                 };
                             } else {
-                                // Fusión inteligente de turnos sin duplicar si es la misma ruta
                                 tempJSatelite[skuClean].cantidadSolicitada = Math.max(tempJSatelite[skuClean].cantidadSolicitada, parseInt(qtyVal, 10) || 0);
                             }
                         }
