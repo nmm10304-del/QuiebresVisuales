@@ -312,7 +312,7 @@
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <span>Por reponer:</span>
-                                <span id="boxPorReponerRepo" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
+                                <span id="boxPorReponerRepo" class="bg-red-500 text-white font-mono font-bold px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                         </div>
                     </div>
@@ -377,7 +377,7 @@
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <span>Por reponer:</span>
-                                <span id="boxPorReponerCumplimiento" class="bg-red-500 text-white font-bold font-mono px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
+                                <span id="boxPorReponerCumplimiento" class="bg-red-500 text-white font-mono font-bold px-2.5 py-0.5 rounded text-sm shadow-sm">0</span>
                             </div>
                         </div>
                     </div>
@@ -509,7 +509,7 @@
                             <div id="containerInputLpn" class="hidden">
                                 <label class="block text-[10px] font-bold text-gray-700 uppercase tracking-wide mb-0.5">Cantidad</label>
                                 <input type="number" id="cantidadInput" min="1" max="99" inputmode="numeric" oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
-                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus:ring-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
+                                       class="w-full p-1.5 border border-purple-400 rounded focus:ring-2 focus-purple-500 font-mono text-sm font-bold text-center focus:outline-none" 
                                        placeholder="00" onkeydown="handleCantidadKey(event)">
                             </div>
                             <div id="containerResetBtn" class="hidden">
@@ -566,7 +566,7 @@
             </div>
             <div class="flex gap-2 pt-1">
                 <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
-                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
             </div>
         </div>
     </div>
@@ -592,7 +592,7 @@
             </div>
             <div class="flex gap-2 pt-1">
                 <button onclick="confirmarGuardarNuevoUsuario()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Guardar</button>
-                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase">Cancelar</button>
+                <button onclick="cerrarModalAgregarUsuario()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
             </div>
         </div>
     </div>
@@ -1381,15 +1381,17 @@
                 }
             }
 
-            // Si es la semana actual, sumamos los escaneos en vivo
+            // Datos tomados desde Quiebres Visuales
             let claveActual = obtenerClaveSemana(new Date());
-            if (semanaDashboardSeleccionada === claveActual && Array.isArray(registrosHistoricosRepotenciar)) {
+            if (semanaDashboardSeleccionada === claveActual) {
                 let diaHoyNum = new Date().getDay() || 7;
-                let escaneosHoy = registrosHistoricosRepotenciar.length;
-                let conStockHoy = registrosHistoricosRepotenciar.filter(r => r.cant > 0).length;
+                let escaneosHoy = Object.keys(reqJ_Satelite || {}).length;
+                let conStockHoy = parseInt(document.getElementById('boxSkusStockCumplimiento') ? document.getElementById('boxSkusStockCumplimiento').innerText : 0, 10) || 0;
                 
-                escaneadosPorDia[diaHoyNum - 1] = Math.max(escaneadosPorDia[diaHoyNum - 1], escaneosHoy);
-                stockPorDia[diaHoyNum - 1] = Math.max(stockPorDia[diaHoyNum - 1], conStockHoy);
+                if (escaneosHoy > 0) {
+                    escaneadosPorDia[diaHoyNum - 1] = escaneosHoy;
+                    stockPorDia[diaHoyNum - 1] = conStockHoy;
+                }
             }
 
             let sumaTotalEscaneado = escaneadosPorDia.reduce((a, b) => a + b, 0);
@@ -1406,7 +1408,11 @@
                 chartDashboardInstance.destroy();
             }
 
-            Chart.register(ChartDataLabels);
+            try {
+                if (typeof ChartDataLabels !== 'undefined') {
+                    Chart.register(ChartDataLabels);
+                }
+            } catch (e) {}
 
             chartDashboardInstance = new Chart(ctx, {
                 type: 'bar',
@@ -1440,24 +1446,19 @@
                         tooltip: {
                             enabled: true,
                             backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                            titleFont: { size: 12, weight: 'bold' },
-                            bodyFont: { size: 11 },
+                            bodyFont: { size: 12, weight: 'bold' },
                             padding: 10,
                             displayColors: false,
                             callbacks: {
-                                title: (context) => `📅 DÍA: ${context[0].label}`,
+                                title: () => '',
                                 label: (context) => {
                                     let idx = context.dataIndex;
                                     let total = escaneadosPorDia[idx];
                                     let stock = stockPorDia[idx];
-                                    let porReponer = Math.max(0, total - stock);
-                                    let porcentaje = total > 0 ? Math.round((stock / total) * 100) : 0;
 
                                     return [
                                         `📦 Total escaneado: ${total}`,
-                                        `🟢 Con stock:       ${stock}`,
-                                        `🔴 Por reponer:     ${porReponer}`,
-                                        `📊 % Cobertura:     ${porcentaje}%`
+                                        `🟢 Con stock:       ${stock}`
                                     ];
                                 }
                             }
@@ -2641,7 +2642,7 @@
                                 let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
                                 let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
-                                if (fvOtroLpn && (fvOtroLpn === fvFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
+                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
                                     estadoFila = "Misma FV";
                                     estadoTextoPlano = "LPN con la misma FV";
                                 } else {
