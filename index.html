@@ -147,20 +147,31 @@
                         📊 DASHBOARD DE SEGUIMIENTO SEMANAL
                     </h3>
                     
-                    <!-- SELECTOR DE SEMANAS CON CHECKBOXES -->
-                    <div class="relative inline-block text-left w-64">
-                        <button type="button" onclick="alternarMenuDropdownSemanas()" class="w-full bg-white border border-gray-300 rounded-lg shadow-xs px-3 py-2 text-xs font-bold text-gray-800 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
-                            <span id="lblSemanaSeleccionadaDashboard">Semana Actual</span>
-                            <svg class="w-4 h-4 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- SELECTOR DE SEMANAS CON CHECKBOXES -->
+                        <div class="relative inline-block text-left w-60">
+                            <button type="button" onclick="alternarMenuDropdownSemanas()" class="w-full bg-white border border-gray-300 rounded-lg shadow-xs px-3 py-2 text-xs font-bold text-gray-800 flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
+                                <span id="lblSemanaSeleccionadaDashboard">Semana Actual</span>
+                                <svg class="w-4 h-4 text-gray-500 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
 
-                        <div id="dropdownListaSemanas" class="hidden absolute right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto py-1">
-                            <div id="contenedorCheckboxesSemanas" class="space-y-1 p-1 text-xs">
-                                <!-- Render dinámico de semanas -->
+                            <div id="dropdownListaSemanas" class="hidden absolute right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-56 overflow-y-auto py-1">
+                                <div id="contenedorCheckboxesSemanas" class="space-y-1 p-1 text-xs">
+                                    <!-- Render dinámico de semanas -->
+                                </div>
                             </div>
                         </div>
+
+                        <!-- BOTONES DE GESTIÓN / ELIMINACIÓN DE HISTORIAL -->
+                        <button type="button" onclick="abrirModalEliminarDiaDashboard()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-bold px-2.5 py-1.5 rounded-lg text-xs transition shadow-2xs cursor-pointer flex items-center gap-1">
+                            🗑️ Limpiar Día
+                        </button>
+
+                        <button type="button" onclick="eliminarSemanaSeleccionadaDashboard()" class="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold px-2.5 py-1.5 rounded-lg text-xs transition shadow-2xs cursor-pointer flex items-center gap-1">
+                            🗑️ Purgar Semana
+                        </button>
                     </div>
                 </div>
 
@@ -370,6 +381,12 @@
                             </select>
                         </div>
 
+                        <!-- SELECTOR DE FECHA PARA CARGA RETROACTIVA / TURNO TARDE -->
+                        <div class="flex items-center gap-1.5 bg-purple-50 border border-purple-200 px-2 py-1 rounded shadow-xs">
+                            <span class="text-xs font-bold text-purple-900">Fecha del Proceso:</span>
+                            <input type="date" id="inputFechaProcesoQuiebres" onchange="ejecutarCruceMacroGlobal()" class="bg-white border text-xs font-bold text-gray-800 rounded p-0.5 focus:outline-none cursor-pointer">
+                        </div>
+
                         <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
                             <div class="flex items-center gap-1.5">
                                 <span>SKUs con Stock:</span>
@@ -567,6 +584,30 @@
             <div class="flex gap-2 pt-1">
                 <button onclick="ejecutarEliminacionConfirmada()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase tracking-wide cursor-pointer">Aceptar</button>
                 <button onclick="cerrarModalConfirmarEliminar()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LIMPIAR DÍA DASHBOARD -->
+    <div id="modalEliminarDiaDashboard" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-3 z-[110]">
+        <div class="bg-white rounded-2xl shadow-xl p-4 max-w-xs w-full space-y-3 border text-center">
+            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">🗑️</div>
+            <div class="space-y-2">
+                <h4 class="text-sm font-bold text-gray-900">Limpiar Día en Dashboard</h4>
+                <p class="text-xs text-gray-600">Selecciona el día de la semana activa cuyos datos deseas poner a cero:</p>
+                <select id="selectDiaEliminarDashboard" class="w-full p-2 border rounded text-xs font-bold text-gray-800 bg-white focus:outline-none">
+                    <option value="1">Lunes (LUN)</option>
+                    <option value="2">Martes (MAR)</option>
+                    <option value="3">Miércoles (MIÉ)</option>
+                    <option value="4">Jueves (JUE)</option>
+                    <option value="5">Viernes (VIE)</option>
+                    <option value="6">Sábado (SÁB)</option>
+                    <option value="7">Domingo (DOM)</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-1">
+                <button onclick="confirmarEliminarDiaDashboard()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-xl text-xs transition shadow uppercase cursor-pointer">Limpiar</button>
+                <button onclick="cerrarModalEliminarDiaDashboard()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-1.5 rounded-xl text-xs transition uppercase cursor-pointer">Cancelar</button>
             </div>
         </div>
     </div>
@@ -771,6 +812,11 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
+            const inputFecha = document.getElementById('inputFechaProcesoQuiebres');
+            if (inputFecha) {
+                inputFecha.value = new Date().toISOString().slice(0, 10);
+            }
+
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
             setupDragAndDrop("cardJSatelite", "fileJSatelite", procesarJ_Satelite, "drop-zone-blue--over");
             setupDragAndDrop("cardDetalleReposicion", "fileData2", procesarData2, "drop-zone-purple--over");
@@ -1366,6 +1412,38 @@
             renderizarDashboardSemanal();
         }
 
+        function abrirModalEliminarDiaDashboard() {
+            document.getElementById('modalEliminarDiaDashboard').classList.remove('hidden');
+        }
+
+        function cerrarModalEliminarDiaDashboard() {
+            document.getElementById('modalEliminarDiaDashboard').classList.add('hidden');
+        }
+
+        function confirmarEliminarDiaDashboard() {
+            const diaNum = document.getElementById('selectDiaEliminarDashboard').value;
+            if (!semanaDashboardSeleccionada || !diaNum) return;
+
+            dashboardHistoryRef.child(semanaDashboardSeleccionada).child(diaNum).remove().then(() => {
+                cerrarModalEliminarDiaDashboard();
+                renderizarDashboardSemanal();
+            });
+        }
+
+        function eliminarSemanaSeleccionadaDashboard() {
+            if (!semanaDashboardSeleccionada) return;
+            let partes = semanaDashboardSeleccionada.split("_");
+            let nombreVisible = `Semana ${partes[1] || ''}`;
+
+            if (confirm(`¿Estás seguro de purgar todos los datos de ${nombreVisible}? Esta acción no se puede deshacer.`)) {
+                dashboardHistoryRef.child(semanaDashboardSeleccionada).remove().then(() => {
+                    semanaDashboardSeleccionada = "";
+                    actualizarListaDesplegableSemanasDashboard();
+                    renderizarDashboardSemanal();
+                });
+            }
+        }
+
         function renderizarDashboardSemanal() {
             let dataSemana = cacheHistoricoSemanasDashboard[semanaDashboardSeleccionada] || {};
             
@@ -1437,11 +1515,7 @@
                     plugins: {
                         legend: { display: false },
                         datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            color: '#1f2937',
-                            font: { weight: 'bold', size: 11 },
-                            formatter: (value) => value > 0 ? `[ ${value} ]` : ''
+                            display: false
                         },
                         tooltip: {
                             enabled: true,
@@ -2717,6 +2791,22 @@
 
             document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
             document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
+
+            // Guardar automáticamente en la fecha seleccionada del Dashboard
+            let totalEscaneadosJSatelite = Object.keys(reqJ_Satelite).length;
+            if (totalEscaneadosJSatelite > 0) {
+                let inputF = document.getElementById('inputFechaProcesoQuiebres');
+                let fechaDestino = (inputF && inputF.value) ? parsearFechaEspanol(inputF.value) : new Date();
+                
+                let claveSemana = obtenerClaveSemana(fechaDestino);
+                let diaNum = fechaDestino.getDay() || 7;
+
+                dashboardHistoryRef.child(claveSemana).child(diaNum).update({
+                    totalEscaneado: totalEscaneadosJSatelite,
+                    conStock: totalSkusConStock,
+                    fechaTexto: fechaDestino.toLocaleDateString('es-PE')
+                });
+            }
         }
 
         function eliminarData(tipo, event) {
@@ -2951,7 +3041,8 @@
                 const hoja = libro.Sheets[libro.SheetNames[0]];
                 const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                 
-                let tempJSatelite = {};
+                // Mantenemos los SKUs existentes si es una carga acumulada o creamos la base
+                let tempJSatelite = { ...(reqJ_Satelite || {}) };
                 
                 if (filasMatriz && filasMatriz.length > 0) {
                     let headerRowIdx = 0;
@@ -2992,7 +3083,8 @@
                                     stockPMM: pmmVal || 0
                                 };
                             } else {
-                                tempJSatelite[skuClean].cantidadSolicitada += (parseInt(qtyVal, 10) || 0);
+                                // Fusión inteligente de turnos sin duplicar si es la misma ruta
+                                tempJSatelite[skuClean].cantidadSolicitada = Math.max(tempJSatelite[skuClean].cantidadSolicitada, parseInt(qtyVal, 10) || 0);
                             }
                         }
                     }
