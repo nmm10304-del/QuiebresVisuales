@@ -766,6 +766,15 @@
         let semanaDashboardSeleccionada = "";
         let cacheHistoricoSemanasDashboard = {};
 
+        // Función para obtener la fecha local real (YYYY-MM-DD) sin desfase UTC
+        function obtenerFechaHoyLocal() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         // DICCIONARIO HOMOLOGADO DE ÁREAS Y DEPARTAMENTOS PROMART
         const DICCIONARIO_AREAS_PROMART = {
             "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN", "A1": "CONSTRUCCIÓN", "A01": "CONSTRUCCIÓN",
@@ -795,7 +804,7 @@
             let s = valArea.toString().trim().toUpperCase();
             if (s === "" || s === "GENERAL" || s === "S/A") return "GENERAL";
             
-            // Si ya es un texto de departamento válido y no un código alfanumérico corto tipo A16/A18
+            // Si ya es un texto de departamento válido (ej: LIMPIEZA, FERRETERIA)
             if (s.length > 4 && !/^A\d+$/.test(s) && isNaN(s)) {
                 return s;
             }
@@ -851,7 +860,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const inputFecha = document.getElementById('inputFechaProcesoQuiebres');
             if (inputFecha) {
-                inputFecha.value = new Date().toISOString().slice(0, 10);
+                inputFecha.value = obtenerFechaHoyLocal();
             }
 
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
@@ -1082,9 +1091,9 @@
             });
         }
 
-        // CONTROL DE SESIÓN: DESLOGUEA AUTOMÁTICAMENTE A ASISTENTES A LAS 00:00 (ADMIN NUNCA SE DESLOGUEA)
+        // CONTROL DE SESIÓN: DESLOGUEA AUTOMÁTICAMENTE A ASISTENTES TRAS LAS 00:00 HORA LOCAL
         function validarExpiracionSesionesMedianoche() {
-            let fechaHoy = new Date().toISOString().slice(0, 10);
+            let fechaHoy = obtenerFechaHoyLocal();
             let rolGuardado = localStorage.getItem("sesion_rol");
             let fechaGuardada = localStorage.getItem("sesion_fecha");
 
@@ -1093,6 +1102,7 @@
             }
         }
 
+        // DESCARGA AUTOMÁTICA EN CUALQUIER PC DIRECTO DESDE FIREBASE
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -1143,9 +1153,9 @@
             let usuarioGuardado = localStorage.getItem("sesion_usuario");
             let rolGuardado = localStorage.getItem("sesion_rol");
             let fechaGuardada = localStorage.getItem("sesion_fecha");
-            let fechaHoy = new Date().toISOString().slice(0, 10);
+            let fechaHoy = obtenerFechaHoyLocal();
 
-            // Cierre estricto al día siguiente para cualquier asistente
+            // Cierre estricto al día siguiente para cualquier asistente según hora local
             if (rolGuardado === "asistente" && fechaGuardada && fechaGuardada !== fechaHoy) {
                 cerrarSesion();
                 return;
@@ -1162,6 +1172,7 @@
                     nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
                     rol: rolUsuarioActivo,
                     online: true,
+                    forzarLogout: false,
                     ultimaConexion: new Date().toLocaleString('es-PE')
                 });
 
@@ -1169,9 +1180,14 @@
                     online: false
                 });
 
-                // Escucha instantánea (0s) de cierre forzoso solo para asistentes
+                // Escucha de cierre forzado ignorando estados viejos al conectar
                 if (rolUsuarioActivo === "asistente") {
+                    let inicioCargaSesion = true;
                     sesionesRef.child(usuarioGuardado).on("value", (snap) => {
+                        if (inicioCargaSesion) {
+                            inicioCargaSesion = false;
+                            return;
+                        }
                         const val = snap.val();
                         if (val && val.forzarLogout === true) {
                             sesionesRef.child(usuarioGuardado).update({ forzarLogout: false, online: false });
@@ -1999,6 +2015,7 @@
             if (!dataArray || dataArray.length === 0) return;
 
             const hoja = XLSX.utils.json_to_sheet(dataArray);
+
             const rango = XLSX.utils.decode_range(hoja['!ref'] || "A1:A1");
             for (let R = rango.s.r; R <= rango.e.r; ++R) {
                 for (let C = rango.s.c; C <= rango.e.c; ++C) {
@@ -2533,8 +2550,7 @@
                         });
                     }
 
-                    let fechaHoyStr = new Date().toISOString().slice(0, 10);
-                    fechaCargaRef.set(fechaHoyStr);
+                    fechaCargaRef.set(obtenerFechaHoyLocal());
 
                     dbRef.set(datosFormateados).then(() => {
                         statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
@@ -2608,7 +2624,7 @@
                         // Extraer el texto de la columna AREA (ej. LIMPIEZA, FERRETERIA)
                         let areaRaw = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "";
                         
-                        // Si por alguna razón la columna 6 vino vacía o con código, revisar columna siguiente o traducir
+                        // Si la columna encontrada vino vacía, verificar directamente columna F (índice 5)
                         if (!areaRaw && row[5] !== undefined) {
                             areaRaw = row[5].toString().trim();
                         }
@@ -2777,6 +2793,7 @@
 
                 if (idxFecha === -1) idxFecha = 0;
                 if (idxPallet === -1) idxPallet = 1;
+                if (idxArea === -1) idxArea = 2;
                 if (idxLpn === -1) idxLpn = 3;
                 if (idxSku === -1) idxSku = 4;
                 if (idxDesc === -1) idxDesc = 5;
@@ -2813,6 +2830,339 @@
                 supplyRef.set(tempSupply);
             };
             lector.readAsArrayBuffer(file);
+        }
+
+        function handleLoginKey(event) { 
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) { 
+                event.preventDefault(); autenticarUsuario(); 
+            } 
+        }
+
+        function autenticarUsuario() {
+            const user = document.getElementById('userInput').value.trim().toUpperCase();
+            const pass = document.getElementById('passwordInput').value.trim();
+            
+            if (usuariosDB[user] && usuariosDB[user].clave === pass) {
+                rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
+                idUsuarioLogueado = user;
+                let fechaHoy = obtenerFechaHoyLocal();
+                localStorage.setItem("sesion_usuario", user);
+                localStorage.setItem("sesion_rol", rolUsuarioActivo);
+                localStorage.setItem("sesion_fecha", fechaHoy);
+                document.getElementById('seccionLogin').classList.add('hidden');
+                document.getElementById('navUsuario').classList.remove('hidden');
+                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+                
+                // Reseteo inmediato del flag de forzarLogout para que no sea expulsado
+                sesionesRef.child(user).update({
+                    nombre: usuariosDB[user].nombre,
+                    rol: rolUsuarioActivo,
+                    online: true,
+                    forzarLogout: false,
+                    ultimaConexion: new Date().toLocaleString('es-PE')
+                });
+
+                sesionesRef.child(user).onDisconnect().update({
+                    online: false
+                });
+
+                // Escucha de expulsión forzada ignorando el primer valor viejo
+                if (rolUsuarioActivo === "asistente") {
+                    let primeraLectura = true;
+                    sesionesRef.child(user).on("value", (snap) => {
+                        if (primeraLectura) {
+                            primeraLectura = false;
+                            return;
+                        }
+                        const val = snap.val();
+                        if (val && val.forzarLogout === true) {
+                            sesionesRef.child(user).update({ forzarLogout: false, online: false });
+                            cerrarSesion();
+                        }
+                    });
+                }
+
+                switchRole();
+                
+                if (rolUsuarioActivo === "asistente") {
+                    document.getElementById("selectVistaAsistente").value = "escaneo";
+                    alternarModuloVistaAsistente();
+                } else {
+                    document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                    alternarModuloAdminView();
+                }
+            } else { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
+            }
+        }
+
+        function cerrarSesion() {
+            if (idUsuarioLogueado) {
+                sesionesRef.child(idUsuarioLogueado).update({ online: false, forzarLogout: false });
+            }
+            localStorage.removeItem("sesion_usuario");
+            localStorage.removeItem("sesion_rol");
+            localStorage.removeItem("sesion_fecha");
+            
+            const uIn = document.getElementById('userInput');
+            const pIn = document.getElementById('passwordInput');
+            if (uIn) uIn.value = "";
+            if (pIn) pIn.value = "";
+
+            rolUsuarioActivo = "";
+            idUsuarioLogueado = "";
+
+            document.getElementById('panelAdmin').classList.add('hidden');
+            document.getElementById('panelAsistente').classList.add('hidden');
+            document.getElementById('navUsuario').classList.add('hidden');
+            document.getElementById('seccionLogin').classList.remove('hidden');
+        }
+
+        function switchRole() {
+            document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
+            document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
+            if (rolUsuarioActivo === 'asistente') {
+                setTimeout(() => document.getElementById('barcodeInput').focus(), 50);
+            } else if (rolUsuarioActivo === 'admin') {
+                document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
+                alternarModuloAdminView();
+            }
+        }
+
+        function alCambiarTextoBarcode() {
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
+        }
+
+        function handleBarcode(event) {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
+                event.preventDefault();
+                
+                let inputElem = document.getElementById('barcodeInput');
+                let entradaOriginal = inputElem ? inputElem.value.trim().toUpperCase() : "";
+                if (!entradaOriginal) return;
+
+                if (!inventarioData1 || inventarioData1.length === 0) {
+                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "hidden";
+                    return;
+                }
+
+                let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
+                let skuTraducido = ""; 
+                let descripcionTraducida = "";
+                let existeEnCatalogo = false;
+
+                if (databaseCat_Ean[entradaOriginal]) {
+                    skuTraducido = databaseCat_Ean[entradaOriginal].sku;
+                    descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
+                    existeEnCatalogo = true;
+                } else if (databaseCat_Ean[entradaSinCeros]) {
+                    skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
+                    descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
+                    existeEnCatalogo = true;
+                }
+
+                skuEscaneadoTemporal = skuTraducido || entradaOriginal;
+                let numeroSkuLimpioExcel = (skuTraducido || entradaOriginal).replace(/[^0-9]/g, "").trim();
+                let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
+
+                lotesFiltradosTurno = inventarioData1.filter(item => {
+                    if (!item || !item.sku) return false;
+                    
+                    if (!item.ubicacion || item.ubicacion.toString().trim() === "") {
+                        return false;
+                    }
+
+                    let u = item.ubicacion.toString().toUpperCase().trim();
+                    if (
+                        u.includes("DE-PROVEEDOR") || 
+                        u.includes("ST-PROVEEDOR") || 
+                        u.includes("DEV-PRV-VIA-CD") || 
+                        u.includes("DEV-PRV-SVT-001") || 
+                        u.includes("JAU-BAT-ALM-001") || 
+                        u.includes("DSCTO-") || 
+                        u.includes("DAD-RECP") || 
+                        u.includes("CMM-ALM") || 
+                        u.includes("CD-FALTANTE") || 
+                        u.includes("MM-") || 
+                        u.includes("NAV-TDA") || 
+                        u.includes("VCTO-") || 
+                        u.includes("JAU-BAT") || 
+                        u.includes("DEV-PRV") || 
+                        u.includes("ST-ALM") || 
+                        u.includes("CD-SOBRANTE")
+                    ) {
+                        return false;
+                    }
+
+                    let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                    let tieneUnidadesValidas = parseInt(item.unidades || 0, 10) > 0;
+                    
+                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
+                });
+
+                let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
+                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
+
+                if (lotesFiltradosTurno.length > 0) {
+                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                    document.getElementById('avisoAdvertenciaStock').className = "hidden";
+                    document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
+                    document.getElementById('containerInputLpn').className = "block";
+                    document.getElementById('containerResetBtn').className = "hidden";
+                    setTimeout(() => document.getElementById('cantidadInput').focus(), 50);
+                } else {
+                    if (existeEnCatalogo) {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
+                    } else {
+                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el SKU no se encuentra en la data. Por favor repórtalo en el botón de abajo.";
+                    }
+
+                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
+                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+                    document.getElementById('containerInputLpn').className = "hidden";
+                    document.getElementById('containerResetBtn').className = "block";
+                }
+
+                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida || "PRODUCTO IDENTIFICADO";
+                document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
+            }
+        }
+
+        function handleCantidadKey(event) {
+            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
+                event.preventDefault();
+                solicitarUbicacionOEnviar(); 
+            }
+        }
+
+        function solicitarUbicacionOEnviar() {
+            const cantVal = document.getElementById('cantidadInput').value;
+            if(!cantVal || parseInt(cantVal, 10) <= 0) { 
+                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
+                return; 
+            }
+            if (document.activeElement) document.activeElement.blur(); 
+            const radios = document.getElementsByName('optUbicacion');
+            radios.forEach(r => r.checked = false);
+            
+            document.getElementById('modalSeleccionUbicacion').classList.remove('hidden');
+        }
+
+        function cerrarModalUbicacion() {
+            document.getElementById('modalSeleccionUbicacion').classList.add('hidden');
+        }
+
+        function confirmarUbicacionYGuardar(ubicacionElegida) {
+            cerrarModalUbicacion();
+            guardarRegistro(ubicacionElegida);
+        }
+
+        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO Y ACTUALIZACIÓN LIGERA (AL TOQUE)
+        function guardarRegistro(zonaDestino) {
+            const inputCantElem = document.getElementById('cantidadInput');
+            const cantidadString = inputCantElem ? inputCantElem.value : "";
+            
+            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
+                return; 
+            }
+
+            const cantidadNumerica = parseInt(cantidadString, 10);
+            let remanente = cantidadNumerica;
+            
+            let lpnSugerido = "LPN-MANUAL";
+            let fvSugerida = "";
+            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+
+            let copiaLotesFiltrados = [...lotesFiltradosTurno];
+            let updatesInventario = {};
+
+            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                try {
+                    copiaLotesFiltrados.sort((a, b) => {
+                        let fA = parsearFechaEspanol(a.vencimiento);
+                        let fB = parsearFechaEspanol(b.vencimiento);
+                        if (fA.getTime() !== fB.getTime()) {
+                            return fA - fB;
+                        }
+                        return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                    });
+                } catch(eSort) {}
+                
+                fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
+                historialConsumosLpns = [];
+                let lpnsConsumidosUnicos = [];
+
+                for (let lote of copiaLotesFiltrados) {
+                    if (remanente <= 0) break;
+                    let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
+                    
+                    let idxLoteOriginal = inventarioData1.findIndex(i => 
+                        i && i.sku && i.lpn === lote.lpn &&
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
+                    );
+                    
+                    if (idxLoteOriginal !== -1) {
+                        let nuevasUnidades = Math.max(0, (parseInt(inventarioData1[idxLoteOriginal].unidades, 10) || 0) - descontar);
+                        inventarioData1[idxLoteOriginal].unidades = nuevasUnidades;
+                        updatesInventario[`${idxLoteOriginal}/unidades`] = nuevasUnidades;
+                    }
+                    
+                    remanente -= descontar;
+                    let lpnActual = lote.lpn || 'S/LPN';
+                    if (!lpnsConsumidosUnicos.includes(lpnActual)) {
+                        lpnsConsumidosUnicos.push(lpnActual);
+                    }
+                    historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
+                }
+
+                lpnSugerido = lpnsConsumidosUnicos.join(", ");
+            }
+
+            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+            if (zonaDestino) {
+                copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+            }
+
+            cancelarRegistro();
+
+            const registroAPush = {
+                idAsistente: idUsuarioLogueado,
+                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                sku: copiaSkuTemporal,
+                fifoLpnOptimizado: lpnSugerido, 
+                desc: copiaDescripcion,
+                cant: cantidadNumerica,
+                fv: fvSugerida,
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+            };
+
+            guardandoLocalmente = true;
+            logRef.push(registroAPush);
+            if (Object.keys(updatesInventario).length > 0) {
+                dbRef.update(updatesInventario);
+            }
+        }
+
+        function cancelarRegistro() {
+            if (document.activeElement) document.activeElement.blur();
+            document.getElementById('barcodeInput').value = "";
+            document.getElementById('cantidadInput').value = "";
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
+            lotesFiltradosTurno = [];
+            requestAnimationFrame(() => {
+                const bInput = document.getElementById('barcodeInput');
+                if (bInput) bInput.focus();
+            });
         }
     </script>
 </body>
