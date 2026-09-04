@@ -766,36 +766,49 @@
         let semanaDashboardSeleccionada = "";
         let cacheHistoricoSemanasDashboard = {};
 
-        // Diccionario oficial de Departamentos / Áreas para Promart y Retail
+        function obtenerFechaHoyLocal() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         const DICCIONARIO_AREAS_PROMART = {
-            "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN",
-            "2": "MADERAS", "02": "MADERAS", "002": "MADERAS",
-            "3": "ELECTRICIDAD", "03": "ELECTRICIDAD", "003": "ELECTRICIDAD",
-            "4": "GASFITERÍA", "04": "GASFITERÍA", "004": "GASFITERÍA",
-            "5": "HERRAMIENTAS", "05": "HERRAMIENTAS", "005": "HERRAMIENTAS",
-            "6": "FERRETERÍA", "06": "FERRETERÍA", "006": "FERRETERÍA",
-            "7": "PINTURAS", "07": "PINTURAS", "007": "PINTURAS",
-            "8": "PISOS Y ACABADOS", "08": "PISOS Y ACABADOS", "008": "PISOS Y ACABADOS",
-            "9": "BAÑOS Y COCINAS", "09": "BAÑOS Y COCINAS", "009": "BAÑOS Y COCINAS",
-            "10": "ILUMINACIÓN", "010": "ILUMINACIÓN",
-            "11": "ELECTROHOGAR", "011": "ELECTROHOGAR",
-            "12": "MUEBLES Y ORGANIZACIÓN", "012": "MUEBLES Y ORGANIZACIÓN",
-            "13": "DECORACIÓN", "013": "DECORACIÓN",
-            "14": "MENAJE", "014": "MENAJE",
-            "15": "LIMPIEZA", "015": "LIMPIEZA",
-            "16": "AIRE LIBRE Y JARDÍN", "016": "AIRE LIBRE Y JARDÍN",
-            "17": "HERRAMIENTAS", "017": "HERRAMIENTAS",
-            "18": "AUTOMOTRIZ", "018": "AUTOMOTRIZ"
+            "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN", "A1": "CONSTRUCCIÓN", "A01": "CONSTRUCCIÓN",
+            "2": "MADERAS", "02": "MADERAS", "002": "MADERAS", "A2": "MADERAS", "A02": "MADERAS",
+            "3": "ELECTRICIDAD", "03": "ELECTRICIDAD", "003": "ELECTRICIDAD", "A3": "ELECTRICIDAD", "A03": "ELECTRICIDAD",
+            "4": "GASFITERÍA", "04": "GASFITERÍA", "004": "GASFITERÍA", "A4": "GASFITERÍA", "A04": "GASFITERÍA",
+            "5": "HERRAMIENTAS", "05": "HERRAMIENTAS", "005": "HERRAMIENTAS", "A5": "HERRAMIENTAS", "A05": "HERRAMIENTAS",
+            "6": "FERRETERÍA", "06": "FERRETERÍA", "006": "FERRETERÍA", "A6": "FERRETERÍA", "A06": "FERRETERÍA",
+            "7": "PINTURAS", "07": "PINTURAS", "007": "PINTURAS", "A7": "PINTURAS", "A07": "PINTURAS",
+            "8": "PISOS Y ACABADOS", "08": "PISOS Y ACABADOS", "008": "PISOS Y ACABADOS", "A8": "PISOS Y ACABADOS", "A08": "PISOS Y ACABADOS",
+            "9": "BAÑOS Y COCINAS", "09": "BAÑOS Y COCINAS", "009": "BAÑOS Y COCINAS", "A9": "BAÑOS Y COCINAS", "A09": "BAÑOS Y COCINAS",
+            "10": "ILUMINACIÓN", "010": "ILUMINACIÓN", "A10": "ILUMINACIÓN",
+            "11": "ELECTROHOGAR", "011": "ELECTROHOGAR", "A11": "ELECTROHOGAR",
+            "12": "MUEBLES Y ORGANIZACIÓN", "012": "MUEBLES Y ORGANIZACIÓN", "A12": "MUEBLES Y ORGANIZACIÓN",
+            "13": "DECORACIÓN", "013": "DECORACIÓN", "A13": "DECORACIÓN",
+            "14": "MENAJE", "014": "MENAJE", "A14": "MENAJE",
+            "15": "AIRE LIBRE Y JARDÍN", "015": "AIRE LIBRE Y JARDÍN", "A15": "AIRE LIBRE Y JARDÍN",
+            "16": "FERRETERÍA", "016": "FERRETERÍA", "A16": "FERRETERÍA",
+            "17": "HERRAMIENTAS", "017": "HERRAMIENTAS", "A17": "HERRAMIENTAS",
+            "18": "LIMPIEZA", "018": "LIMPIEZA", "A18": "LIMPIEZA",
+            "19": "AUTOMOTRIZ", "019": "AUTOMOTRIZ", "A19": "AUTOMOTRIZ",
+            "20": "SEGURIDAD", "020": "SEGURIDAD", "A20": "SEGURIDAD"
         };
 
-        function traducirCodigoArea(valArea) {
+        function traducirAreaOcodigo(valArea) {
             if (!valArea) return "GENERAL";
             let s = valArea.toString().trim().toUpperCase();
+            if (s === "" || s === "GENERAL" || s === "S/A") return "GENERAL";
+            if (s.length > 4 && !/^A\d+$/.test(s) && isNaN(s)) return s;
             if (DICCIONARIO_AREAS_PROMART[s]) return DICCIONARIO_AREAS_PROMART[s];
-            let numLimpio = s.replace(/[^0-9]/g, "");
-            if (numLimpio && DICCIONARIO_AREAS_PROMART[numLimpio]) return DICCIONARIO_AREAS_PROMART[numLimpio];
-            let numSinCeros = numLimpio.replace(/^0+/, "");
-            if (numSinCeros && DICCIONARIO_AREAS_PROMART[numSinCeros]) return DICCIONARIO_AREAS_PROMART[numSinCeros];
+            let clean = s.replace(/[^A-Z0-9]/g, "");
+            if (DICCIONARIO_AREAS_PROMART[clean]) return DICCIONARIO_AREAS_PROMART[clean];
+            let withoutA = clean.replace(/^A/, "");
+            if (DICCIONARIO_AREAS_PROMART[withoutA]) return DICCIONARIO_AREAS_PROMART[withoutA];
+            let withoutZeros = withoutA.replace(/^0+/, "");
+            if (DICCIONARIO_AREAS_PROMART[withoutZeros]) return DICCIONARIO_AREAS_PROMART[withoutZeros];
             return s;
         }
 
@@ -807,7 +820,7 @@
         
         let lotesFiltradosTurno = [];
 
-        let usuariosIniciales = {
+        const usuariosIniciales = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
             "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
@@ -836,7 +849,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const inputFecha = document.getElementById('inputFechaProcesoQuiebres');
             if (inputFecha) {
-                inputFecha.value = new Date().toISOString().slice(0, 10);
+                inputFecha.value = obtenerFechaHoyLocal();
             }
 
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
@@ -856,8 +869,7 @@
             escucharHistoricoDashboardNube();
             verificarSesionGuardada();
 
-            validarPurgaMedianocheAutomática();
-            setInterval(validarPurgaMedianocheAutomática, 60000); 
+            setInterval(validarExpiracionSesionesMedianoche, 15000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -1067,33 +1079,15 @@
             });
         }
 
-        // PURGA AUTOMÁTICA DE DATOS A MEDIANOCHE (ADMIN NUNCA SE DESLOGUEA)
-        function validarPurgaMedianocheAutomática() {
-            let fechaHoy = new Date().toISOString().slice(0, 10);
+        // CONTROL DE SESIÓN: DESLOGUEA AUTOMÁTICAMENTE A ASISTENTES TRAS LAS 00:00 HORA LOCAL
+        function validarExpiracionSesionesMedianoche() {
+            let fechaHoy = obtenerFechaHoyLocal();
             let rolGuardado = localStorage.getItem("sesion_rol");
+            let fechaGuardada = localStorage.getItem("sesion_fecha");
 
-            fechaCargaRef.get().then((snapshot) => {
-                if (snapshot.exists()) {
-                    let fechaCargada = snapshot.val();
-                    if (fechaCargada && fechaCargada !== fechaHoy) {
-                        Promise.all([
-                            dbRef.set(null),
-                            sateliteRef.set(null),
-                            detalleRepoRef.set(null),
-                            supplyRef.set(null),
-                            logRef.set(null),
-                            fechaCargaRef.set(fechaHoy)
-                        ]).then(() => {
-                            if (rolGuardado === "asistente") {
-                                localStorage.removeItem("sesion_usuario");
-                                localStorage.removeItem("sesion_rol");
-                                localStorage.removeItem("sesion_fecha");
-                                window.location.reload();
-                            }
-                        });
-                    }
-                }
-            }).catch(() => {});
+            if (rolGuardado === "asistente" && fechaGuardada && fechaGuardada !== fechaHoy) {
+                cerrarSesion();
+            }
         }
 
         function escucharPersistenciaArchivosCloud() {
@@ -1142,41 +1136,47 @@
             });
         }
 
+        // VERIFICACIÓN DE SESIÓN CORREGIDA: NO EXPULSA AL ACTUALIZAR LA PÁGINA
         function verificarSesionGuardada() {
             let usuarioGuardado = localStorage.getItem("sesion_usuario");
             let rolGuardado = localStorage.getItem("sesion_rol");
+            let fechaGuardada = localStorage.getItem("sesion_fecha");
+            let fechaHoy = obtenerFechaHoyLocal();
 
-            if (usuarioGuardado && rolGuardado) {
-                rolUsuarioActivo = rolGuardado; 
-                idUsuarioLogueado = usuarioGuardado;
-                document.getElementById('seccionLogin').classList.add('hidden');
-                document.getElementById('navUsuario').classList.remove('hidden');
-                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
-                
-                sesionesRef.child(usuarioGuardado).update({
-                    nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
-                    rol: rolUsuarioActivo,
-                    online: true,
-                    ultimaConexion: new Date().toLocaleString('es-PE')
-                });
-
-                sesionesRef.child(usuarioGuardado).onDisconnect().update({
-                    online: false
-                });
-
-                // Escucha instantánea (0s) de cierre forzoso solo para asistentes
-                if (rolUsuarioActivo === "asistente") {
-                    sesionesRef.child(usuarioGuardado).on("value", (snap) => {
-                        const val = snap.val();
-                        if (val && val.forzarLogout === true) {
-                            sesionesRef.child(usuarioGuardado).update({ forzarLogout: false, online: false });
-                            cerrarSesion();
-                        }
-                    });
-                }
-
-                switchRole();
+            if (!usuarioGuardado || !rolGuardado) {
+                return;
             }
+
+            // Expiración por cambio de fecha solo para asistentes
+            if (rolGuardado === "asistente" && fechaGuardada && fechaGuardada !== fechaHoy) {
+                cerrarSesion();
+                return;
+            }
+
+            // Si la fecha guardada no existía, se actualiza a hoy sin cerrar sesión
+            if (!fechaGuardada) {
+                localStorage.setItem("sesion_fecha", fechaHoy);
+            }
+
+            rolUsuarioActivo = rolGuardado; 
+            idUsuarioLogueado = usuarioGuardado;
+            document.getElementById('seccionLogin').classList.add('hidden');
+            document.getElementById('navUsuario').classList.remove('hidden');
+            document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado;
+            
+            sesionesRef.child(usuarioGuardado).update({
+                nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
+                rol: rolUsuarioActivo,
+                online: true,
+                forzarLogout: false,
+                ultimaConexion: new Date().toLocaleString('es-PE')
+            });
+
+            sesionesRef.child(usuarioGuardado).onDisconnect().update({
+                online: false
+            });
+
+            switchRole();
         }
 
         function alternarVisibilidadPassword(idInput, idIcono) {
@@ -1348,7 +1348,7 @@
             }
         }
 
-        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI (100% QUIEBRES VISUALES) =================
+        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI =================
         function obtenerClaveSemana(fechaObj) {
             let fecha = new Date(Date.UTC(fechaObj.getFullYear(), fechaObj.getMonth(), fechaObj.getDate()));
             let diaNum = fecha.getUTCDay() || 7;
@@ -1469,7 +1469,6 @@
         function renderizarDashboardSemanal() {
             let dataSemana = cacheHistoricoSemanasDashboard[semanaDashboardSeleccionada] || {};
             
-            // Días fijos Lunes (1) a Domingo (7)
             const nombresDias = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
             let escaneadosPorDia = [0, 0, 0, 0, 0, 0, 0];
             let stockPorDia = [0, 0, 0, 0, 0, 0, 0];
@@ -1481,7 +1480,6 @@
                 }
             }
 
-            // Datos tomados estrictamente de Quiebres Visuales
             let claveActual = obtenerClaveSemana(new Date());
             if (semanaDashboardSeleccionada === claveActual) {
                 let diaHoyNum = new Date().getDay() || 7;
@@ -1500,7 +1498,6 @@
             document.getElementById("kpiDashboardTotalEscaneado").innerText = sumaTotalEscaneado;
             document.getElementById("kpiDashboardConStock").innerText = sumaConStock;
 
-            // Renderizado del Gráfico Chart.js
             const ctx = document.getElementById("canvasChartDashboard");
             if (!ctx) return;
 
@@ -1969,7 +1966,7 @@
                 "LPN": i.lpn,
                 "Ubicación": i.ubicacion,
                 "Descripción": i.descripcion,
-                "Área": i.area,
+                "Área": traducirAreaOcodigo(i.area),
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
                 "Estado": i.estadoTextoPlano || "Pendiente",
@@ -1981,7 +1978,7 @@
             if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return [];
             return registrosHistoricosSupplyQuiebre.map(i => ({
                 "PL": i.pallet,
-                "ÁREA": i.area,
+                "ÁREA": traducirAreaOcodigo(i.area),
                 "SKU": i.sku,
                 "LPN": i.lpn,
                 "UBICACIÓN": i.ubicacion,
@@ -1994,6 +1991,7 @@
             if (!dataArray || dataArray.length === 0) return;
 
             const hoja = XLSX.utils.json_to_sheet(dataArray);
+
             const rango = XLSX.utils.decode_range(hoja['!ref'] || "A1:A1");
             for (let R = rango.s.r; R <= rango.e.r; ++R) {
                 for (let C = rango.s.c; C <= rango.e.c; ++C) {
@@ -2009,7 +2007,6 @@
             XLSX.writeFile(libro, nombreArchivo);
         }
 
-        // CRUCE Y TABLA DE SUPPLY-QUIEBRES
         function ejecutarCruceSupplyQuiebre() {
             const tbody = document.getElementById("tablaSupplyQuiebreBody");
             if (!tbody) return;
@@ -2047,14 +2044,12 @@
 
                 let satItem = reqJ_Satelite[skuClean];
 
-                // REGLA 1: Solo SKUs con Stock_PMM = 0 en JSatélite y que tengan necesidad en Quantity
                 if (!satItem || satItem.stockPMM !== 0 || satItem.cantidadSolicitada <= 0) {
                     return;
                 }
 
                 let cantSolicitadaJSatelite = satItem.cantidadSolicitada;
 
-                // REGLA 2: Buscar en Cajas_Tienda en ubicaciones exactas PISO-ALM-528-000 o PUERTA-528-001-001
                 let cajaMatch = inventarioCajasTemporal.find(i => {
                     if (!i || !i.sku || !i.ubicacion) return false;
                     let iSku = i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -2075,7 +2070,7 @@
 
                 let filaData = {
                     pallet: supItem.pallet || "P/L",
-                    area: traducirCodigoArea(supItem.area || satItem.areaJSatelite || "GENERAL"),
+                    area: traducirAreaOcodigo(supItem.area || satItem.areaJSatelite || "GENERAL"),
                     sku: supItem.sku || satItem.skuOriginal || skuClean,
                     lpn: supItem.lpn || cajaMatch.lpn || "-",
                     ubicacion: ubicacionFisica,
@@ -2104,6 +2099,7 @@
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
         }
 
+        // CRUCE GLOBAL DE CUMPLIMIENTO 24
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2140,9 +2136,8 @@
                 let satItem = reqJ_Satelite[skuKey];
                 if (!satItem) return;
                 let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
-
-                if (cantidadRequeridaMeta <= 0) return;
+                
+                let cantidadRequeridaMeta = (satItem.cantidadSolicitada && satItem.cantidadSolicitada > 0) ? satItem.cantidadSolicitada : 999999;
 
                 let lotesDisponibles = inventarioCajasTemporal.filter(item => {
                     if (!item || !item.sku) return false;
@@ -2252,7 +2247,7 @@
                         lpn: lote.lpn || "-",
                         ubicacion: lote.ubicacion || "RESERVA",
                         descripcion: descFila,
-                        area: traducirCodigoArea(satItem.areaJSatelite || "GENERAL"),
+                        area: traducirAreaOcodigo(satItem.areaJSatelite || "GENERAL"),
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja,
                         fv: fvFila,
                         estado: estadoFila,
@@ -2310,7 +2305,6 @@
             document.getElementById('boxSkusStockCumplimiento').innerText = totalSkusConStock;
             document.getElementById('boxPorReponerCumplimiento').innerText = porReponer;
 
-            // Guardar automáticamente en el Dashboard exclusivo de Quiebres Visuales
             let totalEscaneadosJSatelite = Object.keys(reqJ_Satelite).length;
             if (totalEscaneadosJSatelite > 0) {
                 let inputF = document.getElementById('inputFechaProcesoQuiebres');
@@ -2531,8 +2525,7 @@
                         });
                     }
 
-                    let fechaHoyStr = new Date().toISOString().slice(0, 10);
-                    fechaCargaRef.set(fechaHoyStr);
+                    fechaCargaRef.set(obtenerFechaHoyLocal());
 
                     dbRef.set(datosFormateados).then(() => {
                         statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
@@ -2548,6 +2541,7 @@
             }, 0);
         }
 
+        // PROCESAMIENTO DE JSATÉLITE CON EXTRACCIÓN DIRECTA DE LA COLUMNA 6 (F - AREA)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -2574,10 +2568,13 @@
                     let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     let idxSkuCol = headers.findIndex(h => h === "sku" || h.includes("sku") || h.includes("articulo"));
                     
-                    // Priorizar columnas textuales de área para que no tome solo números (como 017 o 012)
-                    let idxAreaCol = headers.findIndex(h => h.includes("nombre_area") || h.includes("nombre área") || h.includes("desc_area") || h.includes("des_area") || h.includes("nom_area") || h.includes("departamento") || h.includes("nom_dpto") || h.includes("desc_dpto") || h.includes("categoria"));
+                    let idxAreaCol = -1;
+                    idxAreaCol = headers.findIndex(h => (h === "area" || h === "área") && !h.includes("cod"));
                     if (idxAreaCol === -1) {
-                        idxAreaCol = headers.findIndex(h => h === "area" || h === "área" || h.includes("area") || h.includes("área"));
+                        idxAreaCol = headers.findIndex(h => (h.includes("area") || h.includes("área")) && !h.includes("cod") && !h.includes("cód"));
+                    }
+                    if (idxAreaCol === -1 && headers.length > 5) {
+                        idxAreaCol = 5;
                     }
 
                     let idxQtyCol = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad") || h.includes("solicitad"));
@@ -2591,8 +2588,13 @@
                         let row = filasMatriz[i];
                         if (!row || row.length === 0) continue;
                         let skuVal = row[idxSkuCol] !== undefined ? row[idxSkuCol].toString().trim() : "";
-                        let areaRaw = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "GENERAL";
-                        let areaVal = traducirCodigoArea(areaRaw);
+                        
+                        let areaRaw = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "";
+                        if (!areaRaw && row[5] !== undefined) {
+                            areaRaw = row[5].toString().trim();
+                        }
+                        
+                        let areaVal = traducirAreaOcodigo(areaRaw);
                         let qtyVal = row[idxQtyCol] !== undefined ? row[idxQtyCol] : 0;
                         let pmmVal = (idxStockPmmCol !== -1 && row[idxStockPmmCol] !== undefined) ? parseInt(row[idxStockPmmCol], 10) : 0;
 
@@ -2742,10 +2744,11 @@
                 let idxFecha = headers.findIndex(h => h.includes("fecha proceso") || h.includes("fecha") || h.includes("proceso"));
                 let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
                 
-                let idxArea = headers.findIndex(h => h.includes("nombre_area") || h.includes("desc_area") || h.includes("departamento") || h.includes("nom_dpto") || h.includes("desc_dpto"));
+                let idxArea = headers.findIndex(h => (h.includes("area") || h.includes("área")) && !h.includes("cod") && !h.includes("cód"));
                 if (idxArea === -1) {
-                    idxArea = headers.findIndex(h => h === "área" || h === "area");
+                    idxArea = headers.findIndex(h => h.includes("nombre_area") || h.includes("desc_area") || h.includes("departamento"));
                 }
+                if (idxArea === -1) idxArea = 2;
 
                 let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
                 let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
@@ -2769,7 +2772,7 @@
                     let pFecha = row[idxFecha] !== undefined ? row[idxFecha].toString().trim() : "";
                     let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
                     let pAreaRaw = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
-                    let pArea = traducirCodigoArea(pAreaRaw);
+                    let pArea = traducirAreaOcodigo(pAreaRaw);
                     let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
                     let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
                     let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
@@ -2791,6 +2794,107 @@
                 supplyRef.set(tempSupply);
             };
             lector.readAsArrayBuffer(file);
+        }
+
+        function guardarRegistro(zonaDestino) {
+            const inputCantElem = document.getElementById('cantidadInput');
+            const cantidadString = inputCantElem ? inputCantElem.value : "";
+            
+            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
+                return; 
+            }
+
+            const cantidadNumerica = parseInt(cantidadString, 10);
+            let remanente = cantidadNumerica;
+            
+            let lpnSugerido = "LPN-MANUAL";
+            let fvSugerida = "";
+            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
+
+            let copiaLotesFiltrados = [...lotesFiltradosTurno];
+            let updatesInventario = {};
+
+            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
+                try {
+                    copiaLotesFiltrados.sort((a, b) => {
+                        let fA = parsearFechaEspanol(a.vencimiento);
+                        let fB = parsearFechaEspanol(b.vencimiento);
+                        if (fA.getTime() !== fB.getTime()) {
+                            return fA - fB;
+                        }
+                        return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
+                    });
+                } catch(eSort) {}
+                
+                fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
+                historialConsumosLpns = [];
+                let lpnsConsumidosUnicos = [];
+
+                for (let lote of copiaLotesFiltrados) {
+                    if (remanente <= 0) break;
+                    let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
+                    
+                    let idxLoteOriginal = inventarioData1.findIndex(i => 
+                        i && i.sku && i.lpn === lote.lpn &&
+                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
+                    );
+                    
+                    if (idxLoteOriginal !== -1) {
+                        let nuevasUnidades = Math.max(0, (parseInt(inventarioData1[idxLoteOriginal].unidades, 10) || 0) - descontar);
+                        inventarioData1[idxLoteOriginal].unidades = nuevasUnidades;
+                        updatesInventario[`${idxLoteOriginal}/unidades`] = nuevasUnidades;
+                    }
+                    
+                    remanente -= descontar;
+                    let lpnActual = lote.lpn || 'S/LPN';
+                    if (!lpnsConsumidosUnicos.includes(lpnActual)) {
+                        lpnsConsumidosUnicos.push(lpnActual);
+                    }
+                    historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
+                }
+
+                lpnSugerido = lpnsConsumidosUnicos.join(", ");
+            }
+
+            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
+            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
+            if (zonaDestino) {
+                copiaDescripcion += ` [Zona: ${zonaDestino}]`;
+            }
+
+            cancelarRegistro();
+
+            const registroAPush = {
+                idAsistente: idUsuarioLogueado,
+                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                sku: copiaSkuTemporal,
+                fifoLpnOptimizado: lpnSugerido, 
+                desc: copiaDescripcion,
+                cant: cantidadNumerica,
+                fv: fvSugerida,
+                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+            };
+
+            guardandoLocalmente = true;
+            logRef.push(registroAPush);
+            if (Object.keys(updatesInventario).length > 0) {
+                dbRef.update(updatesInventario);
+            }
+        }
+
+        function cancelarRegistro() {
+            if (document.activeElement) document.activeElement.blur();
+            document.getElementById('barcodeInput').value = "";
+            document.getElementById('cantidadInput').value = "";
+            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
+            document.getElementById('containerInputLpn').className = "hidden";
+            document.getElementById('containerResetBtn').className = "hidden";
+            document.getElementById('avisoAdvertenciaStock').className = "hidden";
+            lotesFiltradosTurno = [];
+            requestAnimationFrame(() => {
+                const bInput = document.getElementById('barcodeInput');
+                if (bInput) bInput.focus();
+            });
         }
     </script>
 </body>
