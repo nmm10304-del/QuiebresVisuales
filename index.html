@@ -766,6 +766,54 @@
         let semanaDashboardSeleccionada = "";
         let cacheHistoricoSemanasDashboard = {};
 
+        // DICCIONARIO HOMOLOGADO DE ÁREAS Y DEPARTAMENTOS PROMART
+        const DICCIONARIO_AREAS_PROMART = {
+            "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN", "A1": "CONSTRUCCIÓN", "A01": "CONSTRUCCIÓN",
+            "2": "MADERAS", "02": "MADERAS", "002": "MADERAS", "A2": "MADERAS", "A02": "MADERAS",
+            "3": "ELECTRICIDAD", "03": "ELECTRICIDAD", "003": "ELECTRICIDAD", "A3": "ELECTRICIDAD", "A03": "ELECTRICIDAD",
+            "4": "GASFITERÍA", "04": "GASFITERÍA", "004": "GASFITERÍA", "A4": "GASFITERÍA", "A04": "GASFITERÍA",
+            "5": "HERRAMIENTAS", "05": "HERRAMIENTAS", "005": "HERRAMIENTAS", "A5": "HERRAMIENTAS", "A05": "HERRAMIENTAS",
+            "6": "FERRETERÍA", "06": "FERRETERÍA", "006": "FERRETERÍA", "A6": "FERRETERÍA", "A06": "FERRETERÍA",
+            "7": "PINTURAS", "07": "PINTURAS", "007": "PINTURAS", "A7": "PINTURAS", "A07": "PINTURAS",
+            "8": "PISOS Y ACABADOS", "08": "PISOS Y ACABADOS", "008": "PISOS Y ACABADOS", "A8": "PISOS Y ACABADOS", "A08": "PISOS Y ACABADOS",
+            "9": "BAÑOS Y COCINAS", "09": "BAÑOS Y COCINAS", "009": "BAÑOS Y COCINAS", "A9": "BAÑOS Y COCINAS", "A09": "BAÑOS Y COCINAS",
+            "10": "ILUMINACIÓN", "010": "ILUMINACIÓN", "A10": "ILUMINACIÓN",
+            "11": "ELECTROHOGAR", "011": "ELECTROHOGAR", "A11": "ELECTROHOGAR",
+            "12": "MUEBLES Y ORGANIZACIÓN", "012": "MUEBLES Y ORGANIZACIÓN", "A12": "MUEBLES Y ORGANIZACIÓN",
+            "13": "DECORACIÓN", "013": "DECORACIÓN", "A13": "DECORACIÓN",
+            "14": "MENAJE", "014": "MENAJE", "A14": "MENAJE",
+            "15": "AIRE LIBRE Y JARDÍN", "015": "AIRE LIBRE Y JARDÍN", "A15": "AIRE LIBRE Y JARDÍN",
+            "16": "FERRETERÍA", "016": "FERRETERÍA", "A16": "FERRETERÍA",
+            "17": "HERRAMIENTAS", "017": "HERRAMIENTAS", "A17": "HERRAMIENTAS",
+            "18": "LIMPIEZA", "018": "LIMPIEZA", "A18": "LIMPIEZA",
+            "19": "AUTOMOTRIZ", "019": "AUTOMOTRIZ", "A19": "AUTOMOTRIZ",
+            "20": "SEGURIDAD", "020": "SEGURIDAD", "A20": "SEGURIDAD"
+        };
+
+        function traducirAreaOcodigo(valArea) {
+            if (!valArea) return "GENERAL";
+            let s = valArea.toString().trim().toUpperCase();
+            if (s === "" || s === "GENERAL" || s === "S/A") return "GENERAL";
+            
+            // Si ya es un texto de departamento válido y no un código alfanumérico corto tipo A16/A18
+            if (s.length > 4 && !/^A\d+$/.test(s) && isNaN(s)) {
+                return s;
+            }
+
+            if (DICCIONARIO_AREAS_PROMART[s]) return DICCIONARIO_AREAS_PROMART[s];
+            
+            let clean = s.replace(/[^A-Z0-9]/g, "");
+            if (DICCIONARIO_AREAS_PROMART[clean]) return DICCIONARIO_AREAS_PROMART[clean];
+            
+            let withoutA = clean.replace(/^A/, "");
+            if (DICCIONARIO_AREAS_PROMART[withoutA]) return DICCIONARIO_AREAS_PROMART[withoutA];
+            
+            let withoutZeros = withoutA.replace(/^0+/, "");
+            if (DICCIONARIO_AREAS_PROMART[withoutZeros]) return DICCIONARIO_AREAS_PROMART[withoutZeros];
+            
+            return s;
+        }
+
         let alertasOcultadasAsistente = [];
         try {
             const guardadas = localStorage.getItem("alertas_ocultas_cache");
@@ -2247,7 +2295,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
+        // GUARDADO OPTIMIZADO: ACTUALIZA ÚNICAMENTE LAS CAJAS AFECTADAS PARA MIGRACIÓN INSTANTÁNEA (AL TOQUE)
         function guardarRegistro(zonaDestino) {
             const inputCantElem = document.getElementById('cantidadInput');
             const cantidadString = inputCantElem ? inputCantElem.value : "";
@@ -2264,6 +2312,7 @@
             let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
             let copiaLotesFiltrados = [...lotesFiltradosTurno];
+            let updatesInventario = {};
 
             if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                 try {
@@ -2285,13 +2334,15 @@
                     if (remanente <= 0) break;
                     let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
                     
-                    let loteOriginalInventario = inventarioData1.find(i => 
+                    let idxLoteOriginal = inventarioData1.findIndex(i => 
                         i && i.sku && i.lpn === lote.lpn &&
                         i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
                     );
                     
-                    if (loteOriginalInventario) {
-                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
+                    if (idxLoteOriginal !== -1) {
+                        let nuevasUnidades = Math.max(0, (parseInt(inventarioData1[idxLoteOriginal].unidades, 10) || 0) - descontar);
+                        inventarioData1[idxLoteOriginal].unidades = nuevasUnidades;
+                        updatesInventario[`${idxLoteOriginal}/unidades`] = nuevasUnidades;
                     }
                     
                     remanente -= descontar;
@@ -2325,10 +2376,11 @@
             };
 
             guardandoLocalmente = true;
-            setTimeout(() => {
-                logRef.push(registroAPush);
-                dbRef.set(inventarioData1);
-            }, 0);
+            // Envío instantáneo sin sobrecargar ancho de banda
+            logRef.push(registroAPush);
+            if (Object.keys(updatesInventario).length > 0) {
+                dbRef.update(updatesInventario);
+            }
         }
 
         function cancelarRegistro() {
@@ -2421,7 +2473,7 @@
                 "LPN": i.lpn,
                 "Ubicación": i.ubicacion,
                 "Descripción": i.descripcion,
-                "Área": i.area,
+                "Área": traducirAreaOcodigo(i.area),
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
                 "Estado": i.estadoTextoPlano || "Pendiente",
@@ -2433,7 +2485,7 @@
             if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return [];
             return registrosHistoricosSupplyQuiebre.map(i => ({
                 "PL": i.pallet,
-                "ÁREA": i.area,
+                "ÁREA": traducirAreaOcodigo(i.area),
                 "SKU": i.sku,
                 "LPN": i.lpn,
                 "UBICACIÓN": i.ubicacion,
@@ -2528,7 +2580,7 @@
 
                 let filaData = {
                     pallet: supItem.pallet || "P/L",
-                    area: supItem.area || satItem.areaJSatelite || "GENERAL",
+                    area: traducirAreaOcodigo(supItem.area || satItem.areaJSatelite || "GENERAL"),
                     sku: supItem.sku || satItem.skuOriginal || skuClean,
                     lpn: supItem.lpn || cajaMatch.lpn || "-",
                     ubicacion: ubicacionFisica,
@@ -2705,7 +2757,7 @@
                         lpn: lote.lpn || "-",
                         ubicacion: lote.ubicacion || "RESERVA",
                         descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL",
+                        area: traducirAreaOcodigo(satItem.areaJSatelite || "GENERAL"),
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja,
                         fv: fvFila,
                         estado: estadoFila,
@@ -3026,19 +3078,47 @@
 
                     let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     let idxSkuCol = headers.findIndex(h => h === "sku" || h.includes("sku") || h.includes("articulo"));
-                    let idxAreaCol = headers.findIndex(h => h === "area" || h.includes("área") || h.includes("area"));
+                    
+                    // 1. Buscar primero columna descriptiva de departamento/área
+                    let idxDeptoTextCol = headers.findIndex(h => 
+                        h.includes("departamento") || h.includes("depto") || h.includes("dpto") || 
+                        h.includes("nom_depto") || h.includes("desc_depto") || h.includes("nom_dpto") || 
+                        h.includes("desc_dpto") || h.includes("nombre_area") || h.includes("desc_area") || 
+                        h.includes("des_area") || h.includes("categoria") || h.includes("linea")
+                    );
+
+                    // 2. Si no, buscar la columna general de área
+                    let idxAreaGeneralCol = headers.findIndex(h => h === "area" || h === "área" || h.includes("area") || h.includes("área"));
+
                     let idxQtyCol = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad") || h.includes("solicitad"));
                     let idxStockPmmCol = headers.findIndex(h => h.includes("stock_pmm") || h.includes("stock pmm") || h === "pmm");
 
                     if (idxSkuCol === -1) idxSkuCol = 2;   
-                    if (idxAreaCol === -1) idxAreaCol = 5;  
+                    let idxAreaCol = idxDeptoTextCol !== -1 ? idxDeptoTextCol : (idxAreaGeneralCol !== -1 ? idxAreaGeneralCol : 5);
                     if (idxQtyCol === -1) idxQtyCol = 12; 
 
                     for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
                         let row = filasMatriz[i];
                         if (!row || row.length === 0) continue;
                         let skuVal = row[idxSkuCol] !== undefined ? row[idxSkuCol].toString().trim() : "";
-                        let areaVal = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "GENERAL";
+                        
+                        let areaRaw = "";
+                        if (idxDeptoTextCol !== -1 && row[idxDeptoTextCol] !== undefined) {
+                            areaRaw = row[idxDeptoTextCol].toString().trim();
+                        }
+                        if ((!areaRaw || /^A?\d+$/.test(areaRaw.replace(/[^A-Z0-9]/gi, ""))) && idxAreaGeneralCol !== -1 && row[idxAreaGeneralCol] !== undefined) {
+                            let altRaw = row[idxAreaGeneralCol].toString().trim();
+                            if (altRaw && !/^A?\d+$/.test(altRaw.replace(/[^A-Z0-9]/gi, ""))) {
+                                areaRaw = altRaw;
+                            } else if (!areaRaw) {
+                                areaRaw = altRaw;
+                            }
+                        }
+                        if (!areaRaw && row[idxAreaCol] !== undefined) {
+                            areaRaw = row[idxAreaCol].toString().trim();
+                        }
+
+                        let areaVal = traducirAreaOcodigo(areaRaw);
                         let qtyVal = row[idxQtyCol] !== undefined ? row[idxQtyCol] : 0;
                         let pmmVal = (idxStockPmmCol !== -1 && row[idxStockPmmCol] !== undefined) ? parseInt(row[idxStockPmmCol], 10) : 0;
 
@@ -3054,6 +3134,9 @@
                                 };
                             } else {
                                 tempJSatelite[skuClean].cantidadSolicitada = Math.max(tempJSatelite[skuClean].cantidadSolicitada, parseInt(qtyVal, 10) || 0);
+                                if (areaVal && areaVal !== "GENERAL") {
+                                    tempJSatelite[skuClean].areaJSatelite = areaVal;
+                                }
                             }
                         }
                     }
@@ -3184,7 +3267,16 @@
                 
                 let idxFecha = headers.findIndex(h => h.includes("fecha proceso") || h.includes("fecha") || h.includes("proceso"));
                 let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
-                let idxArea = headers.findIndex(h => h === "área" || h === "area");
+                
+                // Priorizar columna de texto para área/departamento en SupplyChain
+                let idxArea = headers.findIndex(h => 
+                    h.includes("nombre_area") || h.includes("desc_area") || h.includes("departamento") || 
+                    h.includes("nom_dpto") || h.includes("desc_dpto") || h.includes("categoria")
+                );
+                if (idxArea === -1) {
+                    idxArea = headers.findIndex(h => h === "área" || h === "area");
+                }
+
                 let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
                 let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
                 let idxDesc = headers.findIndex(h => h.includes("descripci"));
@@ -3206,7 +3298,8 @@
 
                     let pFecha = row[idxFecha] !== undefined ? row[idxFecha].toString().trim() : "";
                     let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
-                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pAreaRaw = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pArea = traducirAreaOcodigo(pAreaRaw);
                     let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
                     let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
                     let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
