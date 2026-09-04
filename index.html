@@ -766,60 +766,36 @@
         let semanaDashboardSeleccionada = "";
         let cacheHistoricoSemanasDashboard = {};
 
-        // Función para obtener la fecha local real (YYYY-MM-DD)
-        function obtenerFechaHoyLocal() {
-            const d = new Date();
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // DICCIONARIO HOMOLOGADO DE ÁREAS Y DEPARTAMENTOS PROMART
+        // Diccionario oficial de Departamentos / Áreas para Promart y Retail
         const DICCIONARIO_AREAS_PROMART = {
-            "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN", "A1": "CONSTRUCCIÓN", "A01": "CONSTRUCCIÓN",
-            "2": "MADERAS", "02": "MADERAS", "002": "MADERAS", "A2": "MADERAS", "A02": "MADERAS",
-            "3": "ELECTRICIDAD", "03": "ELECTRICIDAD", "003": "ELECTRICIDAD", "A3": "ELECTRICIDAD", "A03": "ELECTRICIDAD",
-            "4": "GASFITERÍA", "04": "GASFITERÍA", "004": "GASFITERÍA", "A4": "GASFITERÍA", "A04": "GASFITERÍA",
-            "5": "HERRAMIENTAS", "05": "HERRAMIENTAS", "005": "HERRAMIENTAS", "A5": "HERRAMIENTAS", "A05": "HERRAMIENTAS",
-            "6": "FERRETERÍA", "06": "FERRETERÍA", "006": "FERRETERÍA", "A6": "FERRETERÍA", "A06": "FERRETERÍA",
-            "7": "PINTURAS", "07": "PINTURAS", "007": "PINTURAS", "A7": "PINTURAS", "A07": "PINTURAS",
-            "8": "PISOS Y ACABADOS", "08": "PISOS Y ACABADOS", "008": "PISOS Y ACABADOS", "A8": "PISOS Y ACABADOS", "A08": "PISOS Y ACABADOS",
-            "9": "BAÑOS Y COCINAS", "09": "BAÑOS Y COCINAS", "009": "BAÑOS Y COCINAS", "A9": "BAÑOS Y COCINAS", "A09": "BAÑOS Y COCINAS",
-            "10": "ILUMINACIÓN", "010": "ILUMINACIÓN", "A10": "ILUMINACIÓN",
-            "11": "ELECTROHOGAR", "011": "ELECTROHOGAR", "A11": "ELECTROHOGAR",
-            "12": "MUEBLES Y ORGANIZACIÓN", "012": "MUEBLES Y ORGANIZACIÓN", "A12": "MUEBLES Y ORGANIZACIÓN",
-            "13": "DECORACIÓN", "013": "DECORACIÓN", "A13": "DECORACIÓN",
-            "14": "MENAJE", "014": "MENAJE", "A14": "MENAJE",
-            "15": "AIRE LIBRE Y JARDÍN", "015": "AIRE LIBRE Y JARDÍN", "A15": "AIRE LIBRE Y JARDÍN",
-            "16": "FERRETERÍA", "016": "FERRETERÍA", "A16": "FERRETERÍA",
-            "17": "HERRAMIENTAS", "017": "HERRAMIENTAS", "A17": "HERRAMIENTAS",
-            "18": "LIMPIEZA", "018": "LIMPIEZA", "A18": "LIMPIEZA",
-            "19": "AUTOMOTRIZ", "019": "AUTOMOTRIZ", "A19": "AUTOMOTRIZ",
-            "20": "SEGURIDAD", "020": "SEGURIDAD", "A20": "SEGURIDAD"
+            "1": "CONSTRUCCIÓN", "01": "CONSTRUCCIÓN", "001": "CONSTRUCCIÓN",
+            "2": "MADERAS", "02": "MADERAS", "002": "MADERAS",
+            "3": "ELECTRICIDAD", "03": "ELECTRICIDAD", "003": "ELECTRICIDAD",
+            "4": "GASFITERÍA", "04": "GASFITERÍA", "004": "GASFITERÍA",
+            "5": "HERRAMIENTAS", "05": "HERRAMIENTAS", "005": "HERRAMIENTAS",
+            "6": "FERRETERÍA", "06": "FERRETERÍA", "006": "FERRETERÍA",
+            "7": "PINTURAS", "07": "PINTURAS", "007": "PINTURAS",
+            "8": "PISOS Y ACABADOS", "08": "PISOS Y ACABADOS", "008": "PISOS Y ACABADOS",
+            "9": "BAÑOS Y COCINAS", "09": "BAÑOS Y COCINAS", "009": "BAÑOS Y COCINAS",
+            "10": "ILUMINACIÓN", "010": "ILUMINACIÓN",
+            "11": "ELECTROHOGAR", "011": "ELECTROHOGAR",
+            "12": "MUEBLES Y ORGANIZACIÓN", "012": "MUEBLES Y ORGANIZACIÓN",
+            "13": "DECORACIÓN", "013": "DECORACIÓN",
+            "14": "MENAJE", "014": "MENAJE",
+            "15": "LIMPIEZA", "015": "LIMPIEZA",
+            "16": "AIRE LIBRE Y JARDÍN", "016": "AIRE LIBRE Y JARDÍN",
+            "17": "HERRAMIENTAS", "017": "HERRAMIENTAS",
+            "18": "AUTOMOTRIZ", "018": "AUTOMOTRIZ"
         };
 
-        function traducirAreaOcodigo(valArea) {
+        function traducirCodigoArea(valArea) {
             if (!valArea) return "GENERAL";
             let s = valArea.toString().trim().toUpperCase();
-            if (s === "" || s === "GENERAL" || s === "S/A") return "GENERAL";
-            
-            // Si ya es un nombre textual como LIMPIEZA o FERRETERIA
-            if (s.length > 4 && !/^A\d+$/.test(s) && isNaN(s)) {
-                return s;
-            }
-
             if (DICCIONARIO_AREAS_PROMART[s]) return DICCIONARIO_AREAS_PROMART[s];
-            
-            let clean = s.replace(/[^A-Z0-9]/g, "");
-            if (DICCIONARIO_AREAS_PROMART[clean]) return DICCIONARIO_AREAS_PROMART[clean];
-            
-            let withoutA = clean.replace(/^A/, "");
-            if (DICCIONARIO_AREAS_PROMART[withoutA]) return DICCIONARIO_AREAS_PROMART[withoutA];
-            
-            let withoutZeros = withoutA.replace(/^0+/, "");
-            if (DICCIONARIO_AREAS_PROMART[withoutZeros]) return DICCIONARIO_AREAS_PROMART[withoutZeros];
-            
+            let numLimpio = s.replace(/[^0-9]/g, "");
+            if (numLimpio && DICCIONARIO_AREAS_PROMART[numLimpio]) return DICCIONARIO_AREAS_PROMART[numLimpio];
+            let numSinCeros = numLimpio.replace(/^0+/, "");
+            if (numSinCeros && DICCIONARIO_AREAS_PROMART[numSinCeros]) return DICCIONARIO_AREAS_PROMART[numSinCeros];
             return s;
         }
 
@@ -831,8 +807,7 @@
         
         let lotesFiltradosTurno = [];
 
-        // USUARIOS Y CONTRASEÑAS BASE (SIEMPRE DISPONIBLES)
-        const usuariosIniciales = {
+        let usuariosIniciales = {
             "HP72545443": { nombre: "Andy", clave: "Hpsa2027" },
             "HP74139234": { nombre: "Ale", clave: "Hpsa2027" },
             "HP70729960": { nombre: "Farro", clave: "Hpsa2027" },
@@ -861,7 +836,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             const inputFecha = document.getElementById('inputFechaProcesoQuiebres');
             if (inputFecha) {
-                inputFecha.value = obtenerFechaHoyLocal();
+                inputFecha.value = new Date().toISOString().slice(0, 10);
             }
 
             setupDragAndDrop("cardCajasTienda", "fileData1", procesarData1, "drop-zone--over");
@@ -881,8 +856,8 @@
             escucharHistoricoDashboardNube();
             verificarSesionGuardada();
 
-            validarExpiracionSesionesMedianoche();
-            setInterval(validarExpiracionSesionesMedianoche, 15000); 
+            validarPurgaMedianocheAutomática();
+            setInterval(validarPurgaMedianocheAutomática, 60000); 
         });
 
         function inicializarUsuariosNubeSiEstaVacio() {
@@ -909,7 +884,6 @@
         function escucharUsuariosRegistradosNube() {
             usersMasterRef.on("value", (snapshot) => {
                 const cloudUsers = snapshot.val() || {};
-                // Asegurar que usuariosIniciales (y especialmente ADMIN) nunca se borren
                 usuariosDB = { ...usuariosIniciales, ...cloudUsers };
                 actualizarCombosYTablaUsuarios();
             });
@@ -1093,18 +1067,35 @@
             });
         }
 
-        // CONTROL DE SESIÓN: DESLOGUEA AUTOMÁTICAMENTE A ASISTENTES TRAS LAS 00:00 HORA LOCAL
-        function validarExpiracionSesionesMedianoche() {
-            let fechaHoy = obtenerFechaHoyLocal();
+        // PURGA AUTOMÁTICA DE DATOS A MEDIANOCHE (ADMIN NUNCA SE DESLOGUEA)
+        function validarPurgaMedianocheAutomática() {
+            let fechaHoy = new Date().toISOString().slice(0, 10);
             let rolGuardado = localStorage.getItem("sesion_rol");
-            let fechaGuardada = localStorage.getItem("sesion_fecha");
 
-            if (rolGuardado === "asistente" && fechaGuardada && fechaGuardada !== fechaHoy) {
-                cerrarSesion();
-            }
+            fechaCargaRef.get().then((snapshot) => {
+                if (snapshot.exists()) {
+                    let fechaCargada = snapshot.val();
+                    if (fechaCargada && fechaCargada !== fechaHoy) {
+                        Promise.all([
+                            dbRef.set(null),
+                            sateliteRef.set(null),
+                            detalleRepoRef.set(null),
+                            supplyRef.set(null),
+                            logRef.set(null),
+                            fechaCargaRef.set(fechaHoy)
+                        ]).then(() => {
+                            if (rolGuardado === "asistente") {
+                                localStorage.removeItem("sesion_usuario");
+                                localStorage.removeItem("sesion_rol");
+                                localStorage.removeItem("sesion_fecha");
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            }).catch(() => {});
         }
 
-        // DESCARGA AUTOMÁTICA EN CUALQUIER PC DIRECTO DESDE FIREBASE
         function escucharPersistenciaArchivosCloud() {
             sateliteRef.on("value", (snapshot) => {
                 const data = snapshot.val();
@@ -1154,14 +1145,6 @@
         function verificarSesionGuardada() {
             let usuarioGuardado = localStorage.getItem("sesion_usuario");
             let rolGuardado = localStorage.getItem("sesion_rol");
-            let fechaGuardada = localStorage.getItem("sesion_fecha");
-            let fechaHoy = obtenerFechaHoyLocal();
-
-            // Cierre al día siguiente solo para asistentes
-            if (rolGuardado === "asistente" && fechaGuardada && fechaGuardada !== fechaHoy) {
-                cerrarSesion();
-                return;
-            }
 
             if (usuarioGuardado && rolGuardado) {
                 rolUsuarioActivo = rolGuardado; 
@@ -1174,13 +1157,23 @@
                     nombre: usuariosDB[usuarioGuardado] ? usuariosDB[usuarioGuardado].nombre : usuarioGuardado,
                     rol: rolUsuarioActivo,
                     online: true,
-                    forzarLogout: false,
                     ultimaConexion: new Date().toLocaleString('es-PE')
                 });
 
                 sesionesRef.child(usuarioGuardado).onDisconnect().update({
                     online: false
                 });
+
+                // Escucha instantánea (0s) de cierre forzoso solo para asistentes
+                if (rolUsuarioActivo === "asistente") {
+                    sesionesRef.child(usuarioGuardado).on("value", (snap) => {
+                        const val = snap.val();
+                        if (val && val.forzarLogout === true) {
+                            sesionesRef.child(usuarioGuardado).update({ forzarLogout: false, online: false });
+                            cerrarSesion();
+                        }
+                    });
+                }
 
                 switchRole();
             }
@@ -1355,7 +1348,7 @@
             }
         }
 
-        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI =================
+        // ================= LÓGICA DEL DASHBOARD SEMANAL TIPO POWER BI (100% QUIEBRES VISUALES) =================
         function obtenerClaveSemana(fechaObj) {
             let fecha = new Date(Date.UTC(fechaObj.getFullYear(), fechaObj.getMonth(), fechaObj.getDate()));
             let diaNum = fecha.getUTCDay() || 7;
@@ -1476,6 +1469,7 @@
         function renderizarDashboardSemanal() {
             let dataSemana = cacheHistoricoSemanasDashboard[semanaDashboardSeleccionada] || {};
             
+            // Días fijos Lunes (1) a Domingo (7)
             const nombresDias = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
             let escaneadosPorDia = [0, 0, 0, 0, 0, 0, 0];
             let stockPorDia = [0, 0, 0, 0, 0, 0, 0];
@@ -1487,6 +1481,7 @@
                 }
             }
 
+            // Datos tomados estrictamente de Quiebres Visuales
             let claveActual = obtenerClaveSemana(new Date());
             if (semanaDashboardSeleccionada === claveActual) {
                 let diaHoyNum = new Date().getDay() || 7;
@@ -1505,6 +1500,7 @@
             document.getElementById("kpiDashboardTotalEscaneado").innerText = sumaTotalEscaneado;
             document.getElementById("kpiDashboardConStock").innerText = sumaConStock;
 
+            // Renderizado del Gráfico Chart.js
             const ctx = document.getElementById("canvasChartDashboard");
             if (!ctx) return;
 
@@ -1973,7 +1969,7 @@
                 "LPN": i.lpn,
                 "Ubicación": i.ubicacion,
                 "Descripción": i.descripcion,
-                "Área": traducirAreaOcodigo(i.area),
+                "Área": i.area,
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
                 "Estado": i.estadoTextoPlano || "Pendiente",
@@ -1985,7 +1981,7 @@
             if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return [];
             return registrosHistoricosSupplyQuiebre.map(i => ({
                 "PL": i.pallet,
-                "ÁREA": traducirAreaOcodigo(i.area),
+                "ÁREA": i.area,
                 "SKU": i.sku,
                 "LPN": i.lpn,
                 "UBICACIÓN": i.ubicacion,
@@ -1998,7 +1994,6 @@
             if (!dataArray || dataArray.length === 0) return;
 
             const hoja = XLSX.utils.json_to_sheet(dataArray);
-
             const rango = XLSX.utils.decode_range(hoja['!ref'] || "A1:A1");
             for (let R = rango.s.r; R <= rango.e.r; ++R) {
                 for (let C = rango.s.c; C <= rango.e.c; ++C) {
@@ -2014,6 +2009,7 @@
             XLSX.writeFile(libro, nombreArchivo);
         }
 
+        // CRUCE Y TABLA DE SUPPLY-QUIEBRES
         function ejecutarCruceSupplyQuiebre() {
             const tbody = document.getElementById("tablaSupplyQuiebreBody");
             if (!tbody) return;
@@ -2051,12 +2047,14 @@
 
                 let satItem = reqJ_Satelite[skuClean];
 
+                // REGLA 1: Solo SKUs con Stock_PMM = 0 en JSatélite y que tengan necesidad en Quantity
                 if (!satItem || satItem.stockPMM !== 0 || satItem.cantidadSolicitada <= 0) {
                     return;
                 }
 
                 let cantSolicitadaJSatelite = satItem.cantidadSolicitada;
 
+                // REGLA 2: Buscar en Cajas_Tienda en ubicaciones exactas PISO-ALM-528-000 o PUERTA-528-001-001
                 let cajaMatch = inventarioCajasTemporal.find(i => {
                     if (!i || !i.sku || !i.ubicacion) return false;
                     let iSku = i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
@@ -2077,7 +2075,7 @@
 
                 let filaData = {
                     pallet: supItem.pallet || "P/L",
-                    area: traducirAreaOcodigo(supItem.area || satItem.areaJSatelite || "GENERAL"),
+                    area: traducirCodigoArea(supItem.area || satItem.areaJSatelite || "GENERAL"),
                     sku: supItem.sku || satItem.skuOriginal || skuClean,
                     lpn: supItem.lpn || cajaMatch.lpn || "-",
                     ubicacion: ubicacionFisica,
@@ -2106,7 +2104,6 @@
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
         }
 
-        // CRUCE GLOBAL DE CUMPLIMIENTO 24 (RECONOCE DIRECTAMENTE LOS QUIEBRES VISUALES)
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2143,9 +2140,9 @@
                 let satItem = reqJ_Satelite[skuKey];
                 if (!satItem) return;
                 let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                
-                // Si el reporte de quiebre visual no trae columna Quantity, la meta es reponer lo disponible en reserva
-                let cantidadRequeridaMeta = (satItem.cantidadSolicitada && satItem.cantidadSolicitada > 0) ? satItem.cantidadSolicitada : 999999;
+                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
+
+                if (cantidadRequeridaMeta <= 0) return;
 
                 let lotesDisponibles = inventarioCajasTemporal.filter(item => {
                     if (!item || !item.sku) return false;
@@ -2255,7 +2252,7 @@
                         lpn: lote.lpn || "-",
                         ubicacion: lote.ubicacion || "RESERVA",
                         descripcion: descFila,
-                        area: traducirAreaOcodigo(satItem.areaJSatelite || "GENERAL"),
+                        area: traducirCodigoArea(satItem.areaJSatelite || "GENERAL"),
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja,
                         fv: fvFila,
                         estado: estadoFila,
@@ -2434,321 +2431,366 @@
             }
         }
 
-        function handleLoginKey(event) { 
-            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) { 
-                event.preventDefault(); autenticarUsuario(); 
-            } 
+        function procesarData1() {
+            const input = document.getElementById("fileData1");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            
+            const statusElem = document.getElementById('statusData1');
+            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
+            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
+
+            setTimeout(() => {
+                const lector = new FileReader();
+                lector.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    
+                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1, defval: "" });
+                    
+                    if (!filasMatriz || filasMatriz.length < 2) {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
+                        return;
+                    }
+
+                    let headerRowIdx = -1;
+                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
+                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
+                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo") || strLine.includes("ubicacion") || strLine.includes("ubicación")) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (headerRowIdx === -1) headerRowIdx = 0;
+
+                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    
+                    let idxLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
+                    let idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo") || h.includes("material"));
+                    let idxDesc = headers.findIndex(h => h.includes("descripci") || h.includes("denominacion"));
+                    let idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant") || h.includes("stock") || h.includes("qty"));
+                    let idxUbi = headers.findIndex(h => h.includes("ubicaci") || h.includes("posici") || h.includes("locaci") || h.includes("ubi"));
+                    let idxVenc = headers.findIndex(h => h.includes("vencimiento") || h.includes("caducidad") || h.includes("fv"));
+
+                    if (idxLpn === -1) idxLpn = 0;
+                    if (idxSku === -1) idxSku = 1;
+                    if (idxDesc === -1) idxDesc = 2;
+                    if (idxUnidades === -1) idxUnidades = 3;
+                    if (idxUbi === -1) idxUbi = 4;
+                    if (idxVenc === -1) idxVenc = 15;
+
+                    let datosFormateados = [];
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        const row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+
+                        let skuVal = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                        let lpnVal = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                        let descVal = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                        let uVal = row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
+                        let ubiVal = row[idxUbi] !== undefined ? row[idxUbi].toString().trim() : "";
+                        let caducidadVal = row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "";
+
+                        if (!skuVal || uVal <= 0) continue;
+
+                        let uUpper = ubiVal.toUpperCase();
+                        if (
+                            uUpper.includes("DE-PROVEEDOR") || 
+                            uUpper.includes("ST-PROVEEDOR") || 
+                            uUpper.includes("DEV-PRV-VIA-CD") || 
+                            uUpper.includes("DEV-PRV-SVT-001") || 
+                            uUpper.includes("JAU-BAT-ALM-001") || 
+                            uUpper.includes("DSCTO-") || 
+                            uUpper.includes("DAD-RECP") || 
+                            uUpper.includes("CMM-ALM") || 
+                            uUpper.includes("CD-FALTANTE") || 
+                            uUpper.includes("MM-") || 
+                            uUpper.includes("NAV-TDA") || 
+                            uUpper.includes("VCTO-") || 
+                            uUpper.includes("JAU-BAT") || 
+                            uUpper.includes("DEV-PRV") || 
+                            uUpper.includes("ST-ALM") || 
+                            uUpper.includes("CD-SOBRANTE")
+                        ) {
+                            continue;
+                        }
+
+                        datosFormateados.push({
+                            lpn: lpnVal,
+                            sku: skuVal,
+                            descripcion: descVal,
+                            unidades: uVal,
+                            vencimiento: caducidadVal,
+                            ubicacion: ubiVal
+                        });
+                    }
+
+                    let fechaHoyStr = new Date().toISOString().slice(0, 10);
+                    fechaCargaRef.set(fechaHoyStr);
+
+                    dbRef.set(datosFormateados).then(() => {
+                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
+                        ejecutarCruceMacroGlobal();
+                        ejecutarCruceSupplyQuiebre();
+                    }).catch(err => {
+                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
+                    });
+                };
+                lector.readAsArrayBuffer(file);
+            }, 0);
         }
 
-        function autenticarUsuario() {
-            const user = document.getElementById('userInput').value.trim().toUpperCase();
-            const pass = document.getElementById('passwordInput').value.trim();
-            
-            if (usuariosDB[user] && usuariosDB[user].clave === pass) {
-                rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
-                idUsuarioLogueado = user;
-                let fechaHoy = obtenerFechaHoyLocal();
-                localStorage.setItem("sesion_usuario", user);
-                localStorage.setItem("sesion_rol", rolUsuarioActivo);
-                localStorage.setItem("sesion_fecha", fechaHoy);
-                document.getElementById('seccionLogin').classList.add('hidden');
-                document.getElementById('navUsuario').classList.remove('hidden');
-                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+        function procesarJ_Satelite() {
+            const input = document.getElementById("fileJSatelite");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
                 
-                // Reseteo inmediato del flag de forzarLogout para que no sea expulsado
-                sesionesRef.child(user).update({
-                    nombre: usuariosDB[user].nombre,
-                    rol: rolUsuarioActivo,
-                    online: true,
-                    forzarLogout: false,
-                    ultimaConexion: new Date().toLocaleString('es-PE')
-                });
-
-                sesionesRef.child(user).onDisconnect().update({
-                    online: false
-                });
-
-                switchRole();
+                let tempJSatelite = { ...(reqJ_Satelite || {}) };
                 
-                if (rolUsuarioActivo === "asistente") {
-                    document.getElementById("selectVistaAsistente").value = "escaneo";
-                    alternarModuloVistaAsistente();
-                } else {
-                    document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
-                    alternarModuloAdminView();
+                if (filasMatriz && filasMatriz.length > 0) {
+                    let headerRowIdx = 0;
+                    for (let i = 0; i < Math.min(5, filasMatriz.length); i++) {
+                        let rowStr = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (rowStr.includes("sku") || rowStr.includes("quantity") || rowStr.includes("articulo") || rowStr.includes("stock_pmm")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+
+                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    let idxSkuCol = headers.findIndex(h => h === "sku" || h.includes("sku") || h.includes("articulo"));
+                    
+                    // Priorizar columnas textuales de área para que no tome solo números (como 017 o 012)
+                    let idxAreaCol = headers.findIndex(h => h.includes("nombre_area") || h.includes("nombre área") || h.includes("desc_area") || h.includes("des_area") || h.includes("nom_area") || h.includes("departamento") || h.includes("nom_dpto") || h.includes("desc_dpto") || h.includes("categoria"));
+                    if (idxAreaCol === -1) {
+                        idxAreaCol = headers.findIndex(h => h === "area" || h === "área" || h.includes("area") || h.includes("área"));
+                    }
+
+                    let idxQtyCol = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad") || h.includes("solicitad"));
+                    let idxStockPmmCol = headers.findIndex(h => h.includes("stock_pmm") || h.includes("stock pmm") || h === "pmm");
+
+                    if (idxSkuCol === -1) idxSkuCol = 2;   
+                    if (idxAreaCol === -1) idxAreaCol = 5;  
+                    if (idxQtyCol === -1) idxQtyCol = 12; 
+
+                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
+                        let row = filasMatriz[i];
+                        if (!row || row.length === 0) continue;
+                        let skuVal = row[idxSkuCol] !== undefined ? row[idxSkuCol].toString().trim() : "";
+                        let areaRaw = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "GENERAL";
+                        let areaVal = traducirCodigoArea(areaRaw);
+                        let qtyVal = row[idxQtyCol] !== undefined ? row[idxQtyCol] : 0;
+                        let pmmVal = (idxStockPmmCol !== -1 && row[idxStockPmmCol] !== undefined) ? parseInt(row[idxStockPmmCol], 10) : 0;
+
+                        if (skuVal) {
+                            let skuClean = skuVal.replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
+                            
+                            if (!tempJSatelite[skuClean]) {
+                                tempJSatelite[skuClean] = {
+                                    skuOriginal: skuVal,
+                                    areaJSatelite: areaVal || "GENERAL",
+                                    cantidadSolicitada: parseInt(qtyVal, 10) || 0,
+                                    stockPMM: pmmVal || 0
+                                };
+                            } else {
+                                tempJSatelite[skuClean].cantidadSolicitada = Math.max(tempJSatelite[skuClean].cantidadSolicitada, parseInt(qtyVal, 10) || 0);
+                                if (areaVal && areaVal !== "GENERAL") {
+                                    tempJSatelite[skuClean].areaJSatelite = areaVal;
+                                }
+                            }
+                        }
+                    }
                 }
-            } else { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Usuario o contraseña incorrectos.");
-            }
-        }
-
-        function cerrarSesion() {
-            if (idUsuarioLogueado) {
-                sesionesRef.child(idUsuarioLogueado).update({ online: false, forzarLogout: false });
-            }
-            localStorage.removeItem("sesion_usuario");
-            localStorage.removeItem("sesion_rol");
-            localStorage.removeItem("sesion_fecha");
-            
-            const uIn = document.getElementById('userInput');
-            const pIn = document.getElementById('passwordInput');
-            if (uIn) uIn.value = "";
-            if (pIn) pIn.value = "";
-
-            rolUsuarioActivo = "";
-            idUsuarioLogueado = "";
-
-            document.getElementById('panelAdmin').classList.add('hidden');
-            document.getElementById('panelAsistente').classList.add('hidden');
-            document.getElementById('navUsuario').classList.add('hidden');
-            document.getElementById('seccionLogin').classList.remove('hidden');
-        }
-
-        function switchRole() {
-            document.getElementById('panelAdmin').classList.toggle('hidden', rolUsuarioActivo !== 'admin');
-            document.getElementById('panelAsistente').classList.toggle('hidden', rolUsuarioActivo !== 'asistente');
-            if (rolUsuarioActivo === 'asistente') {
-                setTimeout(() => document.getElementById('barcodeInput').focus(), 50);
-            } else if (rolUsuarioActivo === 'admin') {
-                document.getElementById("selectVistaModuloAdmin").value = "repotenciar";
-                alternarModuloAdminView();
-            }
-        }
-
-        function alCambiarTextoBarcode() {
-            document.getElementById('containerInputLpn').className = "hidden";
-            document.getElementById('containerResetBtn').className = "hidden";
-            document.getElementById('avisoAdvertenciaStock').className = "hidden";
-        }
-
-        function handleBarcode(event) {
-            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
-                event.preventDefault();
                 
-                let inputElem = document.getElementById('barcodeInput');
-                let entradaOriginal = inputElem ? inputElem.value.trim().toUpperCase() : "";
-                if (!entradaOriginal) return;
+                sateliteRef.set(tempJSatelite);
+            };
+            lector.readAsArrayBuffer(file);
+        }
 
-                if (!inventarioData1 || inventarioData1.length === 0) {
-                    document.getElementById('txtMensajeAdvertenciaStock').innerText = "Pídele al encargado que coloque la data de Cajas_Tienda para seguir con el flujo del escaneo";
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
-                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-                    document.getElementById('containerInputLpn').className = "hidden";
-                    document.getElementById('containerResetBtn').className = "hidden";
+        function procesarData2() {
+            const input = document.getElementById("fileData2");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusData2').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusData2').innerText = "⚠️ Archivo vacío o formato no válido.";
                     return;
                 }
 
-                let entradaSinCeros = entradaOriginal.replace(/^0+/, "");
-                let skuTraducido = ""; 
-                let descripcionTraducida = "";
-                let existeEnCatalogo = false;
-
-                if (databaseCat_Ean[entradaOriginal]) {
-                    skuTraducido = databaseCat_Ean[entradaOriginal].sku;
-                    descripcionTraducida = databaseCat_Ean[entradaOriginal].desc;
-                    existeEnCatalogo = true;
-                } else if (databaseCat_Ean[entradaSinCeros]) {
-                    skuTraducido = databaseCat_Ean[entradaSinCeros].sku;
-                    descripcionTraducida = databaseCat_Ean[entradaSinCeros].desc;
-                    existeEnCatalogo = true;
-                }
-
-                skuEscaneadoTemporal = skuTraducido || entradaOriginal;
-                let numeroSkuLimpioExcel = (skuTraducido || entradaOriginal).replace(/[^0-9]/g, "").trim();
-                let numeroSinCerosExcel = numeroSkuLimpioExcel.replace(/^0+/, "");
-
-                lotesFiltradosTurno = inventarioData1.filter(item => {
-                    if (!item || !item.sku) return false;
-                    
-                    if (!item.ubicacion || item.ubicacion.toString().trim() === "") {
-                        return false;
-                    }
-
-                    let u = item.ubicacion.toString().toUpperCase().trim();
-                    if (
-                        u.includes("DE-PROVEEDOR") || 
-                        u.includes("ST-PROVEEDOR") || 
-                        u.includes("DEV-PRV-VIA-CD") || 
-                        u.includes("DEV-PRV-SVT-001") || 
-                        u.includes("JAU-BAT-ALM-001") || 
-                        u.includes("DSCTO-") || 
-                        u.includes("DAD-RECP") || 
-                        u.includes("CMM-ALM") || 
-                        u.includes("CD-FALTANTE") || 
-                        u.includes("MM-") || 
-                        u.includes("NAV-TDA") || 
-                        u.includes("VCTO-") || 
-                        u.includes("JAU-BAT") || 
-                        u.includes("DEV-PRV") || 
-                        u.includes("ST-ALM") || 
-                        u.includes("CD-SOBRANTE")
-                    ) {
-                        return false;
-                    }
-
-                    let skuInventarioMat = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                    let tieneUnidadesValidas = parseInt(item.unidades || 0, 10) > 0;
-                    
-                    return (skuInventarioMat === numeroSkuLimpioExcel || skuInventarioMat === numeroSinCerosExcel) && tieneUnidadesValidas;
-                });
-
-                let totalStockDisponible = lotesFiltradosTurno.reduce((acc, curr) => acc + (parseInt(curr.unidades, 10) || 0), 0);
-                document.getElementById('badgeStockDisponibleReserva').innerText = `Reserva: ${totalStockDisponible} Uds`;
-
-                if (lotesFiltradosTurno.length > 0) {
-                    descripcionTraducida = lotesFiltradosTurno[0].descripcion || descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                    document.getElementById('avisoAdvertenciaStock').className = "hidden";
-                    document.getElementById('cardDetalleProductoAsistente').classList.remove('hidden');
-                    document.getElementById('containerInputLpn').className = "block";
-                    document.getElementById('containerResetBtn').className = "hidden";
-                    setTimeout(() => document.getElementById('cantidadInput').focus(), 50);
-                } else {
-                    if (existeEnCatalogo) {
-                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el producto que buscas no hay en la reserva";
-                    } else {
-                        document.getElementById('txtMensajeAdvertenciaStock').innerText = "Lo sentimos, el SKU no se encuentra en la data. Por favor repórtalo en el botón de abajo.";
-                    }
-
-                    document.getElementById('avisoAdvertenciaStock').className = "bg-red-50 border border-red-300 rounded-lg p-2 flex items-center gap-2 text-red-800 text-xs font-semibold shadow-2xs block";
-                    document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-                    document.getElementById('containerInputLpn').className = "hidden";
-                    document.getElementById('containerResetBtn').className = "block";
-                }
-
-                document.getElementById('asistenteInfoDescripcion').innerText = descripcionTraducida || "PRODUCTO IDENTIFICADO";
-                document.getElementById('lblSkuConvertido').innerText = numeroSkuLimpioExcel;
-            }
-        }
-
-        function handleCantidadKey(event) {
-            if (event.key === 'Enter' || event.keyCode === 13 || event.which === 13) {
-                event.preventDefault();
-                solicitarUbicacionOEnviar(); 
-            }
-        }
-
-        function solicitarUbicacionOEnviar() {
-            const cantVal = document.getElementById('cantidadInput').value;
-            if(!cantVal || parseInt(cantVal, 10) <= 0) { 
-                lanzarAlertaCuidadoPersonalizada("Cuidado", "Ingrese una cantidad válida."); 
-                return; 
-            }
-            if (document.activeElement) document.activeElement.blur(); 
-            const radios = document.getElementsByName('optUbicacion');
-            radios.forEach(r => r.checked = false);
-            
-            document.getElementById('modalSeleccionUbicacion').classList.remove('hidden');
-        }
-
-        function cerrarModalUbicacion() {
-            document.getElementById('modalSeleccionUbicacion').classList.add('hidden');
-        }
-
-        function confirmarUbicacionYGuardar(ubicacionElegida) {
-            cerrarModalUbicacion();
-            guardarRegistro(ubicacionElegida);
-        }
-
-        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO Y ACTUALIZACIÓN LIGERA (AL TOQUE)
-        function guardarRegistro(zonaDestino) {
-            const inputCantElem = document.getElementById('cantidadInput');
-            const cantidadString = inputCantElem ? inputCantElem.value : "";
-            
-            if(!cantidadString || parseInt(cantidadString, 10) <= 0) { 
-                return; 
-            }
-
-            const cantidadNumerica = parseInt(cantidadString, 10);
-            let remanente = cantidadNumerica;
-            
-            let lpnSugerido = "LPN-MANUAL";
-            let fvSugerida = "";
-            let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
-
-            let copiaLotesFiltrados = [...lotesFiltradosTurno];
-            let updatesInventario = {};
-
-            if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
-                try {
-                    copiaLotesFiltrados.sort((a, b) => {
-                        let fA = parsearFechaEspanol(a.vencimiento);
-                        let fB = parsearFechaEspanol(b.vencimiento);
-                        if (fA.getTime() !== fB.getTime()) {
-                            return fA - fB;
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pantalla") || strLine.includes("lpn") || strLine.includes("sku")) {
+                            headerRowIdx = i;
+                            break;
                         }
-                        return (parseInt(a.unidades, 10) || 0) - (parseInt(b.unidades, 10) || 0);
-                    });
-                } catch(eSort) {}
-                
-                fvSugerida = copiaLotesFiltrados[0].vencimiento || "";
-                historialConsumosLpns = [];
-                let lpnsConsumidosUnicos = [];
-
-                for (let lote of copiaLotesFiltrados) {
-                    if (remanente <= 0) break;
-                    let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
-                    
-                    let idxLoteOriginal = inventarioData1.findIndex(i => 
-                        i && i.sku && i.lpn === lote.lpn &&
-                        i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
-                    );
-                    
-                    if (idxLoteOriginal !== -1) {
-                        let nuevasUnidades = Math.max(0, (parseInt(inventarioData1[idxLoteOriginal].unidades, 10) || 0) - descontar);
-                        inventarioData1[idxLoteOriginal].unidades = nuevasUnidades;
-                        updatesInventario[`${idxLoteOriginal}/unidades`] = nuevasUnidades;
                     }
-                    
-                    remanente -= descontar;
-                    let lpnActual = lote.lpn || 'S/LPN';
-                    if (!lpnsConsumidosUnicos.includes(lpnActual)) {
-                        lpnsConsumidosUnicos.push(lpnActual);
-                    }
-                    historialConsumosLpns.push(`${lpnActual} (-${descontar} Uds)`);
                 }
 
-                lpnSugerido = lpnsConsumidosUnicos.join(", ");
-            }
+                if (headerRowIdx === -1) headerRowIdx = 0;
 
-            let copiaSkuTemporal = (skuEscaneadoTemporal || "").toString().replace(/[^0-9]/g, "");
-            let copiaDescripcion = document.getElementById('asistenteInfoDescripcion').innerText || "PRODUCTO IDENTIFICADO";
-            if (zonaDestino) {
-                copiaDescripcion += ` [Zona: ${zonaDestino}]`;
-            }
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                const idxPantalla = headers.findIndex(h => h.includes("pantalla") || h.includes("estado") || h.includes("destino"));
+                const idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo"));
+                const idxUsuario = headers.findIndex(h => h.includes("usuario") || h.includes("operador"));
+                const idxCantOrig = headers.findIndex(h => h.includes("original") || h.includes("solicitada"));
+                const idxCantAjust = headers.findIndex(h => h.includes("ajustada") || h.includes("confirmada"));
 
-            cancelarRegistro();
+                let idxLpn = headers.findIndex(h => h.includes("nro lpn") || h.includes("nro. lpn") || h.includes("lpn") || h.includes("contenedor"));
+                if (idxLpn === -1) idxLpn = 2;
 
-            const registroAPush = {
-                idAsistente: idUsuarioLogueado,
-                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
-                sku: copiaSkuTemporal,
-                fifoLpnOptimizado: lpnSugerido, 
-                desc: copiaDescripcion,
-                cant: cantidadNumerica,
-                fv: fvSugerida,
-                purgaCompletaRuta: historialConsumosLpns.join(" ➔ ")
+                let tempDetalleRepo = [];
+                let ultimoSkuVisto = "";
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pPantalla = idxPantalla !== -1 && row[idxPantalla] !== undefined ? row[idxPantalla].toString().trim() : "";
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = idxSku !== -1 && row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pUsuario = idxUsuario !== -1 && row[idxUsuario] !== undefined ? row[idxUsuario].toString().trim() : "SISTEMA";
+                    let pCantOrig = idxCantOrig !== -1 && row[idxCantOrig] !== undefined ? row[idxCantOrig] : 0;
+                    let pCantAjust = idxCantAjust !== -1 && row[idxCantAjust] !== undefined ? row[idxCantAjust] : 0;
+
+                    if (pSku) {
+                        ultimoSkuVisto = pSku;
+                    } else if (!pSku && ultimoSkuVisto) {
+                        pSku = ultimoSkuVisto;
+                    }
+
+                    let uDestino = pPantalla.toUpperCase();
+                    let esPantallaValida = uDestino.includes("RF_REPONER_RESERVA") || 
+                                           uDestino.includes("RF_REPONER_PUERTA") || 
+                                           uDestino.includes("RF_DIVIDIR") || 
+                                           uDestino.includes("DIVIDIR") || 
+                                           uDestino.includes("REPONER") || 
+                                           uDestino.includes("RESERVA");
+
+                    if (pSku && pLpn && esPantallaValida) {
+                        tempDetalleRepo.push({
+                            lpn: pLpn,
+                            sku: pSku,
+                            pantalla: pPantalla,
+                            cantOriginal: pCantOrig,
+                            cantAjustada: pCantAjust,
+                            usuario: pUsuario
+                        });
+                    }
+                }
+
+                detalleRepoRef.set(tempDetalleRepo);
             };
-
-            guardandoLocalmente = true;
-            logRef.push(registroAPush);
-            if (Object.keys(updatesInventario).length > 0) {
-                dbRef.update(updatesInventario);
-            }
+            lector.readAsArrayBuffer(file);
         }
 
-        function cancelarRegistro() {
-            if (document.activeElement) document.activeElement.blur();
-            document.getElementById('barcodeInput').value = "";
-            document.getElementById('cantidadInput').value = "";
-            document.getElementById('cardDetalleProductoAsistente').classList.add('hidden');
-            document.getElementById('containerInputLpn').className = "hidden";
-            document.getElementById('containerResetBtn').className = "hidden";
-            document.getElementById('avisoAdvertenciaStock').className = "hidden";
-            lotesFiltradosTurno = [];
-            requestAnimationFrame(() => {
-                const bInput = document.getElementById('barcodeInput');
-                if (bInput) bInput.focus();
-            });
+        function procesarSupplyChain() {
+            const input = document.getElementById("fileSupplyChain");
+            const file = input.files ? input.files[0] : null;
+            if (!file) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
+                const hoja = libro.Sheets[libro.SheetNames[0]];
+                const filas = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1 });
+                
+                if (!filas || filas.length < 2) {
+                    document.getElementById('statusSupplyChain').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
+                    document.getElementById('statusSupplyChain').innerText = "⚠️ Archivo vacío o formato no válido.";
+                    return;
+                }
+
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(10, filas.length); i++) {
+                    if (filas[i] && Array.isArray(filas[i])) {
+                        let strLine = filas[i].map(c => (c || "").toString().toLowerCase()).join(" ");
+                        if (strLine.includes("pallet") || strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("fecha proceso")) {
+                            headerRowIdx = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (headerRowIdx === -1) headerRowIdx = 0;
+
+                const headers = filas[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                
+                let idxFecha = headers.findIndex(h => h.includes("fecha proceso") || h.includes("fecha") || h.includes("proceso"));
+                let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
+                
+                let idxArea = headers.findIndex(h => h.includes("nombre_area") || h.includes("desc_area") || h.includes("departamento") || h.includes("nom_dpto") || h.includes("desc_dpto"));
+                if (idxArea === -1) {
+                    idxArea = headers.findIndex(h => h === "área" || h === "area");
+                }
+
+                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
+                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
+                let idxDesc = headers.findIndex(h => h.includes("descripci"));
+                let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
+
+                if (idxFecha === -1) idxFecha = 0;
+                if (idxPallet === -1) idxPallet = 1;
+                if (idxArea === -1) idxArea = 2;
+                if (idxLpn === -1) idxLpn = 3;
+                if (idxSku === -1) idxSku = 4;
+                if (idxDesc === -1) idxDesc = 5;
+                if (idxCantEnviada === -1) idxCantEnviada = 6;
+
+                let tempSupply = [];
+
+                for (let i = headerRowIdx + 1; i < filas.length; i++) {
+                    const row = filas[i];
+                    if (!row || row.length === 0) continue;
+
+                    let pFecha = row[idxFecha] !== undefined ? row[idxFecha].toString().trim() : "";
+                    let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
+                    let pAreaRaw = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pArea = traducirCodigoArea(pAreaRaw);
+                    let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
+                    let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
+                    let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
+                    let pCant = row[idxCantEnviada] !== undefined ? parseInt(row[idxCantEnviada] || 0, 10) : 0;
+
+                    if (pSku || pLpn) {
+                        tempSupply.push({
+                            fechaProceso: pFecha,
+                            pallet: pPallet,
+                            area: pArea,
+                            lpn: pLpn,
+                            sku: pSku,
+                            descripcion: pDesc,
+                            cantidad: pCant
+                        });
+                    }
+                }
+
+                supplyRef.set(tempSupply);
+            };
+            lector.readAsArrayBuffer(file);
         }
     </script>
 </body>
