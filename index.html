@@ -1636,7 +1636,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -2799,7 +2799,7 @@
                         <td class="px-3 py-2 border font-bold text-purple-700 bg-purple-50/40">${item.lpn}</td>
                         <td class="px-3 py-2 border text-blue-800 font-bold bg-blue-50/50">${item.ubicacion}</td>
                         <td class="px-3 py-2 border font-sans text-xs">${item.descripcion}</td>
-                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${item.area}</td>
+                        <td class="px-3 py-2 border font-sans font-bold text-gray-700 uppercase">${traducirAreaOcodigo(item.area)}</td>
                         <td class="px-3 py-2 border text-center font-bold text-blue-600 text-sm">${item.cantidadAsignadaFila}</td>
                         <td class="px-3 py-2 border text-center font-bold">${item.fv}</td>
                         <td class="px-3 py-2 border font-sans text-center">${estadoHtml}</td>
@@ -2835,227 +2835,7 @@
             }
         }
 
-        function eliminarData(tipo, event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            if (tipo === 'cajas') {
-                inventarioData1 = [];
-                data1Cargada = false;
-                dbRef.set(null);
-                fechaCargaRef.set(null);
-                document.getElementById('statusData1').className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusData1').innerText = "⚠️ Falta inyectar Cajas_Tienda en la nube.";
-            } else if (tipo === 'satelite') {
-                reqJ_Satelite = {};
-                sateliteRef.set(null);
-                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
-                ejecutarCruceMacroGlobal();
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'reposicion') {
-                matrixDetalleReposicion = [];
-                detalleRepoRef.set(null);
-                document.getElementById('statusData2').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusData2').innerText = "Waiting...";
-                ejecutarCruceMacroGlobal();
-                forzarActualizacionTablaAdmin();
-            } else if (tipo === 'supply') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                document.getElementById('statusSupplyChain').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusSupplyChain').innerText = "Esperando archivo SupplyChain...";
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'supply_vista') {
-                matrixSupplyChain = [];
-                supplyRef.set(null);
-                document.getElementById('statusSupplyChain').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusSupplyChain').innerText = "Esperando archivo SupplyChain...";
-                ejecutarCruceSupplyQuiebre();
-            } else if (tipo === 'satelite_vista') {
-                reqJ_Satelite = {};
-                sateliteRef.set(null);
-                document.getElementById('statusJSatelite').className = "text-[11px] text-gray-400 mt-2 font-semibold pointer-events-none";
-                document.getElementById('statusJSatelite').innerText = "Esperando archivo Jsatélite...";
-                ejecutarCruceMacroGlobal();
-            } else if (tipo === 'repotenciacion') {
-                registrosHistoricosRepotenciar = [];
-                logRef.set(null);
-                forzarActualizacionTablaAdmin();
-            }
-        }
-
-        function abrirModalReporteIncidencia() {
-            if (document.activeElement) document.activeElement.blur();
-            document.getElementById('modalReporte').classList.remove('hidden');
-            document.getElementById('incidenciacodigoInput').value = document.getElementById('barcodeInput').value;
-            document.getElementById('incidenciaMotivoInput').value = "";
-            setTimeout(() => document.getElementById('incidenciaMotivoInput').focus(), 100);
-        }
-
-        function enviarReporteIncidencia() {
-            let cod = document.getElementById('incidenciacodigoInput').value.trim();
-            let mot = document.getElementById('incidenciaMotivoInput').value.trim();
-            let nombreUser = (usuariosDB[idUsuarioLogueado] || usuariosIniciales[idUsuarioLogueado] || {}).nombre || idUsuarioLogueado;
-
-            if(!cod || !mot) {
-                lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
-                return;
-            }
-            
-            msgRef.push({
-                idAsistente: idUsuarioLogueado,
-                remitente: nombreUser,
-                codigo: cod,
-                motivo: mot,
-                estado: "Pendiente",
-                timestamp: new Date().toLocaleString()
-            }).then(() => {
-                cerrarModalReporteIncidencia();
-                cancelarRegistro();
-                
-                document.getElementById('iconoNotificacionDinamico').innerText = "✔";
-                document.getElementById('iconoNotificacionDinamico').className = "w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold";
-                document.getElementById('txtNotificacionDinamicoTitulo').innerText = `Estimado ${nombreUser}`;
-                document.getElementById('txtNotificacionExitoDetalle').innerText = "Alerta enviada correctamente al Panel del Administrador.";
-                document.getElementById('modalNotificacionExito').classList.remove('hidden');
-            });
-        }
-
-        function cerrarModalReporteIncidencia() { 
-            document.getElementById('modalReporte').classList.add('hidden'); 
-        }
-
-        function cerrarNotificacionExitoPersonalizada() {
-            const modal = document.getElementById('modalNotificacionExito');
-            if (modal) modal.classList.add('hidden');
-            if (!document.getElementById('seccionLogin').classList.contains('hidden')) {
-                const passInput = document.getElementById('passwordInput');
-                if (passInput) {
-                    passInput.value = "";
-                    passInput.focus();
-                }
-            }
-        }
-
-        function procesarData1() {
-            const input = document.getElementById("fileData1");
-            const file = input.files ? input.files[0] : null;
-            if (!file) return;
-            
-            const statusElem = document.getElementById('statusData1');
-            statusElem.className = "text-[11px] text-orange-600 mt-2 font-semibold animate-pulse pointer-events-none";
-            statusElem.innerText = "⏳ Procesando Excel en milisegundos...";
-
-            setTimeout(() => {
-                const lector = new FileReader();
-                lector.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const libro = XLSX.read(data, { type: 'array', dense: true, cellDates: false, raw: true });
-                    const hoja = libro.Sheets[libro.SheetNames[0]];
-                    
-                    const filasMatriz = XLSX.utils.sheet_to_json(hoja, { raw: true, header: 1, defval: "" });
-                    
-                    if (!filasMatriz || filasMatriz.length < 2) {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Archivo vacío o formato no válido.";
-                        return;
-                    }
-
-                    let headerRowIdx = -1;
-                    for (let i = 0; i < Math.min(10, filasMatriz.length); i++) {
-                        if (filasMatriz[i] && Array.isArray(filasMatriz[i])) {
-                            let strLine = filasMatriz[i].map(c => (c || "").toString().toLowerCase()).join(" ");
-                            if (strLine.includes("lpn") || strLine.includes("sku") || strLine.includes("articulo") || strLine.includes("ubicacion") || strLine.includes("ubicación")) {
-                                headerRowIdx = i;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (headerRowIdx === -1) headerRowIdx = 0;
-
-                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
-                    
-                    let idxLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
-                    let idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo") || h.includes("material"));
-                    let idxDesc = headers.findIndex(h => h.includes("descripci") || h.includes("denominacion"));
-                    let idxUnidades = headers.findIndex(h => h.includes("unidad") || h.includes("cant") || h.includes("stock") || h.includes("qty"));
-                    let idxUbi = headers.findIndex(h => h.includes("ubicaci") || h.includes("posici") || h.includes("locaci") || h.includes("ubi"));
-                    let idxVenc = headers.findIndex(h => h.includes("vencimiento") || h.includes("caducidad") || h.includes("fv"));
-
-                    if (idxLpn === -1) idxLpn = 0;
-                    if (idxSku === -1) idxSku = 1;
-                    if (idxDesc === -1) idxDesc = 2;
-                    if (idxUnidades === -1) idxUnidades = 3;
-                    if (idxUbi === -1) idxUbi = 4;
-                    if (idxVenc === -1) idxVenc = 15;
-
-                    let datosFormateados = [];
-
-                    for (let i = headerRowIdx + 1; i < filasMatriz.length; i++) {
-                        const row = filasMatriz[i];
-                        if (!row || row.length === 0) continue;
-
-                        let skuVal = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
-                        let lpnVal = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
-                        let descVal = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
-                        let uVal = row[idxUnidades] !== undefined ? parseInt(row[idxUnidades] || 0, 10) : 0;
-                        let ubiVal = row[idxUbi] !== undefined ? row[idxUbi].toString().trim() : "";
-                        let caducidadVal = row[idxVenc] !== undefined ? row[idxVenc].toString().trim() : "";
-
-                        if (!skuVal || uVal <= 0) continue;
-
-                        let uUpper = ubiVal.toUpperCase();
-                        if (
-                            uUpper.includes("DE-PROVEEDOR") || 
-                            uUpper.includes("ST-PROVEEDOR") || 
-                            uUpper.includes("DEV-PRV-VIA-CD") || 
-                            uUpper.includes("DEV-PRV-SVT-001") || 
-                            uUpper.includes("JAU-BAT-ALM-001") || 
-                            uUpper.includes("DSCTO-") || 
-                            uUpper.includes("DAD-RECP") || 
-                            uUpper.includes("CMM-ALM") || 
-                            uUpper.includes("CD-FALTANTE") || 
-                            uUpper.includes("MM-") || 
-                            uUpper.includes("NAV-TDA") || 
-                            uUpper.includes("VCTO-") || 
-                            uUpper.includes("JAU-BAT") || 
-                            uUpper.includes("DEV-PRV") || 
-                            uUpper.includes("ST-ALM") || 
-                            uUpper.includes("CD-SOBRANTE")
-                        ) {
-                            continue;
-                        }
-
-                        datosFormateados.push({
-                            lpn: lpnVal,
-                            sku: skuVal,
-                            descripcion: descVal,
-                            unidades: uVal,
-                            vencimiento: caducidadVal,
-                            ubicacion: ubiVal
-                        });
-                    }
-
-                    fechaCargaRef.set(obtenerFechaHoyLocal());
-
-                    dbRef.set(datosFormateados).then(() => {
-                        statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = `✅ Base Cloud activa (${datosFormateados.length} registros).`;
-                        ejecutarCruceMacroGlobal();
-                        ejecutarCruceSupplyQuiebre();
-                    }).catch(err => {
-                        statusElem.className = "text-[11px] text-red-500 mt-2 font-semibold pointer-events-none";
-                        statusElem.innerText = "⚠️ Error de conexión al sincronizar la base.";
-                    });
-                };
-                lector.readAsArrayBuffer(file);
-            }, 0);
-        }
-
-        // PROCESAR JSATÉLITE: PRIORIZAR LA COLUMNA 6 DE EXCEL (F - AREA) Y DESCARTAR CODIGO_ARE (COLUMNA E)
+        // PROCESAR JSATÉLITE: PRIORIZAR LA COLUMNA 6 DE EXCEL (F - AREA) DESCARTANDO CODIGO_ARE
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -3271,6 +3051,7 @@
 
                 if (idxFecha === -1) idxFecha = 0;
                 if (idxPallet === -1) idxPallet = 1;
+                if (idxArea === -1) idxArea = 2;
                 if (idxLpn === -1) idxLpn = 3;
                 if (idxSku === -1) idxSku = 4;
                 if (idxDesc === -1) idxDesc = 5;
