@@ -792,7 +792,8 @@
             "17": "HERRAMIENTAS", "017": "HERRAMIENTAS", "A17": "HERRAMIENTAS",
             "18": "LIMPIEZA", "018": "LIMPIEZA", "A18": "LIMPIEZA",
             "19": "AUTOMOTRIZ", "019": "AUTOMOTRIZ", "A19": "AUTOMOTRIZ",
-            "20": "SEGURIDAD", "020": "SEGURIDAD", "A20": "SEGURIDAD"
+            "20": "SEGURIDAD", "020": "SEGURIDAD", "A20": "SEGURIDAD",
+            "21": "HERRAMIENTAS", "021": "HERRAMIENTAS", "A21": "HERRAMIENTAS"
         };
 
         function traducirAreaOcodigo(valArea) {
@@ -1635,7 +1636,7 @@
                 let partes = str.split('-');
                 if (partes.length === 3) {
                     if (partes[0].length === 4) {
-                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[2], 10));
+                        return new Date(parseInt(partes[0], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     } else {
                         return new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10));
                     }
@@ -1779,9 +1780,9 @@
 
                         if (item.sku) {
                             let skuLogLimpio = item.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                            let lpnSugeridoLimpio = lpnFila.toUpperCase();
+                            let lpnSugeridoLimpio = lpnFila.toUpperCase().replace(/^(TLPN|LPN)/, "").trim();
 
-                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
+                            let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLogLimpio && b.lpn.replace(/^(TLPN|LPN)/, "").trim() === lpnSugeridoLimpio);
 
                             if (idxMatchExacto !== -1) {
                                 bolsaConsumosRF[idxMatchExacto].consumido = true;
@@ -1810,19 +1811,28 @@
                                         badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
                                         textoEstadoExport = "Repuesto";
                                     } else {
-                                        let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
-                                        let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+                                        try {
+                                            let lpnBuscadoClean = (bajadaDispo.lpn || "").replace(/^(TLPN|LPN)/, "").trim();
+                                            let itemRfEnCajas = inventarioData1.find(i => i && i.lpn && i.lpn.toString().toUpperCase().replace(/^(TLPN|LPN)/, "").trim() === lpnBuscadoClean);
+                                            let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                        let fechaOriginalSugerida = parsearFechaEspanol(fvLpnFila);
-                                        let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+                                            let fechaOriginalSugerida = parsearFechaEspanol(fvLpnFila);
+                                            let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
-                                        if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
-                                            badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
-                                            textoEstadoExport = "LPN con la misma FV";
-                                        } else {
-                                            badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
-                                            lpnConsumidoAnomalia = bajadaDispo.lpn;
-                                            textoEstadoExport = "No realizó FIFO";
+                                            let tConsumida = (fechaConsumidaReal instanceof Date && !isNaN(fechaConsumidaReal.getTime())) ? fechaConsumidaReal.getTime() : 9999999999999;
+                                            let tSugerida = (fechaOriginalSugerida instanceof Date && !isNaN(fechaOriginalSugerida.getTime())) ? fechaOriginalSugerida.getTime() : 9999999999999;
+
+                                            if (fvOtroLpn && (fvOtroLpn === fvLpnFila || tConsumida <= tSugerida)) {
+                                                badgeFifoHtml = `<span class="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1 border border-orange-300">🟠 LPN con la misma FV</span>`;
+                                                textoEstadoExport = "LPN con la misma FV";
+                                            } else {
+                                                badgeFifoHtml = `<span class="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🔴 No realizó FIFO</span>`;
+                                                lpnConsumidoAnomalia = bajadaDispo.lpn;
+                                                textoEstadoExport = "No realizó FIFO";
+                                            }
+                                        } catch (e) {
+                                            badgeFifoHtml = `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded shadow-xs inline-flex items-center gap-1">🟢 Repuesto</span>`;
+                                            textoEstadoExport = "Repuesto";
                                         }
                                     }
                                 } else {
@@ -2060,22 +2070,33 @@
         }
 
         function autenticarUsuario() {
-            const user = document.getElementById('userInput').value.trim().toUpperCase();
-            const pass = document.getElementById('passwordInput').value;
-            
-            if (usuariosDB[user] && usuariosDB[user].clave === pass) {
+            const userIn = document.getElementById('userInput');
+            const passIn = document.getElementById('passwordInput');
+            if (!userIn || !passIn) return;
+
+            const user = userIn.value.trim().toUpperCase();
+            const pass = passIn.value.trim();
+
+            if (!user || !pass) {
+                lanzarAlertaCuidadoPersonalizada("Atención", "Por favor ingresa usuario y contraseña.");
+                return;
+            }
+
+            const cuenta = usuariosDB[user] || usuariosIniciales[user];
+
+            if (cuenta && cuenta.clave === pass) {
                 rolUsuarioActivo = user === "ADMIN" ? "admin" : "asistente";
                 idUsuarioLogueado = user;
-                let fechaHoy = new Date().toISOString().slice(0, 10);
+                let fechaHoy = obtenerFechaHoyLocal();
                 localStorage.setItem("sesion_usuario", user);
                 localStorage.setItem("sesion_rol", rolUsuarioActivo);
                 localStorage.setItem("sesion_fecha", fechaHoy);
                 document.getElementById('seccionLogin').classList.add('hidden');
                 document.getElementById('navUsuario').classList.remove('hidden');
-                document.getElementById('nombreUsuarioActivo').innerText = usuariosDB[user].nombre;
+                document.getElementById('nombreUsuarioActivo').innerText = cuenta.nombre;
                 
                 sesionesRef.child(user).update({
-                    nombre: usuariosDB[user].nombre,
+                    nombre: cuenta.nombre,
                     rol: rolUsuarioActivo,
                     online: true,
                     forzarLogout: false,
@@ -2086,9 +2107,13 @@
                     online: false
                 });
 
-                // Si es asistente, activar escucha en tiempo real de logout forzado
                 if (rolUsuarioActivo === "asistente") {
+                    let primeraLectura = true;
                     sesionesRef.child(user).on("value", (snap) => {
+                        if (primeraLectura) {
+                            primeraLectura = false;
+                            return;
+                        }
                         const val = snap.val();
                         if (val && val.forzarLogout === true) {
                             sesionesRef.child(user).update({ forzarLogout: false, online: false });
@@ -2266,7 +2291,7 @@
             guardarRegistro(ubicacionElegida);
         }
 
-        // GUARDADO 100% ASÍNCRONO EN SEGUNDO PLANO (CERO ESPERA PARA EL ASISTENTE)
+        // GUARDADO OPTIMIZADO: ACTUALIZACIÓN DIRECTA EN MILISEGUNDOS (SIN COLGAR LA WEB)
         function guardarRegistro(zonaDestino) {
             const inputCantElem = document.getElementById('cantidadInput');
             const cantidadString = inputCantElem ? inputCantElem.value : "";
@@ -2283,6 +2308,7 @@
             let historialConsumosLpns = [`MANUAL (-${remanente} Uds)`];
 
             let copiaLotesFiltrados = [...lotesFiltradosTurno];
+            let updatesInventario = {};
 
             if (copiaLotesFiltrados && copiaLotesFiltrados.length > 0) {
                 try {
@@ -2304,13 +2330,15 @@
                     if (remanente <= 0) break;
                     let descontar = Math.min(parseInt(lote.unidades, 10) || remanente, remanente); 
                     
-                    let loteOriginalInventario = inventarioData1.find(i => 
+                    let idxLoteOriginal = inventarioData1.findIndex(i => 
                         i && i.sku && i.lpn === lote.lpn &&
                         i.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "") === lote.sku.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "")
                     );
                     
-                    if (loteOriginalInventario) {
-                        loteOriginalInventario.unidades = Math.max(0, (parseInt(loteOriginalInventario.unidades, 10) || 0) - descontar);
+                    if (idxLoteOriginal !== -1) {
+                        let nuevasUnidades = Math.max(0, (parseInt(inventarioData1[idxLoteOriginal].unidades, 10) || 0) - descontar);
+                        inventarioData1[idxLoteOriginal].unidades = nuevasUnidades;
+                        updatesInventario[`${idxLoteOriginal}/unidades`] = nuevasUnidades;
                     }
                     
                     remanente -= descontar;
@@ -2334,7 +2362,7 @@
 
             const registroAPush = {
                 idAsistente: idUsuarioLogueado,
-                operador: usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado,
+                operador: (usuariosDB[idUsuarioLogueado] || usuariosIniciales[idUsuarioLogueado] || {}).nombre || idUsuarioLogueado,
                 sku: copiaSkuTemporal,
                 fifoLpnOptimizado: lpnSugerido, 
                 desc: copiaDescripcion,
@@ -2344,10 +2372,10 @@
             };
 
             guardandoLocalmente = true;
-            setTimeout(() => {
-                logRef.push(registroAPush);
-                dbRef.set(inventarioData1);
-            }, 0);
+            logRef.push(registroAPush);
+            if (Object.keys(updatesInventario).length > 0) {
+                dbRef.update(updatesInventario);
+            }
         }
 
         function cancelarRegistro() {
@@ -2440,7 +2468,7 @@
                 "LPN": i.lpn,
                 "Ubicación": i.ubicacion,
                 "Descripción": i.descripcion,
-                "Área": i.area,
+                "Área": traducirAreaOcodigo(i.area),
                 "Cant": i.cantidadAsignadaFila,
                 "FV": i.fv,
                 "Estado": i.estadoTextoPlano || "Pendiente",
@@ -2452,7 +2480,7 @@
             if (!registrosHistoricosSupplyQuiebre || registrosHistoricosSupplyQuiebre.length === 0) return [];
             return registrosHistoricosSupplyQuiebre.map(i => ({
                 "PL": i.pallet,
-                "ÁREA": i.area,
+                "ÁREA": traducirAreaOcodigo(i.area),
                 "SKU": i.sku,
                 "LPN": i.lpn,
                 "UBICACIÓN": i.ubicacion,
@@ -2547,7 +2575,7 @@
 
                 let filaData = {
                     pallet: supItem.pallet || "P/L",
-                    area: supItem.area || satItem.areaJSatelite || "GENERAL",
+                    area: traducirAreaOcodigo(supItem.area || satItem.areaJSatelite || "GENERAL"),
                     sku: supItem.sku || satItem.skuOriginal || skuClean,
                     lpn: supItem.lpn || cajaMatch.lpn || "-",
                     ubicacion: ubicacionFisica,
@@ -2576,6 +2604,7 @@
             document.getElementById('boxTotalSupply').innerText = registrosHistoricosSupplyQuiebre.length;
         }
 
+        // CRUCE CUMPLIMIENTO 24 (CON ÁREA DE COLUMNA 6 Y VALIDACIÓN DE FECHAS PROTEGIDA)
         function ejecutarCruceMacroGlobal() {
             const tbody = document.getElementById("tablaMacroGlobalBody");
             const filterVal = document.getElementById("filterEstadoCumplimiento24") ? document.getElementById("filterEstadoCumplimiento24").value : "TODOS";
@@ -2612,9 +2641,7 @@
                 let satItem = reqJ_Satelite[skuKey];
                 if (!satItem) return;
                 let skuLimpio = skuKey.toString().replace(/[^0-9]/g, "").trim().replace(/^0+/, "");
-                let cantidadRequeridaMeta = satItem.cantidadSolicitada || 0;
-
-                if (cantidadRequeridaMeta <= 0) return;
+                let cantidadRequeridaMeta = (satItem.cantidadSolicitada && satItem.cantidadSolicitada > 0) ? satItem.cantidadSolicitada : 999999;
 
                 let lotesDisponibles = inventarioCajasTemporal.filter(item => {
                     if (!item || !item.sku) return false;
@@ -2673,9 +2700,9 @@
                     let estadoTextoPlano = "Pendiente";
                     let lpnConsumidoFila = "";
 
-                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase() : "";
+                    let lpnSugeridoLimpio = lote.lpn ? lote.lpn.toString().trim().toUpperCase().replace(/^(TLPN|LPN)/, "").trim() : "";
 
-                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.includes(lpnSugeridoLimpio.replace(/^TLPN/, "")));
+                    let idxMatchExacto = bolsaConsumosRF.findIndex(b => !b.consumido && b.sku === skuLimpio && b.lpn.replace(/^(TLPN|LPN)/, "").trim() === lpnSugeridoLimpio);
 
                     if (idxMatchExacto !== -1) {
                         bolsaConsumosRF[idxMatchExacto].consumido = true;
@@ -2700,19 +2727,28 @@
                                 estadoFila = "Repuesto";
                                 estadoTextoPlano = "Repuesto";
                             } else {
-                                let itemRfEnCajas = inventarioData1.find(i => i.lpn && i.lpn.toString().trim().toUpperCase().includes(bajadaDispo.lpn.replace(/^TLPN/, "")));
-                                let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
+                                try {
+                                    let lpnBuscadoClean = (bajadaDispo.lpn || "").replace(/^(TLPN|LPN)/, "").trim();
+                                    let itemRfEnCajas = inventarioData1.find(i => i && i.lpn && i.lpn.toString().toUpperCase().replace(/^(TLPN|LPN)/, "").trim() === lpnBuscadoClean);
+                                    let fvOtroLpn = itemRfEnCajas ? itemRfEnCajas.vencimiento : "";
 
-                                let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
-                                let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
+                                    let fechaOriginalSugerida = parsearFechaEspanol(fvFila);
+                                    let fechaConsumidaReal = parsearFechaEspanol(fvOtroLpn);
 
-                                if (fvOtroLpn && (fvOtroLpn === fvLpnFila || fechaConsumidaReal.getTime() <= fechaOriginalSugerida.getTime())) {
-                                    estadoFila = "Misma FV";
-                                    estadoTextoPlano = "LPN con la misma FV";
-                                } else {
-                                    estadoFila = "No realizó FIFO";
-                                    estadoTextoPlano = "No realizó FIFO";
-                                    lpnConsumidoFila = bajadaDispo.lpn;
+                                    let tConsumida = (fechaConsumidaReal instanceof Date && !isNaN(fechaConsumidaReal.getTime())) ? fechaConsumidaReal.getTime() : 9999999999999;
+                                    let tSugerida = (fechaOriginalSugerida instanceof Date && !isNaN(fechaOriginalSugerida.getTime())) ? fechaOriginalSugerida.getTime() : 9999999999999;
+
+                                    if (fvOtroLpn && (fvOtroLpn === fvLpnFila || tConsumida <= tSugerida)) {
+                                        estadoFila = "Misma FV";
+                                        estadoTextoPlano = "LPN con la misma FV";
+                                    } else {
+                                        estadoFila = "No realizó FIFO";
+                                        estadoTextoPlano = "No realizó FIFO";
+                                        lpnConsumidoFila = bajadaDispo.lpn;
+                                    }
+                                } catch (e) {
+                                    estadoFila = "Repuesto";
+                                    estadoTextoPlano = "Repuesto";
                                 }
                             }
                         }
@@ -2724,7 +2760,7 @@
                         lpn: lote.lpn || "-",
                         ubicacion: lote.ubicacion || "RESERVA",
                         descripcion: descFila,
-                        area: satItem.areaJSatelite || "GENERAL",
+                        area: traducirAreaOcodigo(satItem.areaJSatelite || "GENERAL"),
                         cantidadAsignadaFila: cantidadATomarDeEstaCaja,
                         fv: fvFila,
                         estado: estadoFila,
@@ -2861,7 +2897,7 @@
         function enviarReporteIncidencia() {
             let cod = document.getElementById('incidenciacodigoInput').value.trim();
             let mot = document.getElementById('incidenciaMotivoInput').value.trim();
-            let nombreUser = usuariosDB[idUsuarioLogueado] ? usuariosDB[idUsuarioLogueado].nombre : idUsuarioLogueado;
+            let nombreUser = (usuariosDB[idUsuarioLogueado] || usuariosIniciales[idUsuarioLogueado] || {}).nombre || idUsuarioLogueado;
 
             if(!cod || !mot) {
                 lanzarAlertaCuidadoPersonalizada("No se pudo completar tu solicitud", "Por favor complete el código y el motivo de la alerta.");
@@ -3003,8 +3039,7 @@
                         });
                     }
 
-                    let fechaHoyStr = new Date().toISOString().slice(0, 10);
-                    fechaCargaRef.set(fechaHoyStr);
+                    fechaCargaRef.set(obtenerFechaHoyLocal());
 
                     dbRef.set(datosFormateados).then(() => {
                         statusElem.className = "text-[11px] text-green-600 mt-2 font-semibold pointer-events-none";
@@ -3020,6 +3055,7 @@
             }, 0);
         }
 
+        // PROCESAR JSATÉLITE: PRIORIZAR LA COLUMNA 6 DE EXCEL (F - AREA) Y DESCARTAR CODIGO_ARE (COLUMNA E)
         function procesarJ_Satelite() {
             const input = document.getElementById("fileJSatelite");
             const file = input.files ? input.files[0] : null;
@@ -3043,9 +3079,19 @@
                         }
                     }
 
-                    let headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
+                    const headers = filasMatriz[headerRowIdx].map(h => (h || "").toString().trim().toLowerCase());
                     let idxSkuCol = headers.findIndex(h => h === "sku" || h.includes("sku") || h.includes("articulo"));
-                    let idxAreaCol = headers.findIndex(h => h === "area" || h.includes("área") || h.includes("area"));
+                    
+                    // Columna F (Columna 6) exclusiva para AREA, descartando CODIGO_ARE
+                    let idxAreaCol = -1;
+                    idxAreaCol = headers.findIndex(h => (h === "area" || h === "área") && !h.includes("cod"));
+                    if (idxAreaCol === -1) {
+                        idxAreaCol = headers.findIndex(h => (h.includes("area") || h.includes("área") || h.includes("departamento")) && !h.includes("cod"));
+                    }
+                    if (idxAreaCol === -1 && headers.length > 5) {
+                        idxAreaCol = 5;
+                    }
+
                     let idxQtyCol = headers.findIndex(h => h === "quantity" || h.includes("quantity") || h.includes("cantidad") || h.includes("solicitad"));
                     let idxStockPmmCol = headers.findIndex(h => h.includes("stock_pmm") || h.includes("stock pmm") || h === "pmm");
 
@@ -3057,8 +3103,14 @@
                         let row = filasMatriz[i];
                         if (!row || row.length === 0) continue;
                         let skuVal = row[idxSkuCol] !== undefined ? row[idxSkuCol].toString().trim() : "";
-                        let areaVal = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "GENERAL";
-                        let qtyVal = row[idxQtyCol] !== undefined ? row[idxQtyCol] : 0;
+                        
+                        let areaRaw = row[idxAreaCol] !== undefined ? row[idxAreaCol].toString().trim() : "";
+                        if (!areaRaw && row[5] !== undefined) {
+                            areaRaw = row[5].toString().trim();
+                        }
+                        
+                        let areaVal = traducirAreaOcodigo(areaRaw);
+                        let qtyVal = (idxQtyCol !== -1 && row[idxQtyCol] !== undefined) ? row[idxQtyCol] : 0;
                         let pmmVal = (idxStockPmmCol !== -1 && row[idxStockPmmCol] !== undefined) ? parseInt(row[idxStockPmmCol], 10) : 0;
 
                         if (skuVal) {
@@ -3073,6 +3125,9 @@
                                 };
                             } else {
                                 tempJSatelite[skuClean].cantidadSolicitada = Math.max(tempJSatelite[skuClean].cantidadSolicitada, parseInt(qtyVal, 10) || 0);
+                                if (areaVal && areaVal !== "GENERAL") {
+                                    tempJSatelite[skuClean].areaJSatelite = areaVal;
+                                }
                             }
                         }
                     }
@@ -3203,15 +3258,19 @@
                 
                 let idxFecha = headers.findIndex(h => h.includes("fecha proceso") || h.includes("fecha") || h.includes("proceso"));
                 let idxPallet = headers.findIndex(h => h === "pallet" || h === "pl" || h.includes("pallet"));
-                let idxArea = headers.findIndex(h => h === "área" || h === "area");
-                let idxLpn = headers.findIndex(h => h === "lpn" || h.includes("lpn") || h.includes("contenedor"));
-                let idxSku = headers.findIndex(h => h === "sku" || h === "articulo" || h === "artículo" || h.includes("sku"));
+                let idxArea = headers.findIndex(h => (h.includes("area") || h.includes("área")) && !h.includes("cod") && !h.includes("cód"));
+                if (idxArea === -1) {
+                    idxArea = headers.findIndex(h => h.includes("nombre_area") || h.includes("desc_area") || h.includes("departamento"));
+                }
+                if (idxArea === -1) idxArea = 2;
+
+                let idxLpn = headers.findIndex(h => h.includes("lpn") || h.includes("contenedor"));
+                let idxSku = headers.findIndex(h => h.includes("sku") || h.includes("articulo") || h.includes("artículo") || h.includes("sku"));
                 let idxDesc = headers.findIndex(h => h.includes("descripci"));
                 let idxCantEnviada = headers.findIndex(h => h.includes("cantidad enviada") || h.includes("enviada") || h === "cantidad" || h === "cant");
 
                 if (idxFecha === -1) idxFecha = 0;
                 if (idxPallet === -1) idxPallet = 1;
-                if (idxArea === -1) idxArea = 2;
                 if (idxLpn === -1) idxLpn = 3;
                 if (idxSku === -1) idxSku = 4;
                 if (idxDesc === -1) idxDesc = 5;
@@ -3225,7 +3284,8 @@
 
                     let pFecha = row[idxFecha] !== undefined ? row[idxFecha].toString().trim() : "";
                     let pPallet = row[idxPallet] !== undefined ? row[idxPallet].toString().trim() : "";
-                    let pArea = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pAreaRaw = row[idxArea] !== undefined ? row[idxArea].toString().trim() : "GENERAL";
+                    let pArea = traducirAreaOcodigo(pAreaRaw);
                     let pLpn = row[idxLpn] !== undefined ? row[idxLpn].toString().trim() : "";
                     let pSku = row[idxSku] !== undefined ? row[idxSku].toString().trim() : "";
                     let pDesc = row[idxDesc] !== undefined ? row[idxDesc].toString().trim() : "";
